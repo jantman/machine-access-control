@@ -1,0 +1,103 @@
+esphome:
+  name: "esp32test"
+  friendly_name: "esp32test"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: !secret domain_name
+  reboot_timeout: "1min"
+  on_connect:
+    then:
+      - lambda: |-
+            id(display_content) = "Please insert\naccess card";
+
+globals:
+  - id: display_content
+    type: std::string
+    restore_value: no
+    max_restore_data_length: 34
+    initial_value: '"Connecting to WiFi"'
+
+i2c:
+  sda: GPIO22
+  scl: GPIO23
+
+sensor:
+  - platform: uptime
+    name: Uptime
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+  - platform: internal_temperature
+    name: "esp32_internal_temperature"
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO25
+    name: "Card Present"
+    id: card_present
+    on_release:
+      then:
+        - lambda: |-
+            id(display_content) = "Please insert\naccess card";
+            id(my_display).print("Please insert\naccess card");
+
+button:
+  - platform: restart
+    name: "Reboot ESP"
+
+wiegand:
+  - id: keypad
+    d0: GPIO16
+    d1: GPIO4
+    on_tag:
+      - lambda: ESP_LOGI("TAG", "received tag %s", x.c_str());
+      - lambda: |-
+            if(x == "14916441") {
+              id(display_content) = "Welcome, \nauthorized user!";
+              id(my_display).print("Welcome, \nauthorized user!");
+            }
+            else if(x == "14916432") {
+              id(display_content) = "Sorry, not\nauthorized.";
+              id(my_display).print("Sorry, not\nauthorized.");
+            }
+            else {
+              id(display_content) = "Unknown card.";
+              id(my_display).print("Unknown card.");
+            }
+
+display:
+  - platform: lcd_pcf8574
+    dimensions: 16x2
+    address: 0x27
+    id: my_display
+    lambda: |-
+      it.print(id(display_content));
