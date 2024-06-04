@@ -1,5 +1,7 @@
 # Decatur Makers Machine Access Control (dm-mac)
 
+[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
+
 This is a software and hardware project for using RFID cards/fobs to control use of various power tools and equipment in the [Decatur Makers](https://decaturmakers.org/ "‌") makerspace. It is made up of custom ESP32-based hardware (machine control units) controlling power to each enabled machine and running ESPHome, and a central access control/management/logging server application written in Python/Flask. Like our [“glue” server](https://github.com/decaturmakers/glue "‌") that powers the RFID-based door access control to the makerspace, dm-mac uses the [Neon CRM](https://www.neoncrm.com/ "‌") (or a local flat-file when in development mode) as its backend datastore.
 
 ## Software Components
