@@ -20,6 +20,7 @@ Changelog = "https://github.com/jantman/machine_access_control/releases"
 
 [tool.poetry.dependencies]
 python = "^3.12"
+flask = "^3.0.3"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
@@ -43,6 +44,9 @@ pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
 safety = ">=1.10.3"
 typeguard = ">=2.13.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest-blockage = "^0.2.4"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
