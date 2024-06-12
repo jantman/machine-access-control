@@ -1,0 +1,16 @@
+{
+  "_checkout": "2022.6.3",
+  "_output_dir": "/home/jantman/GIT/machine-access-control",
+  "_repo_dir": "/home/jantman/.cookiecutters/cookiecutter-hypermodern-python",
+  "_template": "gh:cjolowicz/cookiecutter-hypermodern-python",
+  "author": "Jason Antman",
+  "copyright_year": "2024",
+  "development_status": "Development Status :: 3 - Alpha",
+  "email": "jason@jasonantman.com",
+  "friendly_name": "Machine_Access_Control",
+  "github_user": "jantman",
+  "license": "MIT",
+  "package_name": "dm_mac",
+  "project_name": "machine_access_control",
+  "version": "0.1.0"
+}
