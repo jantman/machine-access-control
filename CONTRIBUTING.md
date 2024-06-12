@@ -1,65 +1,37 @@
 # Contributor Guide
 
 Thank you for your interest in improving this project.
-This project is open-source under the [MIT license] and
+This project is open-source under the [MIT license](https://opensource.org/licenses/MIT) and
 welcomes contributions in the form of bug reports, feature requests, and pull requests.
 
 Here is a list of important resources for contributors:
 
-- [Source Code]
-- [Documentation]
-- [Issue Tracker]
-- [Code of Conduct]
-
-[mit license]: https://opensource.org/licenses/MIT
-[source code]: https://github.com/jantman/machine_access_control
-[documentation]: https://machine_access_control.readthedocs.io/
-[issue tracker]: https://github.com/jantman/machine_access_control/issues
-
-## How to report a bug
-
-Report bugs on the [Issue Tracker].
-
-When filing an issue, make sure to answer these questions:
-
-- Which operating system and Python version are you using?
-- Which version of this project are you using?
-- What did you do?
-- What did you expect to see?
-- What did you see instead?
-
-The best way to get your bug fixed is to provide a test case,
-and/or steps to reproduce the issue.
-
-## How to request a feature
-
-Request features on the [Issue Tracker].
+- [Source Code](https://github.com/jantman/machine_access_control)
+- [Documentation](https://github.com/jantman/machine_access_control)
+- [Issue Tracker](https://github.com/jantman/machine_access_control/issues)
 
 ## How to set up your development environment
 
-You need Python 3.7+ and the following tools:
+You need Python 3.12+ and the following tools:
 
-- [Poetry]
-- [Nox]
-- [nox-poetry]
+- [Poetry](https://python-poetry.org/)
+- [Nox](https://nox.thea.codes/)
+- [nox-poetry](https://nox-poetry.readthedocs.io/)
 
 Install the package with development requirements:
 
 ```console
+$ python3 -mvenv venv
+$ source venv/bin/activate
+$ pip install poetry
 $ poetry install
 ```
 
-You can now run an interactive Python session,
-or the command-line interface:
+Finally, install and set up pre-commit:
 
 ```console
-$ poetry run python
-$ poetry run machine_access_control
+$ nox --session=pre-commit -- install
 ```
-
-[poetry]: https://python-poetry.org/
-[nox]: https://nox.thea.codes/
-[nox-poetry]: https://nox-poetry.readthedocs.io/
 
 ## How to test the project
 
@@ -82,14 +54,12 @@ For example, invoke the unit test suite like this:
 $ nox --session=tests
 ```
 
-Unit tests are located in the _tests_ directory,
-and are written using the [pytest] testing framework.
-
-[pytest]: https://pytest.readthedocs.io/
+Unit tests are located in the [tests/](tests/) directory,
+and are written using the [pytest](https://pytest.readthedocs.io/) testing framework.
 
 ## How to submit changes
 
-Open a [pull request] to submit changes to this project.
+Open a [pull request](https://github.com/jantman/machine_access_control/pulls) to submit changes to this project.
 
 Your pull request needs to meet the following guidelines for acceptance:
 
@@ -107,9 +77,3 @@ $ nox --session=pre-commit -- install
 
 It is recommended to open an issue before starting work on anything.
 This will allow a chance to talk it over with the owners and validate your approach.
-
-[pull request]: https://github.com/jantman/machine_access_control/pulls
-
-<!-- github-only -->
-
-[code of conduct]: CODE_OF_CONDUCT.md

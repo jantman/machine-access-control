@@ -1,73 +1,34 @@
-# Machine_Access_Control
+# Decatur Makers Machine Access Control (dm-mac)
 
-[![PyPI](https://img.shields.io/pypi/v/machine_access_control.svg)][pypi_]
-[![Status](https://img.shields.io/pypi/status/machine_access_control.svg)][status]
-[![Python Version](https://img.shields.io/pypi/pyversions/machine_access_control)][python version]
-[![License](https://img.shields.io/pypi/l/machine_access_control)][license]
+[![Project Status: Concept – Minimal or no implementation has been done yet, or the repository is only intended to be a limited example, demo, or proof-of-concept.](https://www.repostatus.org/badges/latest/concept.svg)](https://www.repostatus.org/#concept)
+[![Tests](https://github.com/jantman/machine_access_control/workflows/Tests/badge.svg)](https://github.com/jantman/machine_access_control/actions?workflow=Tests)
 
-[![Read the documentation at https://machine_access_control.readthedocs.io/](https://img.shields.io/readthedocs/machine_access_control/latest.svg?label=Read%20the%20Docs)][read the docs]
-[![Tests](https://github.com/jantman/machine_access_control/workflows/Tests/badge.svg)][tests]
-[![Codecov](https://codecov.io/gh/jantman/machine_access_control/branch/main/graph/badge.svg)][codecov]
+This is a software and hardware project for using RFID cards/fobs to control use of various power tools and equipment in the [Decatur Makers](https://decaturmakers.org/) makerspace. It is made up of custom ESP32-based hardware (machine control units) controlling power to each enabled machine and running ESPHome, and a central access control/management/logging server application written in Python/Flask. Like our [“glue” server](https://github.com/decaturmakers/glue) that powers the RFID-based door access control to the makerspace, dm-mac uses the [Neon CRM](https://www.neoncrm.com/) (or a local flat-file when in development mode) as its backend datastore.
 
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+## Software Components
 
-[pypi_]: https://pypi.org/project/machine_access_control/
-[status]: https://pypi.org/project/machine_access_control/
-[python version]: https://pypi.org/project/machine_access_control
-[read the docs]: https://machine_access_control.readthedocs.io/
-[tests]: https://github.com/jantman/machine_access_control/actions?workflow=Tests
-[codecov]: https://app.codecov.io/gh/jantman/machine_access_control
-[pre-commit]: https://github.com/pre-commit/pre-commit
-[black]: https://github.com/psf/black
+At a high level, the system is made up of the central control server and the ESPHome configuration for the ESP32’s.
 
-## Features
+### Control Server
 
-- TODO
+This is a Python/Flask application that provides authentication and authorization for users via RFID credentials, control of the ESP32-based machine control units;, and logging and monitoring as well as basic management capabilities.
 
-## Requirements
+**Why not use the Glue server?** First, because the glue server is currently running in a cloud hosting provider. That makes sense for its purpose, but less so for direct control of physical machines in our space. We want the machine access control system to always function, regardless of the state of our Internet connection, with low latency. We also aren’t concerned about reliability through a power outage, as that will also prevent the controlled machines from working. Secondly, having the business logic contained in a central server with relatively “dumb” machine control units on the machines allows for simpler management of the system.
 
-- TODO
+### Machine Control Unit Software
+
+The machine control units run ESPHome, because it is well-supported with an active community, requires minimal programming (just a YAML configuration), and allows updating and managing many devices wirelessly from a central point. The machine control units (and their ESPHome configuration) are relatively simple - they just react to events (RFID card insertion or removal, button press, or a timer ticking), send their current state to the control server via a HTTP POST, and receive a response with the intended state of their outputs (control relay, LCD screen, LEDs). All of the logic of the system is contained in the central control server.
+
+In the event of an extended control server outage, special event, or other exigent circumstance, the machine control unit software is configured with a list of permanently-authorized RFID cards that will enable the machine without requiring authorization from the control server.
 
 ## Installation
 
-You can install _Machine_Access_Control_ via [pip] from [PyPI]:
+It's recommended to install and run via Docker. Details TBD.
 
-```console
-$ pip install machine_access_control
-```
+## Contributing and Development
 
-## Usage
-
-Please see the [Command-line Reference] for details.
-
-## Contributing
-
-Contributions are very welcome.
-To learn more, see the [Contributor Guide].
+Contributions are very welcome. To learn more, see the [Contributor Guide](https://github.com/jantman/machine_access_control/blob/main/CONTRIBUTING.md).
 
 ## License
 
-Distributed under the terms of the [MIT license][license],
-_Machine_Access_Control_ is free and open source software.
-
-## Issues
-
-If you encounter any problems,
-please [file an issue] along with a detailed description.
-
-## Credits
-
-This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
-
-[@cjolowicz]: https://github.com/cjolowicz
-[pypi]: https://pypi.org/
-[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
-[file an issue]: https://github.com/jantman/machine_access_control/issues
-[pip]: https://pip.pypa.io/
-
-<!-- github-only -->
-
-[license]: https://github.com/jantman/machine_access_control/blob/main/LICENSE
-[contributor guide]: https://github.com/jantman/machine_access_control/blob/main/CONTRIBUTING.md
-[command-line reference]: https://machine_access_control.readthedocs.io/en/latest/usage.html
+Distributed under the terms of the [MIT license](https://github.com/jantman/machine_access_control/blob/main/LICENSE), _Machine_Access_Control_ (`dm_mac`) is free and open source software.
