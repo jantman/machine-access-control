@@ -33,6 +33,14 @@ Finally, install and set up pre-commit:
 $ nox --session=pre-commit -- install
 ```
 
+## Running Locally
+
+```console
+$ flask --app dm_mac run
+```
+
+The app will now be available at [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
 ## How to test the project
 
 Run the full test suite:
@@ -52,6 +60,12 @@ For example, invoke the unit test suite like this:
 
 ```console
 $ nox --session=tests
+```
+
+To manually run the pre-commit tests:
+
+```console
+$ nox --session=pre-commit
 ```
 
 Unit tests are located in the [tests/](tests/) directory,

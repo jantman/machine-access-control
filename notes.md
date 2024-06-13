@@ -35,8 +35,8 @@ In terms of hardware, what I think makes the most sense is:
 1. A main box that mounts near the user controls, with the ESP32, RFID reader, display, and LED. This is a standardized 3d-printed box design with the UI and RFID components on the front, a board inside, a connector on the back, and design provision for mounting with screws and a custom bracket on any side. The box halves would be secured with tamper-proof screws and an appropriate warning label over at least one screw.
 2. A “power” box that would contain just:
    1. 120VAC (or 240VAC for special cases) to 5VDC power supply
-   2. control relay*
-   3. current sensor*
+   2. control relay\*
+   3. current sensor\*
 3. A 6-conductor cable connecting the two, likely shielded, using locking aircraft-style connectors
 
 - The normal case we assume is a 120VAC power tool that’s essentially just a motor, where we want to control power to it and see if it’s running. For special cases, like the laser or other things that use lower-voltage (or at least lower-amperage) control circuits, we’d develop custom power boxes. It’s a simple enough interface - we have 2 wires for a relay control output from the ESP32 (which could be as simple as ground and a direct connection to an ESP32 pin, or could have an at-least-minimal relay in between), 2 wires that provide +5VDC and GND to the ESP32 and associated components in the control box, and 2 optional wires that provide output from a current clamp on the machine power input or some other method of sensing machine state.
@@ -48,9 +48,9 @@ Additional thoughts:
 
 The server API should be dead-simple:
 
-* On an event (card scan or removal or button press), POST to the server containing the event type, information (card ID) if applicable, machine name, current sensor value if applicable, and a shared secret string.
-  * Aside from button presses or card changes, we’ll also have a timer event every X seconds that just updates the current sensor value, if applicable.
-* Server responds with a simple JSON data structure containing what should be displayed on screen (written to global variable and printed to screen), desired state of the relay, and desired RGB LED state and/or Oops button LED state.
+- On an event (card scan or removal or button press), POST to the server containing the event type, information (card ID) if applicable, machine name, current sensor value if applicable, and a shared secret string.
+  - Aside from button presses or card changes, we’ll also have a timer event every X seconds that just updates the current sensor value, if applicable.
+- Server responds with a simple JSON data structure containing what should be displayed on screen (written to global variable and printed to screen), desired state of the relay, and desired RGB LED state and/or Oops button LED state.
 
 I would like the server to run on-premise within the building… (1) we want equipment authentication and logging to continue working even if the Internet is down, and (2) if the power is out this doesn’t matter anyway, so that’s not a concern.
 
@@ -60,12 +60,12 @@ Server to machine reply: desired relay state, LCD message, LCD backlight state, 
 
 Machine state representation, in database:
 
-* machine name
-* machine current IP
-* relay state
-* relay last state change time
-* rfid_card_number (nullable)
-* rfid card last state change time
-* oopsed_since (nullable)
-* current_draw (nullable; maybe integer? or maybe machine_is_on bool?)
-* last_changed
+- machine name
+- machine current IP
+- relay state
+- relay last state change time
+- rfid_card_number (nullable)
+- rfid card last state change time
+- oopsed_since (nullable)
+- current_draw (nullable; maybe integer? or maybe machine_is_on bool?)
+- last_changed

@@ -54,7 +54,7 @@ tests = ["tests", "*/tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["dm_mac", "tests"]
+source = ["dm_mac"]
 
 [tool.coverage.report]
 show_missing = true

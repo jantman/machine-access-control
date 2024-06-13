@@ -170,6 +170,7 @@ def tests(session: Session) -> None:
             "-m",
             "pytest",
             "--blockage",
+            "-v",
             *session.posargs,
         )
     finally:

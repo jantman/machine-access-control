@@ -21,6 +21,7 @@ repos:
         entry: check-yaml
         language: system
         types: [yaml]
+        exclude: ^esphome-config\.yaml$
       - id: darglint
         name: darglint
         entry: darglint
