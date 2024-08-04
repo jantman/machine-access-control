@@ -1,0 +1,62 @@
+name: Build & Deploy GH-Pages
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install nox
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install nox
+      - name: Build Sphinx
+        shell: bash
+        env:
+          GITHUB_REF_NAME: ${{ github.event.client_payload.pull_request.head.ref || github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          nox --non-interactive --session=docs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: docs/build/html
+          if-no-files-found: error
+          retention-days: 7
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: docs/build/html
+      - name: Touch nojekyll
+        shell: bash
+        run: |
+          touch docs/build/html/.nojekyll
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/html
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
