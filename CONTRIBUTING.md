@@ -71,6 +71,20 @@ $ nox --session=pre-commit
 Unit tests are located in the [tests/](tests/) directory,
 and are written using the [pytest](https://pytest.readthedocs.io/) testing framework.
 
+## How to build docs
+
+To build docs, serve them locally, and rebuild as they change:
+
+```console
+$ nox --session=docs
+```
+
+To just build docs to [docs/build/](docs/build/):
+
+```console
+$ nox --non-interactive --session=docs
+```
+
 ## How to submit changes
 
 Open a [pull request](https://github.com/jantman/machine_access_control/pulls) to submit changes to this project.

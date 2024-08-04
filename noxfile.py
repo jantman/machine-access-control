@@ -2,6 +2,7 @@
 
 import os
 import shlex
+import shutil
 import sys
 from pathlib import Path
 from textwrap import dedent
@@ -197,3 +198,23 @@ def typeguard(session: Session) -> None:
     session.install(".")
     session.install("pytest", "typeguard", "pygments")
     session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
+
+
+@session(python=python_versions[0], reuse_venv=True)
+def docs(session: Session) -> None:
+    """Build the documentation."""
+    args = session.posargs or ["-b", "html", "docs/source", "docs/build", "-E", "-W"]
+
+    if session.interactive and not session.posargs:
+        args = ["-a", "--watch=docs/source/_static", "--open-browser", *args]
+
+    builddir = Path("docs", "build")
+    if builddir.exists():
+        shutil.rmtree(builddir)
+
+    session.install("-r", "docs/requirements.txt")
+
+    if session.interactive:
+        session.run("sphinx-autobuild", *args)
+    else:
+        session.run("sphinx-build", *args)
