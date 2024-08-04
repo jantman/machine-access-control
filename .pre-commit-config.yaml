@@ -44,6 +44,13 @@ repos:
         language: system
         types: [python]
         args: [--py37-plus]
+      - id: sphinx
+        name: sphinx
+        entry: "nox --non-interactive --session=docs"
+        description: Build docs with sphinx.
+        language: system
+        files: "docs/source/"
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
