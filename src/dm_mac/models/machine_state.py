@@ -1,12 +1,14 @@
 """Classes and functions related to machine state."""
-from typing import Optional
-from logging import getLogger, Logger
+
+from logging import Logger
+from logging import getLogger
 from time import time
+from typing import Optional
 
 
 logger: Logger = getLogger(__name__)
 
-DEFAULT_DISPLAY_TEXT: str = 'Please Insert\nRFID Card'
+DEFAULT_DISPLAY_TEXT: str = "Please Insert\nRFID Card"
 
 
 class MachineState:
@@ -14,7 +16,7 @@ class MachineState:
 
     def __init__(self, machine_name: str):
         """Initialize a new MachineState instance."""
-        logger.debug('Instantiating new MachineState for %s', machine_name)
+        logger.debug("Instantiating new MachineState for %s", machine_name)
         #: The name of the machine
         self.name: str = machine_name
         #: Float timestamp of the machine's last checkin time
@@ -51,9 +53,9 @@ class MachineState:
     ) -> bool:
         """Return whether or not the update causes changes to significant state values."""
         if (
-            rfid_value != self.rfid_value or
-            relay_state != self.relay_is_on or
-            oops != self.is_oopsed
+            rfid_value != self.rfid_value
+            or relay_state != self.relay_is_on
+            or oops != self.is_oopsed
         ):
             return True
         return False
@@ -67,7 +69,4 @@ class MachineState:
     @property
     def machine_response(self) -> dict:
         """Return the response dict to send to the machine."""
-        return {
-            'relay': self.relay_desired_state,
-            'display': self.display_text
-        }
+        return {"relay": self.relay_desired_state, "display": self.display_text}
