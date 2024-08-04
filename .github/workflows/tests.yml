@@ -33,13 +33,11 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install tools using pip
-        working-directory: cookiecutter-hypermodern-python
         # github.workspace is a workaround for https://github.com/pypa/pipx/issues/1331
         # which was fixed in https://github.com/pypa/pipx/pull/1390
         # but has not been released as of 2024-08-04
         run: |
           pip install --constraint=${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt cookiecutter
           pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox
           pipx inject --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox nox-poetry
           pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt poetry
@@ -99,13 +97,11 @@ jobs:
           python-version: "3.12"
 
       - name: Install tools using pip
-        working-directory: cookiecutter-hypermodern-python
         # github.workspace is a workaround for https://github.com/pypa/pipx/issues/1331
         # which was fixed in https://github.com/pypa/pipx/pull/1390
         # but has not been released as of 2024-08-04
         run: |
           pip install --constraint=${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt cookiecutter
           pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox
           pipx inject --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox nox-poetry
           pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt poetry
