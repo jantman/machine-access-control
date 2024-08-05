@@ -35,7 +35,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: build
-          path: docs/build/html
+          path: docs/build
           if-no-files-found: error
           retention-days: 7
   deploy:
@@ -52,15 +52,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: build
-          path: docs/build/html
+          path: docs/build
       - name: Touch nojekyll
         shell: bash
         run: |
-          touch docs/build/html/.nojekyll
+          touch docs/build/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/html
+          path: docs/build
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
