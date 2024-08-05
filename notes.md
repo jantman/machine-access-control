@@ -1,5 +1,14 @@
 # Notes
 
+## August 4th Notes
+
+- right now, just have `users.json` and `machines.json` configs
+- load configs at start
+- /config-reload API endpoint - runs JsonSchema validation, tries to reload configs, fails gracefully
+  - maintain config load timestamp & expose via health endpoint
+- in the future, maybe have a config UI that can replace the files; contain configs in classes that can have the file backend swapped for other classes with same interface
+- Neon loader - just writes users.json & calls reload endpoint
+
 ## April 16th Notes
 
 - 2 enclosures, one mains AC and one LV. Mains should ideally lock with a padlock, or else have tamper switch

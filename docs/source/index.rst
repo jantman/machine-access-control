@@ -1,16 +1,19 @@
-.. machine-access-control documentation master file, created by
-   sphinx-quickstart on Sun Aug  4 15:42:24 2024.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. meta::
+   :description: A software and hardware project for using RFID cards/fobs to control use of various power tools and equipment in the Decatur Makers makerspace.
 
-Welcome to machine-access-control's documentation!
-==================================================
+.. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
-Hello there!
+   Introduction <introduction>
+   Installation <installation>
+   Configuration <configuration>
+   Hardware <hardware>
+   Contributing and Development <contributing>
+   NeonOne Integration <neon>
+
 
 Indices and tables
 ==================
