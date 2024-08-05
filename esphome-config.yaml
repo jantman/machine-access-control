@@ -27,7 +27,7 @@ wifi:
   on_connect:
     then:
       - lambda: |-
-            id(display_content) = "Please insert\naccess card";
+          id(display_content) = "Please insert\naccess card";
 
 globals:
   - id: display_content
@@ -81,18 +81,18 @@ wiegand:
     on_tag:
       - lambda: ESP_LOGI("TAG", "received tag %s", x.c_str());
       - lambda: |-
-            if(x == "14916441") {
-              id(display_content) = "Welcome, \nauthorized user!";
-              id(my_display).print("Welcome, \nauthorized user!");
-            }
-            else if(x == "14916432") {
-              id(display_content) = "Sorry, not\nauthorized.";
-              id(my_display).print("Sorry, not\nauthorized.");
-            }
-            else {
-              id(display_content) = "Unknown card.";
-              id(my_display).print("Unknown card.");
-            }
+          if(x == "14916441") {
+            id(display_content) = "Welcome, \nauthorized user!";
+            id(my_display).print("Welcome, \nauthorized user!");
+          }
+          else if(x == "14916432") {
+            id(display_content) = "Sorry, not\nauthorized.";
+            id(my_display).print("Sorry, not\nauthorized.");
+          }
+          else {
+            id(display_content) = "Unknown card.";
+            id(my_display).print("Unknown card.");
+          }
 
 display:
   - platform: lcd_pcf8574
