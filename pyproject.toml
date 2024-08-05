@@ -49,6 +49,7 @@ typeguard = ">=2.13.3"
 pytest-blockage = "^0.2.4"
 sphinx = "<8.0"
 sphinx-rtd-theme = "^2.0.0"
+responses = "^0.25.3"
 
 [tool.isort]
 profile = "black"
