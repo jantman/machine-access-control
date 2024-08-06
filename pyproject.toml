@@ -47,8 +47,6 @@ pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
 safety = ">=1.10.3"
 typeguard = ">=2.13.3"
-
-[tool.poetry.group.dev.dependencies]
 pytest-blockage = "^0.2.4"
 sphinx = "<8.0"
 sphinx-rtd-theme = "^2.0.0"
