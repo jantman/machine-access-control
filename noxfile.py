@@ -202,6 +202,7 @@ def typeguard(session: Session) -> None:
 @session(python=python_versions[0], reuse_venv=True)
 def docs(session: Session) -> None:
     """Build the documentation."""
+    session.install(".")
     args = session.posargs or ["-b", "html", "docs/source", "docs/build", "-E", "-W"]
 
     if session.interactive and not session.posargs:
@@ -213,6 +214,16 @@ def docs(session: Session) -> None:
 
     session.install("-r", "docs/requirements.txt")
 
+    session.run(
+        "sphinx-apidoc",
+        "src/dm_mac",
+        "-o",
+        "docs/source",
+        "-e",
+        "-f",
+        "-M",
+        "--private",
+    )
     if session.interactive:
         session.run("sphinx-autobuild", *args)
     else:

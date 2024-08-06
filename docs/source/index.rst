@@ -13,6 +13,7 @@
    Hardware <hardware>
    Contributing and Development <contributing>
    NeonOne Integration <neon>
+   Python API <modules>
 
 
 Indices and tables
