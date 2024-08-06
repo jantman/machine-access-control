@@ -27,7 +27,7 @@ flask = "^3.0.3"
 jsonschema = "^4.23.0"
 requests = "^2.32.3"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"
 black = ">=21.10b0"
 coverage = {extras = ["toml"], version = ">=6.2"}
@@ -49,6 +49,7 @@ pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
 safety = ">=1.10.3"
 typeguard = ">=2.13.3"
+types-jsonschema = "^4.23.0.20240712"
 pytest-blockage = "^0.2.4"
 sphinx = "<8.0"
 sphinx-rtd-theme = "^2.0.0"

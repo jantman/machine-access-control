@@ -4,14 +4,14 @@ import logging
 import os
 
 
-def set_log_info(lgr: logging.Logger):
+def set_log_info(lgr: logging.Logger) -> None:
     """Set logger level to INFO."""
     set_log_level_format(
         lgr, logging.INFO, "%(asctime)s %(levelname)s:%(name)s:%(message)s"
     )
 
 
-def set_log_debug(lgr: logging.Logger):
+def set_log_debug(lgr: logging.Logger) -> None:
     """Set logger level to DEBUG, and debug-level output format."""
     set_log_level_format(
         lgr,
@@ -21,7 +21,7 @@ def set_log_debug(lgr: logging.Logger):
     )
 
 
-def set_log_level_format(lgr: logging.Logger, level: int, fmt: str):
+def set_log_level_format(lgr: logging.Logger, level: int, fmt: str) -> None:
     """Set logger level and format."""
     formatter = logging.Formatter(fmt=fmt)
     lgr.handlers[0].setFormatter(formatter)

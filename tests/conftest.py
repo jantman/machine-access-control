@@ -1,5 +1,7 @@
 """Conftest for dm_mac - fixtures."""
 
+from typing import Generator
+
 import pytest
 from flask import Flask
 from flask.testing import FlaskClient
@@ -8,7 +10,7 @@ from dm_mac import create_app
 
 
 @pytest.fixture()
-def app() -> Flask:
+def app() -> Generator[Flask, None, None]:
     """Test App fixture - app instance configured for testing."""
     app = create_app()
     app.config.update(

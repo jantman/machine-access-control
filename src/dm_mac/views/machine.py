@@ -11,7 +11,7 @@ machine: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
 
 @machine.route("/update", methods=["POST"])
-def update():
+def update() -> str:
     """API method to update machine state.
 
     Accepts POSTed JSON containing the following key/value pairs:
@@ -33,3 +33,4 @@ def update():
     #    method for this)
     # check if this data would update the state; if not, just call
     #    noop_update() and return the same display value
+    return "Not implemented."

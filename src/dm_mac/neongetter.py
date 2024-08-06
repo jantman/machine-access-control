@@ -158,7 +158,7 @@ def parse_args(argv):
     return args
 
 
-def main():
+def main() -> None:
     """Main entrypoint for CLI script."""
     args = parse_args(sys.argv[1:])
     # set logging level
@@ -168,8 +168,7 @@ def main():
         set_log_info(logger)
     if args.dump_fields:
         NeonUserUpdater(dump_fields=True)
-        return
-    if args.dump_example_config:
+    elif args.dump_example_config:
         print(json.dumps(NeonUserUpdater.example_config(), sort_keys=True, indent=4))
-        return
-    NeonUserUpdater().run()
+    else:
+        NeonUserUpdater().run()

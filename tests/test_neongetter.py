@@ -1,11 +1,13 @@
 """Tests for dm_mac.neongetter module."""
 
 import json
+from typing import Any
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
+from _pytest.capture import CaptureFixture
 from jsonschema.exceptions import ValidationError
 
 from dm_mac.neongetter import NeonUserUpdater
@@ -20,12 +22,12 @@ pb = f"{pbm}.NeonUserUpdater"
 class TestValidateConfig:
     """Tests for neongetter.validate_config()."""
 
-    def test_example_validates(self):
+    def test_example_validates(self) -> None:
         """Ensure example config is valid."""
         res = NeonUserUpdater.validate_config(NeonUserUpdater.example_config())
         assert res is None
 
-    def test_invalid_raises_exception(self):
+    def test_invalid_raises_exception(self) -> None:
         """Ensure invalid config raises an exception."""
         config = {
             "name_field": "Full Name (F)",
@@ -46,7 +48,7 @@ class TestValidateConfig:
 class TestMain:
     """Tests for main method."""
 
-    def test_run(self, mock_debug, mock_info, mock_nuu):
+    def test_run(self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock) -> None:
         """Test with no arguments."""
         with patch(f"{pbm}.sys.argv", ["neongetter"]):
             main()
@@ -54,7 +56,7 @@ class TestMain:
             assert mock_info.mock_calls == [call(logger)]
             assert mock_nuu.mock_calls == [call(), call().run()]
 
-    def test_run_debug(self, mock_debug, mock_info, mock_nuu):
+    def test_run_debug(self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock) -> None:
         """Test with verbose argument."""
         with patch(f"{pbm}.sys.argv", ["neongetter", "-v"]):
             main()
@@ -62,7 +64,9 @@ class TestMain:
             assert mock_info.mock_calls == []
             assert mock_nuu.mock_calls == [call(), call().run()]
 
-    def test_dump_fields(self, mock_debug, mock_info, mock_nuu):
+    def test_dump_fields(
+        self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock
+    ) -> None:
         """Test with --dump-fields argument."""
         with patch(f"{pbm}.sys.argv", ["neongetter", "--dump-fields"]):
             main()
@@ -70,7 +74,13 @@ class TestMain:
             assert mock_info.mock_calls == [call(logger)]
             assert mock_nuu.mock_calls == [call(dump_fields=True)]
 
-    def test_dump_example_config(self, mock_debug, mock_info, mock_nuu, capsys):
+    def test_dump_example_config(
+        self,
+        mock_debug: Mock,
+        mock_info: Mock,
+        mock_nuu: Mock,
+        capsys: CaptureFixture[Any],
+    ) -> None:
         """Test with --dump-example-config argument."""
         type(mock_nuu).example_config = Mock(return_value={"my": "config"})
         with patch(f"{pbm}.sys.argv", ["neongetter", "--dump-example-config"]):
