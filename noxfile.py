@@ -170,6 +170,7 @@ def tests(session: Session) -> None:
             "-m",
             "pytest",
             "--blockage",
+            "--capture=tee-sys",
             "-v",
             *session.posargs,
         )
@@ -189,6 +190,8 @@ def coverage(session: Session) -> None:
         session.run("coverage", "combine")
 
     session.run("coverage", *args)
+    session.run("coverage", "html")
+    session.run("coverage", "xml")
 
 
 @session(python=python_versions[0])

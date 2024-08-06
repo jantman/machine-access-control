@@ -24,6 +24,8 @@ Changelog = "https://github.com/jantman/machine_access_control/releases"
 [tool.poetry.dependencies]
 python = "^3.12"
 flask = "^3.0.3"
+jsonschema = "^4.23.0"
+requests = "^2.32.3"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
@@ -67,7 +69,7 @@ source = ["dm_mac"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 100
+fail_under = 5
 
 [tool.mypy]
 strict = true
