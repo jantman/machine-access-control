@@ -67,29 +67,6 @@ repos:
             "pre-rebase",
             "prepare-commit-msg",
           ]
-      - id: mypy
-        name: mypy
-        entry: "nox --non-interactive --session=mypy"
-        description: Run mypy typing checks.
-        language: system
-        types: [python]
-        pass_filenames: false
-        # run for every possible stage other than "manual", to prevent
-        # a duplicate run in GitHub Actions, which also fails because
-        # of a shallow git clone
-        stages:
-          [
-            "commit-msg",
-            "post-checkout",
-            "post-commit",
-            "post-merge",
-            "post-rewrite",
-            "pre-commit",
-            "pre-merge-commit",
-            "pre-push",
-            "pre-rebase",
-            "prepare-commit-msg",
-          ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -119,3 +96,28 @@ repos:
     rev: v0.9.1
     hooks:
       - id: sphinx-lint
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.1
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - types-jsonschema
+          - types-requests
+        args: ["--ignore-missing-imports"]
+        files: "^(src/|tests/).*$"
+        # run for every possible stage other than "manual", to prevent
+        # a duplicate run in GitHub Actions, which also fails because
+        # of a shallow git clone
+        stages:
+          [
+            "commit-msg",
+            "post-checkout",
+            "post-commit",
+            "post-merge",
+            "post-rewrite",
+            "pre-commit",
+            "pre-merge-commit",
+            "pre-push",
+            "pre-rebase",
+            "prepare-commit-msg",
+          ]

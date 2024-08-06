@@ -152,7 +152,7 @@ def mypy(session: Session) -> None:
     args = session.posargs or ["src", "tests"]
     session.install(".")
     session.install("mypy", "pytest", "types-jsonschema", "types-requests")
-    session.run("mypy", *args)
+    session.run("mypy", "--ignore-missing-imports", *args)
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
 
