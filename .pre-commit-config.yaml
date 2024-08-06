@@ -51,6 +51,22 @@ repos:
         language: system
         files: "docs/source/"
         pass_filenames: false
+        # run for every possible stage other than "manual", to prevent
+        # a duplicate run in GitHub Actions, which also fails because
+        # of a shallow git clone
+        stages:
+          [
+            "commit-msg",
+            "post-checkout",
+            "post-commit",
+            "post-merge",
+            "post-rewrite",
+            "pre-commit",
+            "pre-merge-commit",
+            "pre-push",
+            "pre-rebase",
+            "prepare-commit-msg",
+          ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
