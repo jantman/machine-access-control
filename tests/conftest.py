@@ -9,7 +9,7 @@ from flask.testing import FlaskClient
 from dm_mac import create_app
 
 
-@pytest.fixture()  # type: ignore
+@pytest.fixture()
 def app() -> Generator[Flask, None, None]:
     """Test App fixture - app instance configured for testing."""
     app = create_app()
@@ -26,7 +26,7 @@ def app() -> Generator[Flask, None, None]:
     # clean up / reset resources here
 
 
-@pytest.fixture()  # type: ignore
+@pytest.fixture()
 def client(app: Flask) -> FlaskClient:
     """Test Client for making requests to test app."""
     return app.test_client()

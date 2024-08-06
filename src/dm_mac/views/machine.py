@@ -11,7 +11,7 @@ from flask import request
 machine: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
 
-@machine.route("/update", methods=["POST"])  # type: ignore
+@machine.route("/update", methods=["POST"])
 def update() -> str:
     """API method to update machine state.
 

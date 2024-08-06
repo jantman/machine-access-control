@@ -103,7 +103,9 @@ repos:
         additional_dependencies:
           - types-jsonschema
           - types-requests
-        args: ["--ignore-missing-imports"]
+          - Flask
+          - pytest
+        args: []
         files: "^(src/|tests/).*$"
         # run for every possible stage other than "manual", to prevent
         # a duplicate run in GitHub Actions, which also fails because
