@@ -3,7 +3,9 @@
 from logging import Logger
 from logging import getLogger
 from time import time
+from typing import Dict
 from typing import Optional
+from typing import Union
 
 
 logger: Logger = getLogger(__name__)
@@ -44,8 +46,12 @@ class MachineState:
         self.display_text: str = DEFAULT_DISPLAY_TEXT
         self._load_from_cache()
 
-    def _save_cache(self):
+    def _save_cache(self) -> None:
         """Save machine state cache to disk."""
+        raise NotImplementedError()
+
+    def _load_from_cache(self) -> None:
+        """Load machine state cache from disk."""
         raise NotImplementedError()
 
     def update_has_changes(
@@ -60,13 +66,13 @@ class MachineState:
             return True
         return False
 
-    def noop_update(self, amps: float):
+    def noop_update(self, amps: float) -> None:
         """Just update amps and last_checkin and save cache."""
         self.current_amps = amps
         self.last_checkin = time()
         self._save_cache()
 
     @property
-    def machine_response(self) -> dict:
+    def machine_response(self) -> Dict[str, Union[str, bool]]:
         """Return the response dict to send to the machine."""
         return {"relay": self.relay_desired_state, "display": self.display_text}

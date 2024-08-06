@@ -7,7 +7,7 @@ from werkzeug.test import TestResponse
 class TestIndex:
     """Tests for API Index view."""
 
-    def test_index_response(self, client: FlaskClient):
+    def test_index_response(self, client: FlaskClient) -> None:
         """Test for API index response."""
         response: TestResponse = client.get("/api/")
         assert response.status_code == 200

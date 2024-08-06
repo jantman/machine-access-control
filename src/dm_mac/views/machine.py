@@ -2,6 +2,7 @@
 
 from typing import Any
 from typing import Dict
+from typing import cast
 
 from flask import Blueprint
 from flask import request
@@ -26,7 +27,7 @@ def update() -> str:
     - "amps" (float) - amperage value from the current clamp ammeter, if present,
         or 0.0 otherwise.
     """
-    data: Dict[str, Any] = request.json  # noqa
+    data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
     # machine_name: str = data.pop("name")
     # get the MachineState object for this machine, or else return an error
     #    that error should be formatted for display on the device (helper

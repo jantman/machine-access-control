@@ -4,6 +4,11 @@ import argparse
 import json
 import logging
 import sys
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Union
+from typing import cast
 
 from jsonschema import validate
 from requests import Response
@@ -26,6 +31,48 @@ class NeonUserUpdater:
 
     BASE_URL: str = "https://api.neoncrm.com/v2/"
 
+    CONFIG_SCHEMA: Dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "name_field": {
+                "type": "string",
+                "description": "Neon field name containing member name.",
+            },
+            "email_field": {
+                "type": "string",
+                "description": "Neon field name containing member email " "address.",
+            },
+            "expiration_field": {
+                "type": "string",
+                "description": "Neon field name containing membership "
+                "expiration date.",
+            },
+            "account_id_field": {
+                "type": "string",
+                "description": "Neon field name containing account ID.",
+            },
+            "fob_fields": {
+                "type": "array",
+                "items": {"type": "string"},
+                "minItems": 1,
+                "description": "List of Neon field names containing RFID " "fob codes.",
+            },
+            "authorized_field_value": {
+                "type": "string",
+                "description": "Value for name of option indicating that "
+                "member is authorized / training complete.",
+            },
+        },
+        "required": [
+            "name_field",
+            "email_field",
+            "expiration_field",
+            "account_id_field",
+            "fob_fields",
+            "authorized_field_value",
+        ],
+    }
+
     def __init__(self, dump_fields: bool = False):
         """Initialize NeonUserUpdater."""
         self._orgid: str = env_var_or_die("NEON_ORG", "your Neon organization ID")
@@ -40,7 +87,7 @@ class NeonUserUpdater:
             return
         # @TODO load config
 
-    def _get_custom_fields_raw(self) -> dict:
+    def _get_custom_fields_raw(self) -> List[Dict[str, Any]]:
         """Return the raw API response for custom fields."""
         url: str = self.BASE_URL + "customFields?category=Account"
         logger.debug("GET %s", url)
@@ -49,9 +96,9 @@ class NeonUserUpdater:
             "Neon returned HTTP %d with %d byte content", r.status_code, len(r.content)
         )
         r.raise_for_status()
-        return r.json()
+        return cast(List[Dict[str, Any]], r.json())
 
-    def _dump_fields(self):
+    def _dump_fields(self) -> None:
         print("Account fields:")
         url: str = self.BASE_URL + "accounts/search/outputFields?searchKey=1"
         logger.debug("GET %s", url)
@@ -65,55 +112,12 @@ class NeonUserUpdater:
         print(json.dumps(self._get_custom_fields_raw(), sort_keys=True, indent=4))
 
     @staticmethod
-    def validate_config(config: dict):
+    def validate_config(config: Dict[str, Any]) -> None:
         """Validate configuration via jsonschema."""
-        schema = {
-            "type": "object",
-            "properties": {
-                "name_field": {
-                    "type": "string",
-                    "description": "Neon field name containing member name.",
-                },
-                "email_field": {
-                    "type": "string",
-                    "description": "Neon field name containing member email "
-                    "address.",
-                },
-                "expiration_field": {
-                    "type": "string",
-                    "description": "Neon field name containing membership "
-                    "expiration date.",
-                },
-                "account_id_field": {
-                    "type": "string",
-                    "description": "Neon field name containing account ID.",
-                },
-                "fob_fields": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "minItems": 1,
-                    "description": "List of Neon field names containing RFID "
-                    "fob codes.",
-                },
-                "authorized_field_value": {
-                    "type": "string",
-                    "description": "Value for name of option indicating that "
-                    "member is authorized / training complete.",
-                },
-            },
-            "required": [
-                "name_field",
-                "email_field",
-                "expiration_field",
-                "account_id_field",
-                "fob_fields",
-                "authorized_field_value",
-            ],
-        }
-        validate(config, schema)
+        validate(config, NeonUserUpdater.CONFIG_SCHEMA)
 
     @staticmethod
-    def example_config() -> dict:
+    def example_config() -> Dict[str, Union[str, List[str]]]:
         """Return an example configuration."""
         return {
             "name_field": "Full Name (F)",
@@ -124,12 +128,12 @@ class NeonUserUpdater:
             "authorized_field_value": "Training Complete",
         }
 
-    def run(self):
+    def run(self) -> None:
         """Run the update."""
         pass
 
 
-def parse_args(argv):
+def parse_args(argv: List[str]) -> argparse.Namespace:
     """Parse command line arguments."""
     p = argparse.ArgumentParser(description="Update users.json from Neon API")
     p.add_argument(
