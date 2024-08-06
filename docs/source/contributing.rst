@@ -16,13 +16,24 @@ Here is a list of important resources for contributors:
 -  `Issue
    Tracker <https://github.com/jantman/machine_access_control/issues>`__
 
+Tooling in use
+--------------
+
+-  `Poetry <https://python-poetry.org/>`__ for dependency management.
+-  `Nox <https://nox.thea.codes/>`__ for running tests, building docs, etc.
+-  GitHub Actions for CI/CD and building the GitHub Pages documentation site.
+-  `Sphinx <https://www.sphinx-doc.org/en/master/>`__ for writing the documentation
+   in `rST <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#rst-primer>`__,
+   mainly chosen for its excellent support for auto-generating Python API docs.
+-  `pre-commit <https://pre-commit.com/>`__ for faster feedback on your changes.
+
 How to set up your development environment
 ------------------------------------------
 
 You need Python 3.12+ and the following tools:
 
--  `Poetry <https://python-poetry.org/>`__
--  `Nox <https://nox.thea.codes/>`__
+-  `Poetry <https://python-poetry.org/>`__ for dependency management
+-  `Nox <https://nox.thea.codes/>`__ for running tests, building docs, etc.
 -  `nox-poetry <https://nox-poetry.readthedocs.io/>`__
 
 Install the package with development requirements:
