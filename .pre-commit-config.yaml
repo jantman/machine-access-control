@@ -101,3 +101,19 @@ repos:
     hooks:
       - id: mypy
         args: [--strict, --ignore-missing-imports]
+        # run for every possible stage other than "manual", to prevent
+        # a duplicate run in GitHub Actions, which also fails because
+        # of a shallow git clone
+        stages:
+          [
+            "commit-msg",
+            "post-checkout",
+            "post-commit",
+            "post-merge",
+            "post-rewrite",
+            "pre-commit",
+            "pre-merge-commit",
+            "pre-push",
+            "pre-rebase",
+            "prepare-commit-msg",
+          ]
