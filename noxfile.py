@@ -151,8 +151,14 @@ def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or ["src", "tests"]
     session.install(".")
-    session.install("mypy", "pytest", "types-jsonschema", "types-requests")
-    session.run("mypy", "--ignore-missing-imports", *args)
+    session.install(
+        "mypy",
+        "pytest",
+        "types-jsonschema",
+        "types-requests",
+        "responses",
+    )
+    session.run("mypy", *args)
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
 
@@ -161,7 +167,9 @@ def mypy(session: Session) -> None:
 def tests(session: Session) -> None:
     """Run the test suite."""
     session.install(".")
-    session.install("coverage[toml]", "pytest", "pygments", "pytest-blockage")
+    session.install(
+        "coverage[toml]", "pytest", "pygments", "pytest-blockage", "responses"
+    )
     try:
         session.run(
             "coverage",
@@ -173,6 +181,10 @@ def tests(session: Session) -> None:
             "--capture=tee-sys",
             "-v",
             *session.posargs,
+            env={
+                "NEON_ORG": "test",
+                "NEON_KEY": "12345",
+            },
         )
     finally:
         if session.interactive:

@@ -1,5 +1,6 @@
 """Conftest for dm_mac - fixtures."""
 
+import os
 from typing import Generator
 
 import pytest
@@ -30,3 +31,10 @@ def app() -> Generator[Flask, None, None]:
 def client(app: Flask) -> FlaskClient:
     """Test Client for making requests to test app."""
     return app.test_client()
+
+
+@pytest.fixture()
+def fixtures_path() -> str:
+    """Return the absolute path to the fixtures directory."""
+    testdir: str = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(testdir, "fixtures")

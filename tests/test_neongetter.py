@@ -1,14 +1,21 @@
 """Tests for dm_mac.neongetter module."""
 
 import json
+import os
+from base64 import b64encode
 from typing import Any
+from typing import List
+from typing import Tuple
+from typing import cast
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
+import responses
 from _pytest.capture import CaptureFixture
 from jsonschema.exceptions import ValidationError
+from responses.registries import OrderedRegistry
 
 from dm_mac.neongetter import NeonUserUpdater
 from dm_mac.neongetter import logger
@@ -18,14 +25,61 @@ from dm_mac.neongetter import main
 pbm = "dm_mac.neongetter"
 pb = f"{pbm}.NeonUserUpdater"
 
+NOX_CREDS: Tuple[str, str] = ("test", "12345")
+NOX_AUTH: str = "Basic " + b64encode(":".join(NOX_CREDS).encode("ascii")).decode(
+    "ascii"
+)
+
+
+class TestInit:
+    """Test the class init() method."""
+
+    def test_happy_path(self) -> None:
+        """Happy path test."""
+        assert 1 == 1
+
+
+class TestDumpFields:
+    """Test NeonUserUpdater._dump_fields() method."""
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_happy_path(self, fixtures_path: str, capsys: CaptureFixture[Any]) -> None:
+        """Test happy path of method."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "dump_fields.yaml")
+        )
+        # store the responses; they're removed from the registry as called
+        resp: List[responses.BaseResponse] = [x for x in responses.registered()]
+        NeonUserUpdater(dump_fields=True)
+        captured = capsys.readouterr()
+        assert resp[0].call_count == 1
+        assert resp[0].calls[0].request.headers["Authorization"] == NOX_AUTH
+        assert resp[0].calls[0].request.headers["NEON-API-VERSION"] == "2.8"
+        assert resp[1].call_count == 1
+        assert resp[1].calls[0].request.headers["Authorization"] == NOX_AUTH
+        assert resp[1].calls[0].request.headers["NEON-API-VERSION"] == "2.8"
+        # get the responses from the fixture data
+        std: Any = json.loads(cast(str, resp[0].body))
+        custom: Any = json.loads(cast(str, resp[1].body))
+        assert captured.err == ""
+        assert (
+            captured.out
+            == "Account fields:\n"
+            + json.dumps(std, sort_keys=True, indent=4)
+            + "\n"
+            + "Custom fields:\n"
+            + json.dumps(custom, sort_keys=True, indent=4)
+            + "\n"
+        )
+
 
 class TestValidateConfig:
     """Tests for neongetter.validate_config()."""
 
     def test_example_validates(self) -> None:
         """Ensure example config is valid."""
-        res = NeonUserUpdater.validate_config(NeonUserUpdater.example_config())
-        assert res is None
+        NeonUserUpdater.validate_config(NeonUserUpdater.example_config())
 
     def test_invalid_raises_exception(self) -> None:
         """Ensure invalid config raises an exception."""
