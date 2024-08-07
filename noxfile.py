@@ -35,6 +35,11 @@ nox.options.sessions = (
     "docs",
 )
 
+TEST_ENV = {
+    "NEON_ORG": "test",
+    "NEON_KEY": "12345",
+}
+
 
 def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
     """Activate virtualenv in hooks installed by pre-commit.
@@ -181,10 +186,7 @@ def tests(session: Session) -> None:
             "--capture=tee-sys",
             "-v",
             *session.posargs,
-            env={
-                "NEON_ORG": "test",
-                "NEON_KEY": "12345",
-            },
+            env=TEST_ENV,
         )
     finally:
         if session.interactive:
@@ -210,8 +212,13 @@ def coverage(session: Session) -> None:
 def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
     session.install(".")
-    session.install("pytest", "typeguard", "pygments")
-    session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
+    session.install("pytest", "typeguard", "pygments", "responses")
+    session.run(
+        "pytest",
+        f"--typeguard-packages={package}",
+        *session.posargs,
+        env=TEST_ENV,
+    )
 
 
 @session(python=python_versions[0], reuse_venv=True)
