@@ -148,7 +148,18 @@ def safety(session: Session) -> None:
     """Scan dependencies for insecure packages."""
     requirements = session.poetry.export_requirements()
     session.install("safety")
-    session.run("safety", "check", "--full-report", f"--file={requirements}")
+    ignored = ",".join(
+        [
+            "70612",  # CVE-2019-8341 in Jinja2, no fix as of 3.1.4
+        ]
+    )
+    session.run(
+        "safety",
+        "check",
+        "--full-report",
+        f"--file={requirements}",
+        f"--ignore={ignored}",
+    )
 
 
 @session(python=python_versions)
