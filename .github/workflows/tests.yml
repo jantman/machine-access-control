@@ -104,6 +104,9 @@ jobs:
         with:
           name: coverage-data
 
+      - name: List workspace
+        run: ls -la
+
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@v1.1.52
         with:
