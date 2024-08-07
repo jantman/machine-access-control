@@ -81,9 +81,9 @@ jobs:
         with:
           name: coverage-data
           path: |
-            .coverage.*
             coverage.xml
             pytest.xml
+            .coverage.*
 
       - name: Upload documentation
         if: matrix.session == 'docs-build'

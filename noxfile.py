@@ -38,6 +38,7 @@ nox.options.sessions = (
 TEST_ENV = {
     "NEON_ORG": "test",
     "NEON_KEY": "12345",
+    "NEONGETTER_CONFIG": "tests/fixtures/neon.config.json",
 }
 
 
@@ -201,8 +202,7 @@ def tests(session: Session) -> None:
             env=TEST_ENV,
         )
     finally:
-        if session.interactive:
-            session.notify("coverage", posargs=[])
+        session.notify("coverage", posargs=[])
 
 
 @session(python=python_versions[0])

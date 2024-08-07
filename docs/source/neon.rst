@@ -21,6 +21,8 @@ and your Neon API key as the ``NEON_KEY`` environment variable.
 You will then need to generate a ``neon.config.json`` configuration file. An example configuration file can be dumped to STDOUT by running ``neongetter --dump-example-config`` and a description of the fields can be seen in the below `JSON Schema <http://json-schema.org/>`__. In some cases you will need to know the names of fields and custom fields set up for Accounts in your Neon instance. This information can be
 obtained by running ``neongetter --dump-fields``.
 
+You can either save your configuration file to ``neon.config.json`` in the directory that you run ``neongetter`` from, or specify the full path to the file in the ``NEONGETTER_CONFIG`` environment variable.
+
 .. _neon.config.schema:
 
 Configuration Schema
