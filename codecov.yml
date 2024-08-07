@@ -1,9 +1,0 @@
-comment: false
-coverage:
-  status:
-    project:
-      default:
-        target: "5"
-    patch:
-      default:
-        target: "5"

@@ -195,6 +195,7 @@ def tests(session: Session) -> None:
             "pytest",
             "--blockage",
             "--capture=tee-sys",
+            "--junitxml=pytest.xml",
             "-v",
             *session.posargs,
             env=TEST_ENV,

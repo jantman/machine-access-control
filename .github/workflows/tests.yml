@@ -4,6 +4,11 @@ on:
   - push
   - pull_request
 
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 jobs:
   tests:
     name: ${{ matrix.session }} ${{ matrix.python }} / ${{ matrix.os }}
@@ -75,7 +80,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data
-          path: ".coverage.*"
+          path: |
+            .coverage.*
+            coverage.xml
+            pytest.xml
 
       - name: Upload documentation
         if: matrix.session == 'docs-build'
@@ -91,33 +99,13 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install tools using pip
-        # github.workspace is a workaround for https://github.com/pypa/pipx/issues/1331
-        # which was fixed in https://github.com/pypa/pipx/pull/1390
-        # but has not been released as of 2024-08-04
-        run: |
-          pip install --constraint=${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox
-          pipx inject --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt nox nox-poetry
-          pipx install --pip-args=--constraint=${{ github.workspace }}/.github/workflows/constraints.txt poetry
-
       - name: Download coverage data
         uses: actions/download-artifact@v3
         with:
           name: coverage-data
 
-      - name: Combine coverage data and display human readable report
-        run: |
-          nox --session=coverage
-
-      - name: Create coverage report
-        run: |
-          nox --session=coverage -- xml
-
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v4.5.0
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@v1.1.52
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
