@@ -25,6 +25,47 @@ logging.basicConfig(
 )
 logger: logging.Logger = logging.getLogger()
 
+CONFIG_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "name_field": {
+            "type": "string",
+            "description": "Neon field name containing member name.",
+        },
+        "email_field": {
+            "type": "string",
+            "description": "Neon field name containing member email " "address.",
+        },
+        "expiration_field": {
+            "type": "string",
+            "description": "Neon field name containing membership " "expiration date.",
+        },
+        "account_id_field": {
+            "type": "string",
+            "description": "Neon field name containing account ID.",
+        },
+        "fob_fields": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 1,
+            "description": "List of Neon field names containing RFID " "fob codes.",
+        },
+        "authorized_field_value": {
+            "type": "string",
+            "description": "Value for name of option indicating that "
+            "member is authorized / training complete.",
+        },
+    },
+    "required": [
+        "name_field",
+        "email_field",
+        "expiration_field",
+        "account_id_field",
+        "fob_fields",
+        "authorized_field_value",
+    ],
+}
+
 
 class NeonUserUpdater:
     """Class to update users.json from Neon One API."""

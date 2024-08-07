@@ -18,10 +18,15 @@ Configuration
 First, export the name of your Neon organization as the ``NEON_ORG`` environment variable
 and your Neon API key as the ``NEON_KEY`` environment variable.
 
-You will then need to generate a ``neon.config.json`` configuration file, using the below
-schema and documentation as an example. In some cases you will need to know the names of
-fields and custom fields set up for Accounts in your Neon instance. This information can be
+You will then need to generate a ``neon.config.json`` configuration file. An example configuration file can be dumped to STDOUT by running ``neongetter --dump-example-config`` and a description of the fields can be seen in the below `JSON Schema <http://json-schema.org/>`__. In some cases you will need to know the names of fields and custom fields set up for Accounts in your Neon instance. This information can be
 obtained by running ``neongetter --dump-fields``.
+
+.. _neon.config.schema:
+
+Configuration Schema
+++++++++++++++++++++
+
+.. jsonschema:: dm_mac.neongetter.CONFIG_SCHEMA
 
 .. _neon.running:
 

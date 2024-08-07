@@ -5,8 +5,11 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 """
 
 import os
+import sys
 from urllib.parse import urlparse
 
+
+sys.path.append(os.path.abspath("exts"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -24,6 +27,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.intersphinx",
     "sphinx_last_updated_by_git",
+    "sphinx-jsonschema",
 ]
 
 templates_path = ["_templates"]
@@ -60,3 +64,11 @@ html_css_files = [
     # thanks to: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
     "theme_overrides.css"  # override wide tables in RTD theme
 ]
+
+git_untracked_check_dependencies = False
+
+# Suppress sphinx_last_updated_by_git warning (treated as error)
+# for non-extant source files caused by sphinx-jsonschema referencing objects
+# ignore non-local image warnings
+
+suppress_warnings = ["git.dependency_not_found"]
