@@ -34,5 +34,5 @@ def env_var_or_die(varname: str, content: str) -> str:
         return os.environ[varname]
     except KeyError as ex:
         raise RuntimeError(
-            f"ERROR: Please set the {varname} environment " f"variable to {content}."
+            f"ERROR: Please set the {varname} environment variable to {content}."
         ) from ex

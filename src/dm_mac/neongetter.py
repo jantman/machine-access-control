@@ -18,6 +18,7 @@ from requests.adapters import HTTPAdapter
 from dm_mac.cli_utils import env_var_or_die
 from dm_mac.cli_utils import set_log_debug
 from dm_mac.cli_utils import set_log_info
+from dm_mac.utils import load_json_config
 
 
 logging.basicConfig(
@@ -84,7 +85,18 @@ class NeonUserUpdater:
         if dump_fields:
             self._dump_fields()
             return
-        # @TODO load config
+        self._config: Dict[str, Union[str, List[str]]] = (
+            self._load_and_validate_config()
+        )
+
+    def _load_and_validate_config(self) -> Dict[str, Union[str, List[str]]]:
+        """Load and validate the config file."""
+        config: Dict[str, Union[str, List[str]]] = cast(
+            Dict[str, Union[str, List[str]]],
+            load_json_config("NEONGETTER_CONFIG", "neon.config.json"),
+        )
+        NeonUserUpdater.validate_config(config)
+        return config
 
     def _get_custom_fields_raw(self) -> List[Dict[str, Any]]:
         """Return the raw API response for custom fields."""

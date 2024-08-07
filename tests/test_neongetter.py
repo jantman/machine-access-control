@@ -36,7 +36,54 @@ class TestInit:
 
     def test_happy_path(self) -> None:
         """Happy path test."""
-        assert 1 == 1
+        with patch(f"{pb}._load_and_validate_config", autospec=True) as m_load:
+            with patch(f"{pb}._dump_fields", autospec=True) as m_df:
+                with patch(f"{pbm}.env_var_or_die") as m_evod:
+                    m_evod.return_value = ["ORGID", "TKN"]
+                    m_load.return_value = {"foo": "bar"}
+                    cls = NeonUserUpdater()
+        assert cls._config == {"foo": "bar"}
+        assert m_load.mock_calls == [call(cls)]
+        assert m_df.mock_calls == []
+        assert m_evod.mock_calls == [
+            call("NEON_ORG", "your Neon organization ID"),
+            call("NEON_KEY", "your Neon API key"),
+        ]
+
+    def test_dump_fields(self) -> None:
+        """Test with dump_fields True."""
+        with patch(f"{pb}._load_and_validate_config", autospec=True) as m_load:
+            with patch(f"{pb}._dump_fields", autospec=True) as m_df:
+                with patch(f"{pbm}.env_var_or_die") as m_evod:
+                    m_evod.return_value = ["ORGID", "TKN"]
+                    m_load.return_value = {"foo": "bar"}
+                    cls = NeonUserUpdater(dump_fields=True)
+        assert m_load.mock_calls == []
+        assert m_df.mock_calls == [call(cls)]
+        assert m_evod.mock_calls == [
+            call("NEON_ORG", "your Neon organization ID"),
+            call("NEON_KEY", "your Neon API key"),
+        ]
+
+
+class TestLoadAndValidateConfig:
+    """Test NeonUserUpdater._load_and_validate_config()."""
+
+    @patch.dict("os.environ", {"NEON_ORG": "o", "NEON_KEY": "k"})
+    def test_happy_path(self) -> None:
+        """Test happy path."""
+        with patch(f"{pb}._load_and_validate_config") as m_load_conf:
+            m_load_conf.return_value = {}
+            cls = NeonUserUpdater()
+        assert cls._config == {}
+        with patch(f"{pbm}.load_json_config", autospec=True) as m_load:
+            with patch(f"{pb}.validate_config") as m_validate:
+                m_load.return_value = {"foo": "bar"}
+                m_validate.return_value = None
+                res = cls._load_and_validate_config()
+        assert m_load.mock_calls == [call("NEONGETTER_CONFIG", "neon.config.json")]
+        assert m_validate.mock_calls == [call({"foo": "bar"})]
+        assert res == {"foo": "bar"}
 
 
 class TestDumpFields:

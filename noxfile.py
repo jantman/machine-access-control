@@ -175,9 +175,10 @@ def mypy(session: Session) -> None:
         "types-requests",
         "responses",
     )
-    session.run("mypy", *args)
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
+    else:
+        session.run("mypy", *args)
 
 
 @session(python=python_versions)
@@ -197,7 +198,7 @@ def tests(session: Session) -> None:
             "--blockage",
             "--capture=tee-sys",
             "--junitxml=pytest.xml",
-            "-v",
+            "-vv",
             *session.posargs,
             env=TEST_ENV,
         )
