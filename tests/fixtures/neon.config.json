@@ -1,0 +1,8 @@
+{
+  "name_field": "Full Name (F)",
+  "email_field": "Email 1",
+  "expiration_field": "Membership Expiration Date",
+  "account_id_field": "Account ID",
+  "fob_fields": ["Fob10Digit"],
+  "authorized_field_value": "Training Complete"
+}
