@@ -37,4 +37,4 @@ def client(app: Flask) -> FlaskClient:
 def fixtures_path() -> str:
     """Return the absolute path to the fixtures directory."""
     testdir: str = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(testdir, "fixtures")
+    return os.path.abspath(os.path.join(testdir, "fixtures"))

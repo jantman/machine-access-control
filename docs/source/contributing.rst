@@ -99,13 +99,13 @@ To build docs, serve them locally, and rebuild as they change:
 
 .. code:: console
 
-   $ nox --session=docs
+   $ DOCS_REBUILD=true nox --session=docs
 
 To just build docs to `docs/build/ <docs/build/>`__:
 
 .. code:: console
 
-   $ nox --non-interactive --session=docs
+   $ nox --session=docs
 
 How to submit changes
 ---------------------

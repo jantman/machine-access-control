@@ -186,7 +186,12 @@ def tests(session: Session) -> None:
     """Run the test suite."""
     session.install(".")
     session.install(
-        "coverage[toml]", "pytest", "pygments", "pytest-blockage", "responses"
+        "coverage[toml]",
+        "pytest",
+        "pygments",
+        "pytest-blockage",
+        "responses",
+        "pytest-html",
     )
     try:
         session.run(
@@ -198,7 +203,12 @@ def tests(session: Session) -> None:
             "--blockage",
             "--capture=tee-sys",
             "--junitxml=pytest.xml",
-            "-vv",
+            "--html=pytest.html",
+            "--self-contained-html",
+            "--log-level=DEBUG",
+            "--log-format=%(asctime)s [%(levelname)s %(filename)s:"  # continue
+            "%(lineno)s - %(name)s.%(funcName)s() ] %(message)s",
+            "-v",
             *session.posargs,
             env=TEST_ENV,
         )
@@ -259,7 +269,7 @@ def docs(session: Session) -> None:
         "-M",
         "--private",
     )
-    if session.interactive:
+    if os.environ.get("DOCS_REBUILD") == "true":
         session.run("sphinx-autobuild", *args)
     else:
         session.run("sphinx-build", *args)

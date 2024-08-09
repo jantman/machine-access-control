@@ -1,5 +1,10 @@
 # Notes
 
+- post Oops button presses to Slack channel
+- post ALL logs - start, stop, oops, unauth - to a specific channel
+- future - Slack app that allows members of a specific private channel (areastewards) to clear an Oops on a machine, force-disable a machine and un-do that
+- IMPORTANT - machine config needs an option like `allow_all_but_warn` for an "implementation mode", where the machine will allow operation by any valid fob, but log and Slack a warning if operated by a fob missing one of these fields/authorizations.
+
 ## August 4th Notes
 
 - right now, just have `users.json` and `machines.json` configs

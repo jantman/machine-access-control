@@ -111,10 +111,6 @@ repos:
     rev: v0.16
     hooks:
       - id: validate-pyproject
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.6.0
-    hooks:
-      - id: prettier
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.9.1
     hooks:

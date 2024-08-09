@@ -3,6 +3,7 @@
 import json
 import os
 from base64 import b64encode
+from pathlib import Path
 from typing import Any
 from typing import List
 from typing import Tuple
@@ -15,6 +16,7 @@ import pytest
 import responses
 from _pytest.capture import CaptureFixture
 from jsonschema.exceptions import ValidationError
+from requests.exceptions import HTTPError
 from responses.registries import OrderedRegistry
 
 from dm_mac.neongetter import NeonUserUpdater
@@ -120,6 +122,57 @@ class TestDumpFields:
             + "\n"
         )
 
+    @responses.activate(registry=OrderedRegistry)
+    def test_account_fields_500(self, fixtures_path: str) -> None:
+        """Test when endpoint returns HTTP 500."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "dump_fields.yaml")
+        )
+        # exfiltrate the registered responses
+        resp: List[responses.BaseResponse] = [x for x in responses.registered()]
+        # clear all registered responses
+        responses.reset()
+        # add back a response so the first request fails
+        responses.add(
+            responses.GET,
+            "https://api.neoncrm.com/v2/accounts/search/outputFields?searchKey=1",
+            body="Some error.",
+            status=503,
+        )
+        # just for completeness, add back the second OK response
+        responses.add(resp[1])
+        with pytest.raises(HTTPError):
+            NeonUserUpdater(dump_fields=True)
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_custom_fields_500(
+        self, fixtures_path: str, capsys: CaptureFixture[Any]
+    ) -> None:
+        """Test when endpoint returns HTTP 500."""
+        # NOTE: capsys is only here to keep STDOUT from polluting pytest console
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "dump_fields.yaml")
+        )
+        # exfiltrate the registered responses
+        resp: List[responses.BaseResponse] = [x for x in responses.registered()]
+        # clear all registered responses
+        responses.reset()
+        # add back the first response
+        responses.add(resp[0])
+        # add back a response so the first request fails
+        responses.add(
+            responses.GET,
+            "https://api.neoncrm.com/v2/customFields?category=Account",
+            body="Some error.",
+            status=503,
+        )
+        # just for completeness, add back the second OK response
+        with pytest.raises(HTTPError):
+            NeonUserUpdater(dump_fields=True)
+        capsys.readouterr()
+
 
 class TestValidateConfig:
     """Tests for neongetter.validate_config()."""
@@ -143,6 +196,70 @@ class TestValidateConfig:
             NeonUserUpdater.validate_config(config)
 
 
+class TestRun:
+    """Test the full run() path."""
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_happy_path(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Happy path test."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run.yaml")
+        )
+        # get config fixture path
+        conf_path: str = os.path.join(fixtures_path, "neon.config.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            NeonUserUpdater().run(output_path="users.json")
+        with open("users.json") as fh:
+            result: str = json.load(fh)
+        with open(
+            os.path.join(fixtures_path, "test_neongetter", "users-happy.json")
+        ) as fh:
+            expected: str = json.load(fh)
+        assert result == expected
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_duplicate_fob(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test exception raised for duplicate fob."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run-dupe-fob.yaml")
+        )
+        # get config fixture path
+        conf_path: str = os.path.join(fixtures_path, "neon.config.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            with pytest.raises(RuntimeError) as exc:
+                NeonUserUpdater().run(output_path="users.json")
+        assert exc.value.args[0] == (
+            "ERROR: Duplicate fob fields: fob 0946889653 is present in user "
+            "Brett Patel (389) as well as Adam Lloyd (504); "
+            "fob 7301436567 is present in user Christopher Frazier (6) "
+            "as well as Steven Abbott (16)"
+        )
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_search_api_error(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test API returns HTTP error."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run-search-api-error.yaml")
+        )
+        # get config fixture path
+        conf_path: str = os.path.join(fixtures_path, "neon.config.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            with pytest.raises(HTTPError):
+                NeonUserUpdater().run(output_path="users.json")
+
+
 @patch(pb)
 @patch(f"{pbm}.set_log_info")
 @patch(f"{pbm}.set_log_debug")
@@ -155,7 +272,20 @@ class TestMain:
             main()
             assert mock_debug.mock_calls == []
             assert mock_info.mock_calls == [call(logger)]
-            assert mock_nuu.mock_calls == [call(), call().run()]
+            assert mock_nuu.mock_calls == [call(), call().run(output_path="users.json")]
+
+    def test_run_output_path(
+        self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock
+    ) -> None:
+        """Test with no arguments."""
+        with patch(f"{pbm}.sys.argv", ["neongetter", "-o", "/foo/bar.json"]):
+            main()
+            assert mock_debug.mock_calls == []
+            assert mock_info.mock_calls == [call(logger)]
+            assert mock_nuu.mock_calls == [
+                call(),
+                call().run(output_path="/foo/bar.json"),
+            ]
 
     def test_run_debug(self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock) -> None:
         """Test with verbose argument."""
@@ -163,7 +293,7 @@ class TestMain:
             main()
             assert mock_debug.mock_calls == [call(logger)]
             assert mock_info.mock_calls == []
-            assert mock_nuu.mock_calls == [call(), call().run()]
+            assert mock_nuu.mock_calls == [call(), call().run(output_path="users.json")]
 
     def test_dump_fields(
         self, mock_debug: Mock, mock_info: Mock, mock_nuu: Mock

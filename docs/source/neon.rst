@@ -30,12 +30,21 @@ Configuration Schema
 
 .. jsonschema:: dm_mac.neongetter.CONFIG_SCHEMA
 
+.. _neon.config.fields:
+
+Authorization and Custom Fields
++++++++++++++++++++++++++++++++
+
+This script uses custom fields on users' Neon Accounts to store whether or not they've received the training required for specific machines. The custom fields must be "checkbox" type and must use the same option name to indicate that an account has completed the training; the examples in this project use "Training Complete" as the option name, but that is configurable using the "authorized_field_value" configuration file option.
+
+For each user, their list of authorizations will be made up of the custom field names, which on their account have a value matching the "authorized_field_value".
+
 .. _neon.running:
 
 Usage
 -----
 
-TBD.
+Set up your configuration file and environment variables as described above, then run ``neongetter``. If all goes well, it will write a ``users.json`` file in the current directory; a different output path can be specified with the ``-o`` option.
 
 .. _neon.development:
 

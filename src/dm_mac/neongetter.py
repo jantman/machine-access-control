@@ -264,13 +264,14 @@ class NeonUserUpdater:
         )
         return users
 
-    def run(self) -> None:
+    def run(self, output_path: str) -> None:
         """Run the update."""
         field_names: List[Union[str, int, List[str]]] = self.fields_to_get()
         rawdata: List[Dict[str, Any]] = self.get_users(field_names)
         fobs: List[str] = []
         users: Dict[str, Dict[str, Any]] = {}
         logger.info("Generating users config")
+        dupes: List[str] = []
         for user in rawdata:
             tmp: Dict[str, Any] = {
                 "fob_codes": [
@@ -288,6 +289,15 @@ class NeonUserUpdater:
                     if user[x] == self._config["authorized_field_value"]
                 ],
             }
+            if not tmp["expiration_ymd"]:
+                logger.info(
+                    "Found user with no expiration date; account_id=%s name=%s",
+                    tmp["account_id"],
+                    tmp["name"],
+                )
+                tmp["expiration_ymd"] = (
+                    datetime.now() + timedelta(days=36500)
+                ).strftime("%Y-%m-%d")
             for fobfield in self._config["fob_fields"]:
                 if fobfield not in user:
                     logger.debug("User does not have field %s: %s", user, fobfield)
@@ -298,19 +308,21 @@ class NeonUserUpdater:
                 # check for duplicate fob number
                 ff: str = user[fobfield]
                 if ff in fobs:
-                    raise RuntimeError(
-                        f"ERROR: Duplicate Fob Field: fob {ff} "
-                        f'is present in user {users[ff]["name"]} '
-                        f'({users[ff]["account_id"]}) as well as '
-                        f'{tmp["name"]} ({tmp["account_id"]})'
+                    dupes.append(
+                        f"fob {ff} is present in user {users[ff]['name']} "
+                        f"({users[ff]['account_id']}) as well as "
+                        f"{tmp['name']} ({tmp['account_id']})"
                     )
+                    continue
                 fobs.append(ff)
                 users[ff] = tmp
+        if dupes:
+            raise RuntimeError(
+                "ERROR: Duplicate fob fields: " + "; ".join(sorted(dupes))
+            )
         UsersConfig.validate_config(users)
-        logger.info(
-            "Writing users config for %d fobs to %s", len(users), "users.config.json"
-        )
-        with open("users.config.json", "w") as fh:
+        logger.info("Writing users config for %d fobs to %s", len(users), output_path)
+        with open(output_path, "w") as fh:
             json.dump(users, fh, sort_keys=True, indent=4)
 
 
@@ -339,6 +351,15 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default=False,
         help="verbose output",
     )
+    p.add_argument(
+        "-o",
+        "--output-path",
+        dest="output_path",
+        action="store",
+        type=str,
+        default="users.json",
+        help="Output path for users.json file",
+    )
     args = p.parse_args(argv)
     return args
 
@@ -356,4 +377,4 @@ def main() -> None:
     elif args.dump_example_config:
         print(json.dumps(NeonUserUpdater.example_config(), sort_keys=True, indent=4))
     else:
-        NeonUserUpdater().run()
+        NeonUserUpdater().run(output_path=args.output_path)
