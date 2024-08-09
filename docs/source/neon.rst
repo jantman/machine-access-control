@@ -36,3 +36,20 @@ Usage
 -----
 
 TBD.
+
+.. _neon.development:
+
+Development
+-----------
+
+Testing of neongetter is slightly different, as it makes external API calls to an API that presumably returns sensitive personal information. The process for testing API calls to neon uses the `responses <https://github.com/getsentry/responses>`__ library for testing HTTP requests, and specifically uses the (as of v0.25.3) beta feature of recording actual HTTP responses to a file.
+
+1. In :py:mod:`~.dm_mac.neongetter` add an ``from responses import _recorder`` import.
+2. Decorate the method in question (generally :py:meth:`~.dm_mac.neongetter.NeonUserUpdater.run`) with ``@_recorder.record(file_path="tests/fixtures/test_neongetter/run-raw.yaml")`` (or a similar decorator for other methods).
+3. Run neongetter with your actual real credentials. **DO NOT commit anything to git until instructed!**.
+4. Assuming that it finished successfully and created/updated the responses YAML file, remove the import and decorator added in steps 1 and 2.
+5. **IMPORTANT** Currently, only data in the fields enumerated in ``neon.config.json`` are sanitized in the following step!
+6. Run ``NEONGETTER_CONFIG=tests/fixtures/neon.config.json tests/fixtures/test_neongetter/sanitizer.py tests/fixtures/test_neongetter/run-raw.yaml tests/fixtures/test_neongetter/run.yaml``
+7. Examine the generated ``tests/fixtures/test_neongetter/run.yaml`` file and ensure it appears sanitized.
+8. **IMPORTANT** Delete the original ``tests/fixtures/test_neongetter/run-raw.yaml`` file.
+9. Add and commit to git.

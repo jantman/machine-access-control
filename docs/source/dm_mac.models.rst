@@ -15,3 +15,4 @@ Submodules
 
    dm_mac.models.machine
    dm_mac.models.machine_state
+   dm_mac.models.users
