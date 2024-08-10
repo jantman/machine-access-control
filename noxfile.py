@@ -174,6 +174,7 @@ def mypy(session: Session) -> None:
         "types-jsonschema",
         "types-requests",
         "responses",
+        "freezegun",
     )
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
@@ -192,6 +193,7 @@ def tests(session: Session) -> None:
         "pytest-blockage",
         "responses",
         "pytest-html",
+        "freezegun",
     )
     try:
         session.run(

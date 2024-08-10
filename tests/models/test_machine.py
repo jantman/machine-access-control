@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
@@ -90,3 +91,44 @@ class TestMachinesConfig:
         with pytest.raises(ValidationError):
             with patch(f"{pbm}.MachineState", autospec=True):
                 MachinesConfig()
+
+
+class TestMachine:
+    """Tests for models.machine.Machine."""
+
+    def test_happy_path(self) -> None:
+        """Test for happy path."""
+        with patch(f"{pbm}.MachineState", autospec=True) as m_state:
+            cls: Machine = Machine(
+                name="mName",
+                authorizations_or=["Foo", "Bar"],
+            )
+        assert cls.name == "mName"
+        assert cls.authorizations_or == ["Foo", "Bar"]
+        assert cls.unauthorized_warn_only is False
+        assert m_state.mock_calls == [call(cls)]
+        assert cls.state == m_state.return_value
+        assert cls.as_dict == {
+            "name": "mName",
+            "authorizations_or": ["Foo", "Bar"],
+            "unauthorized_warn_only": False,
+        }
+
+    def test_unauth_warn(self) -> None:
+        """Test for happy path."""
+        with patch(f"{pbm}.MachineState", autospec=True) as m_state:
+            cls: Machine = Machine(
+                name="mName",
+                authorizations_or=["Foo", "Bar"],
+                unauthorized_warn_only=True,
+            )
+        assert cls.name == "mName"
+        assert cls.authorizations_or == ["Foo", "Bar"]
+        assert cls.unauthorized_warn_only is True
+        assert m_state.mock_calls == [call(cls)]
+        assert cls.state == m_state.return_value
+        assert cls.as_dict == {
+            "name": "mName",
+            "authorizations_or": ["Foo", "Bar"],
+            "unauthorized_warn_only": True,
+        }

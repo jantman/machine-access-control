@@ -6,6 +6,7 @@ from time import time
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import cast
 
 from jsonschema import validate
@@ -144,10 +145,13 @@ class MachineState:
 
     def _load_from_cache(self) -> None:
         """Load machine state cache from disk."""
+        # see: https://py-filelock.readthedocs.io/en/latest/
+        # see: https://dev.to/noyonict/importance-of-filelock-and-how-to-
+        # use-that-in-python-15o4
         raise NotImplementedError()
 
     def update_has_changes(
-        self, rfid_value: str, relay_state: bool, oops: bool, amps: float
+        self, rfid_value: Optional[str], relay_state: bool, oops: bool, amps: float
     ) -> bool:
         """Return whether or not the update causes changes to significant state values."""
         if (
