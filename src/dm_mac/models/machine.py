@@ -1,5 +1,7 @@
 """Model representing a machine."""
 
+import os
+import pickle
 from logging import Logger
 from logging import getLogger
 from time import time
@@ -9,6 +11,7 @@ from typing import List
 from typing import Optional
 from typing import cast
 
+from filelock import FileLock
 from jsonschema import validate
 
 from dm_mac.utils import load_json_config
@@ -137,18 +140,53 @@ class MachineState:
         self.current_amps: float = 0
         #: Text currently displayed on the machine LCD screen
         self.display_text: str = self.DEFAULT_DISPLAY_TEXT
+        #: Uptime of the machine's ESP32 in seconds
+        self.uptime: int = 0
+        #: Path to the directory to save machine state in
+        self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
+        os.makedirs(self._state_dir, exist_ok=True)
+        #: Path to pickled state file
+        self._state_path: str = os.path.join(
+            self._state_dir, f"{self.machine.name}-state.pickle"
+        )
         self._load_from_cache()
 
     def _save_cache(self) -> None:
         """Save machine state cache to disk."""
-        raise NotImplementedError()
+        logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
+        lock = FileLock(self._state_path + ".lock")
+        with lock:
+            data: Dict[str, Any] = {
+                "machine_name": self.machine.name,
+                "last_checkin": self.last_checkin,
+                "last_update": self.last_update,
+                "rfid_value": self.rfid_value,
+                "rfid_present_since": self.rfid_present_since,
+                "relay_is_on": self.relay_is_on,
+                "relay_desired_state": self.relay_desired_state,
+                "is_oopsed": self.is_oopsed,
+                "is_locked_out": self.is_locked_out,
+                "current_amps": self.current_amps,
+                "display_text": self.display_text,
+                "uptime": self.uptime,
+            }
+            logger.debug("Saving state to: %s", self._state_path)
+            with open(self._state_path, "wb") as f:
+                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        logger.debug("State saved.")
 
     def _load_from_cache(self) -> None:
         """Load machine state cache from disk."""
-        # see: https://py-filelock.readthedocs.io/en/latest/
-        # see: https://dev.to/noyonict/importance-of-filelock-and-how-to-
-        # use-that-in-python-15o4
-        raise NotImplementedError()
+        logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
+        lock = FileLock(self._state_path + ".lock")
+        with lock:
+            logger.debug("Loading state from: %s", self._state_path)
+            with open(self._state_path, "rb") as f:
+                data = pickle.load(f)
+            for k, v in data.items():
+                if hasattr(self, k):
+                    setattr(self, k, v)
+        logger.debug("State loaded.")
 
     def update_has_changes(
         self, rfid_value: Optional[str], relay_state: bool, oops: bool, amps: float
@@ -162,9 +200,10 @@ class MachineState:
             return True
         return False
 
-    def noop_update(self, amps: float) -> None:
-        """Just update amps and last_checkin and save cache."""
+    def noop_update(self, amps: float, uptime: int) -> None:
+        """Just update amps, uptime, last_checkin and save cache."""
         self.current_amps = amps
+        self.uptime = uptime
         self.last_checkin = time()
         self._save_cache()
 

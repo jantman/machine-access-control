@@ -4,6 +4,7 @@
 - post ALL logs - start, stop, oops, unauth - to a specific channel
 - future - Slack app that allows members of a specific private channel (areastewards) to clear an Oops on a machine, force-disable a machine and un-do that
 - IMPORTANT - machine config needs an option like `allow_all_but_warn` for an "implementation mode", where the machine will allow operation by any valid fob, but log and Slack a warning if operated by a fob missing one of these fields/authorizations.
+- IMPORTANT - if a machine checks in with a lower uptime than its last checkin, the machine state should be re-initialized (i.e. all current state discarded and replaced with a new, initial state)
 
 ## August 4th Notes
 

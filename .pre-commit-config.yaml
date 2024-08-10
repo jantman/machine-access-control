@@ -29,7 +29,7 @@ repos:
         language: system
         types: [python]
         require_serial: true
-        args: [--darglint-ignore-regex, .*]
+        args: ["--ignore=S301,S403,W503", --darglint-ignore-regex, .*]
       - id: isort
         name: isort
         entry: isort

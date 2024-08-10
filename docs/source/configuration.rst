@@ -26,3 +26,10 @@ Machines are configured via a ``machines.json`` file in the current directory, o
 The schema of this file is as follows:
 
 .. jsonschema:: dm_mac.models.machine.CONFIG_SCHEMA
+
+.. _configuration.machine-state-dir:
+
+Machine State Directory
+-----------------------
+
+During operation, the state of each machine is cached on disk every time it's updated; this is done to ensure that a restart of the server will not affect running machines. As of this time, state is saved to a separate file for each machine. By default, these are saved in a ``machine_state`` subdirectory of the current directory, which is created if it does not exist. An alternate directory to save machine state to can be specified via the ``MACHINE_STATE_DIR`` environment variable.
