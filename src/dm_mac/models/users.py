@@ -56,12 +56,39 @@ CONFIG_SCHEMA: Dict[str, Any] = {
 }
 
 
+class User:
+    """Class representing one user."""
+
+    def __init__(
+        self,
+        fob_codes: List[str],
+        account_id: str,
+        name: str,
+        email: str,
+        expiration_ymd: str,
+        authorizations: List[str],
+    ):
+        """Initialize one user."""
+        self.fob_codes: List[str] = fob_codes
+        self.account_id: str = account_id
+        self.name: str = name
+        self.email: str = email
+        self.expiration_ymd: str = expiration_ymd
+        self.authorizations: List[str] = authorizations
+
+
 class UsersConfig:
     """Class representing users configuration file."""
 
     def __init__(self) -> None:
         """Initialize UsersConfig."""
-        self._users: List[Dict[str, Any]] = self._load_and_validate_config()
+        self.users_by_fob: Dict[str, User] = {}
+        udict: Dict[str, Any]
+        fob: str
+        for udict in self._load_and_validate_config():
+            user: User = User(**udict)
+            for fob in user.fob_codes:
+                self.users_by_fob[fob] = user
 
     def _load_and_validate_config(self) -> List[Dict[str, Any]]:
         """Load and validate the config file."""

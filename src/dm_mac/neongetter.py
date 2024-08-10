@@ -295,9 +295,7 @@ class NeonUserUpdater:
                     tmp["account_id"],
                     tmp["name"],
                 )
-                tmp["expiration_ymd"] = (
-                    datetime.now() + timedelta(days=36500)
-                ).strftime("%Y-%m-%d")
+                tmp["expiration_ymd"] = "2345-01-01"
             user_fobs: List[str] = []
             for fobfield in self._config["fob_fields"]:
                 if fobfield not in user:
