@@ -268,9 +268,9 @@ class NeonUserUpdater:
         """Run the update."""
         field_names: List[Union[str, int, List[str]]] = self.fields_to_get()
         rawdata: List[Dict[str, Any]] = self.get_users(field_names)
-        fobs: List[str] = []
-        users: Dict[str, Dict[str, Any]] = {}
+        users: List[Dict[str, Any]] = []
         logger.info("Generating users config")
+        fobs: Dict[str, Dict[str, Any]] = {}
         dupes: List[str] = []
         for user in rawdata:
             tmp: Dict[str, Any] = {
@@ -298,24 +298,26 @@ class NeonUserUpdater:
                 tmp["expiration_ymd"] = (
                     datetime.now() + timedelta(days=36500)
                 ).strftime("%Y-%m-%d")
+            user_fobs: List[str] = []
             for fobfield in self._config["fob_fields"]:
                 if fobfield not in user:
                     logger.debug("User does not have field %s: %s", user, fobfield)
                     continue
                 if not user[fobfield]:
-                    logger.debug("User has null field %s: %s", user, fobfield)
+                    logger.warning("User has null field %s: %s", user, fobfield)
                     continue
                 # check for duplicate fob number
                 ff: str = user[fobfield]
                 if ff in fobs:
                     dupes.append(
-                        f"fob {ff} is present in user {users[ff]['name']} "
-                        f"({users[ff]['account_id']}) as well as "
+                        f"fob {ff} is present in user {fobs[ff]['name']} "
+                        f"({fobs[ff]['account_id']}) as well as "
                         f"{tmp['name']} ({tmp['account_id']})"
                     )
                     continue
-                fobs.append(ff)
-                users[ff] = tmp
+                fobs[ff] = tmp
+                user_fobs.append(ff)
+            users.append(tmp)
         if dupes:
             raise RuntimeError(
                 "ERROR: Duplicate fob fields: " + "; ".join(sorted(dupes))
