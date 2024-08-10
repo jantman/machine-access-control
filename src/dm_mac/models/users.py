@@ -11,10 +11,7 @@ from jsonschema import validate
 from dm_mac.utils import load_json_config
 
 
-logging.basicConfig(
-    level=logging.WARNING, format="[%(asctime)s %(levelname)s] %(message)s"
-)
-logger: logging.Logger = logging.getLogger()
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 CONFIG_SCHEMA: Dict[str, Any] = {
@@ -76,6 +73,18 @@ class User:
         self.expiration_ymd: str = expiration_ymd
         self.authorizations: List[str] = authorizations
 
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a dict representation of this user."""
+        return {
+            "account_id": self.account_id,
+            "authorizations": self.authorizations,
+            "email": self.email,
+            "expiration_ymd": self.expiration_ymd,
+            "fob_codes": self.fob_codes,
+            "name": self.name,
+        }
+
 
 class UsersConfig:
     """Class representing users configuration file."""
@@ -83,10 +92,12 @@ class UsersConfig:
     def __init__(self) -> None:
         """Initialize UsersConfig."""
         self.users_by_fob: Dict[str, User] = {}
+        self.users: List[User] = []
         udict: Dict[str, Any]
         fob: str
         for udict in self._load_and_validate_config():
             user: User = User(**udict)
+            self.users.append(user)
             for fob in user.fob_codes:
                 self.users_by_fob[fob] = user
 
@@ -94,7 +105,7 @@ class UsersConfig:
         """Load and validate the config file."""
         config: List[Dict[str, Any]] = cast(
             List[Dict[str, Any]],
-            load_json_config("USERS_CONFIG", "users.config.json"),
+            load_json_config("USERS_CONFIG", "users.json"),
         )
         UsersConfig.validate_config(config)
         return config

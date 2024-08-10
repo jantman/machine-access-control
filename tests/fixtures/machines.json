@@ -1,0 +1,17 @@
+{
+  "MetalMill": {
+    "authorizations_or": ["Metal Mill"]
+  },
+  "Hammer": {
+    "authorizations_or": ["Woodshop Orientation", "Woodshop 201", "Woodshop 101"],
+    "unauthorized_warn_only": true
+  },
+  "PermissiveLathe": {
+    "authorizations_or": ["Metal Lathe"],
+    "unauthorized_warn_only": true
+  },
+  "RestrictiveLathe": {
+    "authorizations_or": ["Metal Lathe"],
+    "unauthorized_warn_only": false
+  }
+}

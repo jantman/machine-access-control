@@ -2,16 +2,169 @@
 
 from logging import Logger
 from logging import getLogger
+from time import time
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import cast
+
+from jsonschema import validate
+
+from dm_mac.utils import load_json_config
 
 
 logger: Logger = getLogger(__name__)
 
 
+CONFIG_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "patternProperties": {
+        "^[A-Za-z0-9_-]+$": {
+            "type": "object",
+            "required": ["authorizations_or"],
+            "properties": {
+                "authorizations_or": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of authorizations required to "
+                    "operate machine, any one of which "
+                    "is sufficient.",
+                },
+                "unauthorized_warn_only": {
+                    "type": "boolean",
+                    "description": "If set, allow anyone to operate machine "
+                    "but log and display a warning if the "
+                    "operator is not authorized.",
+                },
+            },
+            "additionalProperties": False,
+            "description": "Unique machine name, alphanumeric _ and - only.",
+        }
+    },
+}
+
+
 class Machine:
     """Object representing a machine and its state and configuration."""
 
-    def __init__(self, machine_name: str):
+    def __init__(
+        self,
+        name: str,
+        authorizations_or: List[str],
+        unauthorized_warn_only: bool = False,
+    ):
         """Initialize a new MachineState instance."""
-        logger.debug("Instantiating new Machine: %s", machine_name)
         #: The name of the machine
-        self.name: str = machine_name
+        self.name: str = name
+        #: List of OR'ed authorizations, any of which is sufficient
+        self.authorizations_or: List[str] = authorizations_or
+        #: Whether to allow anyone to operate machine regardless of
+        #: authorization, just logging/displaying a warning if unauthorized
+        self.unauthorized_warn_only: bool = unauthorized_warn_only
+        #: state of the machine
+        self.state: "MachineState" = MachineState(self)
+
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a dict representation of this machine."""
+        return {
+            "name": self.name,
+            "authorizations_or": self.authorizations_or,
+            "unauthorized_warn_only": self.unauthorized_warn_only,
+        }
+
+
+class MachinesConfig:
+    """Class representing machines configuration file."""
+
+    def __init__(self) -> None:
+        """Initialize UsersConfig."""
+        self.machines_by_name: Dict[str, Machine] = {}
+        self.machines: List[Machine] = []
+        mdict: Dict[str, Any]
+        mname: str
+        for mname, mdict in self._load_and_validate_config().items():
+            mach: Machine = Machine(name=mname, **mdict)
+            self.machines.append(mach)
+            self.machines_by_name[mach.name] = mach
+
+    def _load_and_validate_config(self) -> Dict[str, Dict[str, Any]]:
+        """Load and validate the config file."""
+        config: Dict[str, Dict[str, Any]] = cast(
+            Dict[str, Dict[str, Any]],
+            load_json_config("MACHINES_CONFIG", "machines.json"),
+        )
+        MachinesConfig.validate_config(config)
+        return config
+
+    @staticmethod
+    def validate_config(config: Dict[str, Dict[str, Any]]) -> None:
+        """Validate configuration via jsonschema."""
+        logger.debug("Validating Users config")
+        validate(config, CONFIG_SCHEMA)
+        logger.debug("Users is valid")
+
+
+class MachineState:
+    """Object representing frozen state in time of a machine."""
+
+    DEFAULT_DISPLAY_TEXT: str = "Please Insert\nRFID Card"
+
+    def __init__(self, machine: Machine):
+        """Initialize a new MachineState instance."""
+        logger.debug("Instantiating new MachineState for %s", machine)
+        #: The Machine that this state is for
+        self.machine: Machine = machine
+        #: Float timestamp of the machine's last checkin time
+        self.last_checkin: float | None = None
+        #: Float timestamp of the last time that machine state changed,
+        #: not counting `current_amps` or timestamps.
+        self.last_update: float | None = None
+        #: Value of the RFID card/fob in use, or None if not present.
+        self.rfid_value: str | None = None
+        #: Float timestamp when `rfid_value` last changed to a non-None value.
+        self.rfid_present_since: float | None = None
+        #: Whether the output relay is on or not.
+        self.relay_is_on: bool = False
+        #: Whether the output relay should be on or not.
+        self.relay_desired_state: bool = False
+        #: Whether the machine's Oops button has been pressed.
+        self.is_oopsed: bool = False
+        #: Whether the machine is locked out from use.
+        self.is_locked_out: bool = False
+        #: Last reported output ammeter reading (if equipped).
+        self.current_amps: float = 0
+        #: Text currently displayed on the machine LCD screen
+        self.display_text: str = self.DEFAULT_DISPLAY_TEXT
+        self._load_from_cache()
+
+    def _save_cache(self) -> None:
+        """Save machine state cache to disk."""
+        raise NotImplementedError()
+
+    def _load_from_cache(self) -> None:
+        """Load machine state cache from disk."""
+        raise NotImplementedError()
+
+    def update_has_changes(
+        self, rfid_value: str, relay_state: bool, oops: bool, amps: float
+    ) -> bool:
+        """Return whether or not the update causes changes to significant state values."""
+        if (
+            rfid_value != self.rfid_value
+            or relay_state != self.relay_is_on
+            or oops != self.is_oopsed
+        ):
+            return True
+        return False
+
+    def noop_update(self, amps: float) -> None:
+        """Just update amps and last_checkin and save cache."""
+        self.current_amps = amps
+        self.last_checkin = time()
+        self._save_cache()
+
+    @property
+    def machine_response(self) -> dict[str, str | bool]:
+        """Return the response dict to send to the machine."""
+        return {"relay": self.relay_desired_state, "display": self.display_text}

@@ -57,6 +57,7 @@ responses = "^0.25.3"
 types-requests = "^2.32.0.20240712"
 faker = "^26.3.0"
 pytest-html = "^4.1.1"
+poetry-plugin-export = "^1.8.0"
 
 [tool.isort]
 profile = "black"
