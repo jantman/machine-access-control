@@ -1,5 +1,7 @@
 """Views related to machine endpoints."""
 
+from logging import Logger
+from logging import getLogger
 from typing import Any
 from typing import Dict
 from typing import cast
@@ -7,6 +9,8 @@ from typing import cast
 from flask import Blueprint
 from flask import request
 
+
+logger: Logger = getLogger(__name__)
 
 machine: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
@@ -26,8 +30,10 @@ def update() -> str:
         since the last check-in
     - "amps" (float) - amperage value from the current clamp ammeter, if present,
         or 0.0 otherwise.
+    - "uptime" (float) - uptime of the ESP32 managing the machine.
     """
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
+    logger.debug("UPDATE request: %s", data)
     # machine_name: str = data.pop("name")
     # get the MachineState object for this machine, or else return an error
     #    that error should be formatted for display on the device (helper
