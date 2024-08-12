@@ -11,5 +11,5 @@ class TestIndex:
         """Test for API index response."""
         response: TestResponse = client.get("/api/")
         assert response.status_code == 200
-        assert response.text == "Hello, World!"
+        assert response.text == "Nothing to see here..."
         assert response.headers["Content-Type"] == "text/html; charset=utf-8"

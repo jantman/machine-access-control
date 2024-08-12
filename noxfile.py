@@ -258,7 +258,7 @@ def docs(session: Session) -> None:
     session.install(".")
     args = session.posargs or ["-b", "html", "docs/source", "docs/build", "-E", "-W"]
 
-    if session.interactive and not session.posargs:
+    if os.environ.get("DOCS_REBUILD") == "true" and not session.posargs:
         args = ["-a", "--watch=docs/source/_static", "--open-browser", *args]
 
     builddir = Path("docs", "build")

@@ -14,11 +14,15 @@ powers the RFID-based door access control to the makerspace, dm-mac uses
 the `Neon CRM <https://www.neoncrm.com/>`__ as its source for user data,
 though that is completely optional and pluggable.
 
+.. _introduction.software:
+
 Software Components
 -------------------
 
 At a high level, the system is made up of the central control server and
 the ESPHome configuration for the ESP32’s.
+
+.. _introduction.control-server:
 
 Control Server
 ~~~~~~~~~~~~~~
@@ -38,6 +42,8 @@ will also prevent the controlled machines from working. Secondly, having
 the business logic contained in a central server with relatively “dumb”
 machine control units on the machines allows for simpler management of
 the system.
+
+.. _introduction.mcu-software:
 
 Machine Control Unit Software
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

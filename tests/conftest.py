@@ -19,11 +19,8 @@ def app() -> Generator[Flask, None, None]:
             "TESTING": True,
         }
     )
-
     # other setup can go here
-
     yield app
-
     # clean up / reset resources here
 
 

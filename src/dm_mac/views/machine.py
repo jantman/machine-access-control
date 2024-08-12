@@ -4,19 +4,22 @@ from logging import Logger
 from logging import getLogger
 from typing import Any
 from typing import Dict
+from typing import Tuple
 from typing import cast
 
 from flask import Blueprint
+from flask import Response
+from flask import jsonify
 from flask import request
 
 
 logger: Logger = getLogger(__name__)
 
-machine: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
+machineapi: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
 
-@machine.route("/update", methods=["POST"])
-def update() -> str:
+@machineapi.route("/update", methods=["POST"])
+def update() -> Tuple[Response, int]:
     """API method to update machine state.
 
     Accepts POSTed JSON containing the following key/value pairs:
@@ -40,4 +43,4 @@ def update() -> str:
     #    method for this)
     # check if this data would update the state; if not, just call
     #    noop_update() and return the same display value
-    return "Not implemented."
+    return jsonify({"error": "not implemented"}), 501
