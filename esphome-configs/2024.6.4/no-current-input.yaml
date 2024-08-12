@@ -1,5 +1,12 @@
+# see: https://jantman.github.io/machine-access-control/hardware.html#esphome-configurations
+# This config expects the following hardware:
+#
+# - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO33
+# - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO25
+# - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
+#
 substitutions:
-  machine_name: "MY_HOSTNAME"
+  machine_name: "esp32test"
 
 esphome:
   name: ${machine_name}
@@ -14,6 +21,11 @@ esp32:
 logger:
   level: DEBUG
 
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
 ota:
   password: !secret ota_password
   platform: esphome
@@ -26,7 +38,7 @@ wifi:
   on_connect:
     then:
       - lambda: |-
-          id(display_content) = "Please insert\naccess card";
+            id(display_content) = "Please insert\naccess card";
 
 globals:
   - id: display_content
@@ -68,6 +80,20 @@ binary_sensor:
         - lambda: |-
             id(display_content) = "Please insert\naccess card";
             id(my_display).print("Please insert\naccess card");
+  - platform: gpio
+    pin:
+      number: GPIO32
+      mode:
+        input: True
+        pullup: True
+    name: "oops"
+    filters:
+      - delayed_on: 10ms
+    on_press:
+      then:
+        - lambda: |-
+            id(display_content) = "OOPS!";
+            id(my_display).print("OOPS!");
 
 button:
   - platform: restart
@@ -77,21 +103,23 @@ wiegand:
   - id: keypad
     d0: GPIO16
     d1: GPIO4
+    on_key:
+      - lambda: ESP_LOGI("KEY", "received key %d", x);
     on_tag:
       - lambda: ESP_LOGI("TAG", "received tag %s", x.c_str());
       - lambda: |-
-          if(x == "14916441") {
-            id(display_content) = "Welcome, \nauthorized user!";
-            id(my_display).print("Welcome, \nauthorized user!");
-          }
-          else if(x == "14916432") {
-            id(display_content) = "Sorry, not\nauthorized.";
-            id(my_display).print("Sorry, not\nauthorized.");
-          }
-          else {
-            id(display_content) = "Unknown card.";
-            id(my_display).print("Unknown card.");
-          }
+            if(x == "14916441") {
+              id(display_content) = "Welcome, \nauthorized user!";
+              id(my_display).print("Welcome, \nauthorized user!");
+            }
+            else if(x == "14916432") {
+              id(display_content) = "Sorry, not\nauthorized.";
+              id(my_display).print("Sorry, not\nauthorized.");
+            }
+            else {
+              id(display_content) = "Unknown card.";
+              id(my_display).print("Unknown card.");
+            }
 
 display:
   - platform: lcd_pcf8574
@@ -100,3 +128,23 @@ display:
     id: my_display
     lambda: |-
       it.print(id(display_content));
+
+key_collector:
+  - id: pincode_reader
+    source_id: keypad
+    min_length: 1
+    max_length: 6
+    end_keys: "#"
+    end_key_required: true
+    back_keys: "*"
+    clear_keys: "C"
+    allowed_keys: "0123456789"
+    timeout: 5s
+    on_result:
+      - logger.log:
+          format: "input result: '%s', started by '%c', ended by '%c'"
+          args: [ 'x.c_str()', "(start == 0 ? '~' : start)", "(end == 0 ? '~' : end)" ]
+    on_timeout:
+      - logger.log:
+          format: "input timeout: '%s', started by '%c'"
+          args: [ 'x.c_str()', "(start == 0 ? '~' : start)" ]

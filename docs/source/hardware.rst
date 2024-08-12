@@ -27,3 +27,9 @@ wifi_password
 
 domain_name
     Domain name to use for DNS.
+
+mac_host
+    The hostname of the machine-access-control control server.
+
+mac_port
+    The port number of the machine-access-control control server.
