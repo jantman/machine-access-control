@@ -36,7 +36,7 @@ def update() -> Tuple[Response, int]:
     - "uptime" (float) - uptime of the ESP32 managing the machine.
     """
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
-    logger.debug("UPDATE request: %s", data)
+    logger.warning("UPDATE request: %s", data)
     # machine_name: str = data.pop("name")
     # get the MachineState object for this machine, or else return an error
     #    that error should be formatted for display on the device (helper
