@@ -35,8 +35,8 @@ class TestMachinesConfig:
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf: Dict[str, Dict[str, Any]] = {
-            "MetalMill": {"authorizations_or": ["Metal Mill"]},
-            "Hammer": {
+            "metal-mill": {"authorizations_or": ["Metal Mill"]},
+            "hammer": {
                 "authorizations_or": [
                     "Woodshop Orientation",
                     "Woodshop 201",
@@ -53,17 +53,17 @@ class TestMachinesConfig:
                 cls: MachinesConfig = MachinesConfig()
         assert len(cls.machines) == 2
         assert len(cls.machines_by_name) == 2
-        assert isinstance(cls.machines_by_name["Hammer"], Machine)
-        assert cls.machines_by_name["Hammer"].name == "Hammer"
+        assert isinstance(cls.machines_by_name["hammer"], Machine)
+        assert cls.machines_by_name["hammer"].name == "hammer"
         assert (
-            cls.machines_by_name["Hammer"].authorizations_or
-            == conf["Hammer"]["authorizations_or"]
+            cls.machines_by_name["hammer"].authorizations_or
+            == conf["hammer"]["authorizations_or"]
         )
-        assert cls.machines_by_name["Hammer"].unauthorized_warn_only is True
+        assert cls.machines_by_name["hammer"].unauthorized_warn_only is True
         for x in range(0, len(conf)):
             assert isinstance(cls.machines[x], Machine)
-        assert cls.machines_by_name["MetalMill"].as_dict == {
-            "name": "MetalMill",
+        assert cls.machines_by_name["metal-mill"].as_dict == {
+            "name": "metal-mill",
             "authorizations_or": ["Metal Mill"],
             "unauthorized_warn_only": False,
         }
@@ -71,8 +71,8 @@ class TestMachinesConfig:
     def test_invalid_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf: Dict[str, Dict[str, Any]] = {
-            "MetalMill": {"authorizations_or": ["Metal Mill"]},
-            "Hammer": {
+            "metal-mill": {"authorizations_or": ["Metal Mill"]},
+            "hammer": {
                 "authorizations_or": [
                     "Woodshop Orientation",
                     "Woodshop 201",
@@ -80,7 +80,7 @@ class TestMachinesConfig:
                 ],
                 "unauthorized_warn_only": True,
             },
-            "Invalid": {
+            "invalid": {
                 "bad_key": 4,
             },
         }

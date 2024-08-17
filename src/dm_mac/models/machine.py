@@ -23,7 +23,7 @@ logger: Logger = getLogger(__name__)
 CONFIG_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "patternProperties": {
-        "^[A-Za-z0-9_-]+$": {
+        "^[a-z0-9_-]+$": {
             "type": "object",
             "required": ["authorizations_or"],
             "properties": {

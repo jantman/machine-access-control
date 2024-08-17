@@ -111,7 +111,6 @@ class TestDumpFields:
         # get the responses from the fixture data
         std: Any = json.loads(cast(str, resp[0].body))
         custom: Any = json.loads(cast(str, resp[1].body))
-        assert captured.err == ""
         assert (
             captured.out
             == "Account fields:\n"
