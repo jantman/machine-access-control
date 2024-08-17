@@ -24,27 +24,82 @@ def update() -> Tuple[Response, int]:
 
     Accepts POSTed JSON containing the following key/value pairs:
 
-    - "name" (string) - name of the machine sending the update
-    - "rfid_value" (string) - value of the RFID fob/card that is currently
-        present in the machine, or empty string if none present
-    - "relay_state" (boolean) - the current on/off (true/false) state of the
-        relay
-    - "oops" (boolean) - whether the oops button is pressed, or has been pressed
-        since the last check-in
-    - "amps" (float) - amperage value from the current clamp ammeter, if present,
-        or 0.0 otherwise.
-    - "uptime" (float) - uptime of the ESP32 managing the machine.
+    - ``machine_name`` (string) - name of the machine sending the update
+    - ``oops`` (boolean) - whether the oops button is pressed
+    - ``rfid_value`` (string) - value of the RFID fob/card that is currently
+        present in the machine, or empty string if none present. Note that
+        ESPHome strips leading zeroes from this, so inside this method it is
+        left-padded with zeroes to a length of 10 characters.
+    - ``uptime`` (float) - uptime of the ESP32 (MCU).
+    - ``wifi_signal_db`` (float) - WiFi signal strength in dB
+    - ``wifi_signal_percent`` (float) - WiFi signal strength in percent
+    - ``internal_temperature_c`` (float) - internal temperature of the ESP32 in
+        °C.
+    - ``amps`` (float; optional) - amperage value from the current clamp
+        ammeter, if present, or 0.0 otherwise.
 
-    EXAMPLE Payloads:
+    EXAMPLE Payloads for ESP without amperage sensor
+    ------------------------------------------------
 
-    - Oops button pressed when no RFID present:
-       ``{'oops': True, 'rfid_value': '', 'uptime': 538.0189819}``
-    - RFID inserted (tag 0014916441)
-       ``{'oops': False, 'rfid_value': '14916441', 'uptime': 0.753000021}``
-    - Oops button pressed when RFID present:
-       ``{'oops': True, 'rfid_value': '14916441', 'uptime': 59.80699921}``
-    - RFID removed:
-       ``{'oops': False, 'rfid_value': '', 'uptime': 59.80699921}``
+    Oops button pressed when no RFID present
+    ++++++++++++++++++++++++++++++++++++++++
+
+    .. code-block:: python
+
+       {
+           'machine_name': 'esp32test',
+           'oops': True,
+           'rfid_value': '',
+           'uptime': 59.29299927,
+           'wifi_signal_db': -58,
+           'wifi_signal_percent': 84,
+           'internal_temperature_c': 53.88888931
+       }
+
+    RFID inserted (tag 0014916441)
+    ++++++++++++++++++++++++++++++
+
+    .. code-block:: python
+
+       {
+           'machine_name': 'esp32test',
+           'oops': False,
+           'rfid_value': '14916441',
+           'uptime': 59.29299927,
+           'wifi_signal_db': -58,
+           'wifi_signal_percent': 84,
+           'internal_temperature_c': 53.88888931
+       }
+
+    Oops button pressed when RFID present
+    +++++++++++++++++++++++++++++++++++++
+
+    .. code-block:: python
+
+       {
+           'machine_name': 'esp32test',
+           'oops': True,
+           'rfid_value': '14916441',
+           'uptime': 59.29299927,
+           'wifi_signal_db': -58,
+           'wifi_signal_percent': 84,
+           'internal_temperature_c': 53.88888931
+       }
+
+    RFID removed
+    ++++++++++++
+
+    .. code-block:: python
+
+       {
+           'machine_name': 'esp32test',
+           'oops': False,
+           'rfid_value': '',
+           'uptime': 119.2929993,
+           'wifi_signal_db': -54,
+           'wifi_signal_percent': 92,
+           'internal_temperature_c': 53.88888931
+       }
     """
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
     logger.warning("UPDATE request: %s", data)
