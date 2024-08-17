@@ -1,9 +1,17 @@
-# see: https://jantman.github.io/machine-access-control/hardware.html#esphome-configurations
 # This config expects the following hardware:
 #
 # - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO33
 # - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO25
 # - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
+#
+# And the following secrets in ESPHome's secrets.yaml:
+#
+# - api_encryption_key - maybe not even needed? is this just for HomeAssistant?
+# - ota_password - password for OTA updates
+# - wifi_ssid
+# - wifi_password
+# - domain_name
+# - mac_url - the full URL to the /api/machine/update endpoint of the machine-access-control server
 #
 substitutions:
   machine_name: "esp32test"
@@ -43,9 +51,16 @@ wifi:
 globals:
   - id: display_content
     type: std::string
-    restore_value: no
+    restore_value: False
     max_restore_data_length: 34
     initial_value: '"Connecting to WiFi"'
+  - id: rfid_tag
+    type: std::string
+    restore_value: False
+    max_restore_data_length: 34
+    initial_value: '""'
+
+http_request:
 
 i2c:
   sda: GPIO22
@@ -54,6 +69,7 @@ i2c:
 sensor:
   - platform: uptime
     name: Uptime
+    id: uptime_sensor
   - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
     name: "WiFi Signal dB"
     id: wifi_signal_db
@@ -77,9 +93,19 @@ binary_sensor:
     id: card_present
     on_release:
       then:
+        - lambda: ESP_LOGI("TAG", "RFID tag removed");
         - lambda: |-
+            id(rfid_tag) = "";
             id(display_content) = "Please insert\naccess card";
             id(my_display).print("Please insert\naccess card");
+        - http_request.post:
+            url: !secret mac_url
+            headers:
+              Content-Type: application/json
+            json: |-
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
   - platform: gpio
     pin:
       number: GPIO32
@@ -87,13 +113,23 @@ binary_sensor:
         input: True
         pullup: True
     name: "oops"
+    id: oops_button
     filters:
       - delayed_on: 10ms
     on_press:
       then:
+        - lambda: ESP_LOGI("OOPS", "Oops button pressed");
         - lambda: |-
             id(display_content) = "OOPS!";
             id(my_display).print("OOPS!");
+        - http_request.post:
+            url: !secret mac_url
+            headers:
+              Content-Type: application/json
+            json: |-
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
 
 button:
   - platform: restart
@@ -103,23 +139,20 @@ wiegand:
   - id: keypad
     d0: GPIO16
     d1: GPIO4
-    on_key:
-      - lambda: ESP_LOGI("KEY", "received key %d", x);
     on_tag:
       - lambda: ESP_LOGI("TAG", "received tag %s", x.c_str());
       - lambda: |-
-            if(x == "14916441") {
-              id(display_content) = "Welcome, \nauthorized user!";
-              id(my_display).print("Welcome, \nauthorized user!");
-            }
-            else if(x == "14916432") {
-              id(display_content) = "Sorry, not\nauthorized.";
-              id(my_display).print("Sorry, not\nauthorized.");
-            }
-            else {
-              id(display_content) = "Unknown card.";
-              id(my_display).print("Unknown card.");
-            }
+            id(rfid_tag) = x.c_str();
+            id(display_content) = ((std::string) "TAG RX: " + x).c_str();
+            id(my_display).print(((std::string) "TAG RX: " + x).c_str());
+      - http_request.post:
+          url: !secret mac_url
+          headers:
+            Content-Type: application/json
+          json: |-
+            root["oops"] = id(oops_button).state;
+            root["rfid_value"] = id(rfid_tag);
+            root["uptime"] = id(uptime_sensor).state;
 
 display:
   - platform: lcd_pcf8574
@@ -128,23 +161,3 @@ display:
     id: my_display
     lambda: |-
       it.print(id(display_content));
-
-key_collector:
-  - id: pincode_reader
-    source_id: keypad
-    min_length: 1
-    max_length: 6
-    end_keys: "#"
-    end_key_required: true
-    back_keys: "*"
-    clear_keys: "C"
-    allowed_keys: "0123456789"
-    timeout: 5s
-    on_result:
-      - logger.log:
-          format: "input result: '%s', started by '%c', ended by '%c'"
-          args: [ 'x.c_str()', "(start == 0 ? '~' : start)", "(end == 0 ? '~' : end)" ]
-    on_timeout:
-      - logger.log:
-          format: "input timeout: '%s', started by '%c'"
-          args: [ 'x.c_str()', "(start == 0 ? '~' : start)" ]

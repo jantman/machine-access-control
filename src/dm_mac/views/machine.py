@@ -34,6 +34,17 @@ def update() -> Tuple[Response, int]:
     - "amps" (float) - amperage value from the current clamp ammeter, if present,
         or 0.0 otherwise.
     - "uptime" (float) - uptime of the ESP32 managing the machine.
+
+    EXAMPLE Payloads:
+
+    - Oops button pressed when no RFID present:
+       ``{'oops': True, 'rfid_value': '', 'uptime': 538.0189819}``
+    - RFID inserted (tag 0014916441)
+       ``{'oops': False, 'rfid_value': '14916441', 'uptime': 0.753000021}``
+    - Oops button pressed when RFID present:
+       ``{'oops': True, 'rfid_value': '14916441', 'uptime': 59.80699921}``
+    - RFID removed:
+       ``{'oops': False, 'rfid_value': '', 'uptime': 59.80699921}``
     """
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
     logger.warning("UPDATE request: %s", data)
