@@ -1,17 +1,23 @@
 # This config expects the following hardware:
 #
-# - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO33
+# - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO23
 # - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO25
 # - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
+# - output relay on GPIO33
+# - neopixel (clockless / 1-wire) output on GPIO27
 #
 # And the following secrets in ESPHome's secrets.yaml:
 #
-# - api_encryption_key - maybe not even needed? is this just for HomeAssistant?
+# - api_encryption_key - this is needed for the ESPHome web UI functionality, like wirelessly streaming logs
 # - ota_password - password for OTA updates
 # - wifi_ssid
 # - wifi_password
 # - domain_name
 # - mac_url - the full URL to the /api/machine/update endpoint of the machine-access-control server
+#
+# And the following substitutions:
+#
+# - machine_name - the machine name as configured in MAC and also the ESPHome device name; note these MUST match
 #
 substitutions:
   machine_name: "esp32test"
@@ -29,7 +35,6 @@ esp32:
 logger:
   level: DEBUG
 
-# Enable Home Assistant API
 api:
   encryption:
     key: !secret api_encryption_key
@@ -78,6 +83,7 @@ sensor:
   - platform: copy # Reports the WiFi signal strength in %
     source_id: wifi_signal_db
     name: "WiFi Signal Percent"
+    id: wifi_signal_percent
     filters:
       - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
     unit_of_measurement: "Signal %"
@@ -85,6 +91,7 @@ sensor:
     device_class: ""
   - platform: internal_temperature
     name: "esp32_internal_temperature"
+    id: internal_temperature_c
 
 binary_sensor:
   - platform: gpio
@@ -98,14 +105,19 @@ binary_sensor:
             id(rfid_tag) = "";
             id(display_content) = "Please insert\naccess card";
             id(my_display).print("Please insert\naccess card");
+        # NOTE: need to add machine name to post. maybe WiFi sensors and temperature too?
         - http_request.post:
             url: !secret mac_url
             headers:
               Content-Type: application/json
             json: |-
+              root["machine_name"] = App.get_name().c_str();
               root["oops"] = id(oops_button).state;
               root["rfid_value"] = id(rfid_tag);
               root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
   - platform: gpio
     pin:
       number: GPIO32
@@ -127,13 +139,32 @@ binary_sensor:
             headers:
               Content-Type: application/json
             json: |-
+              root["machine_name"] = App.get_name().c_str();
               root["oops"] = id(oops_button).state;
               root["rfid_value"] = id(rfid_tag);
               root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
 
 button:
   - platform: restart
     name: "Reboot ESP"
+
+output:
+  - platform: gpio
+    pin: GPIO33
+    id: relay_output
+
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: RGB
+    pin: GPIO27
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "StatusLED"
+    id: status_led
 
 wiegand:
   - id: keypad
@@ -150,9 +181,13 @@ wiegand:
           headers:
             Content-Type: application/json
           json: |-
-            root["oops"] = id(oops_button).state;
-            root["rfid_value"] = id(rfid_tag);
-            root["uptime"] = id(uptime_sensor).state;
+              root["machine_name"] = App.get_name().c_str();
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
 
 display:
   - platform: lcd_pcf8574
@@ -161,3 +196,5 @@ display:
     id: my_display
     lambda: |-
       it.print(id(display_content));
+
+# @TODO add interval here to HTTP POST every 10 seconds

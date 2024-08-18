@@ -16,20 +16,20 @@ All of the example ESPHome configurations begin with a ``substitutions`` key, wh
 
 The ESPHome configurations are based on a `ESPHome secrets.yaml file <https://esphome.io/guides/faq.html#tips-for-using-esphome>`__ for substituting in sensitive values and installation-specific values using the ``!secrets`` substitution operator. The example configurations expect the following secrets to be defined:
 
+api_encryption_key
+    this is needed for the ESPHome web UI functionality, like wirelessly streaming logs. See ESPHome docs.
+
 ota_password
-    A password used for OTA updates from ESPHome.
+    A password used for OTA updates from ESPHome. See ESPHome docs.
 
 wifi_ssid
-    WiFi network SSID to connect to.
+    WiFi network SSID to connect to. See ESPHome docs.
 
 wifi_password
-    WiFi network password.
+    WiFi network password. See ESPHome docs.
 
 domain_name
-    Domain name to use for DNS.
+    Domain name to use for DNS. See ESPHome docs.
 
-mac_host
-    The hostname of the machine-access-control control server.
-
-mac_port
-    The port number of the machine-access-control control server.
+mac_url
+    the full URL to the /api/machine/update endpoint of the machine-access-control server
