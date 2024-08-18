@@ -1,5 +1,7 @@
 {
-  "name_field": "Full Name (F)",
+  "full_name_field": "Full Name (F)",
+  "first_name_field": "First Name",
+  "preferred_name_field": "Preferred Name",
   "email_field": "Email 1",
   "expiration_field": "Membership Expiration Date",
   "account_id_field": "Account ID",

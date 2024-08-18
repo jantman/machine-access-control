@@ -236,10 +236,10 @@ class TestRun:
             with pytest.raises(RuntimeError) as exc:
                 NeonUserUpdater().run(output_path="users.json")
         assert exc.value.args[0] == (
-            "ERROR: Duplicate fob fields: fob 0946889653 is present in user "
-            "Brett Patel (389) as well as Adam Lloyd (504); "
-            "fob 7301436567 is present in user Christopher Frazier (6) "
-            "as well as Steven Abbott (16)"
+            "ERROR: Duplicate fob fields: fob 0476421226 is present in user "
+            "Victoria Jones (17) as well as Joshua Adams (586); fob 3706638933"
+            " is present in user Adam Duarte (449) as well as Lisa Padilla "
+            "(587)"
         )
 
     @responses.activate(registry=OrderedRegistry)

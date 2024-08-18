@@ -9,7 +9,9 @@
         "fob_codes": [
             "8114346998"
         ],
-        "name": "Ashley Williams"
+        "full_name": "Ashley Williams",
+        "first_name": "Ashley",
+        "preferred_name": "PAshley"
     },
     {
         "account_id": "2",
@@ -22,7 +24,9 @@
         "fob_codes": [
             "8682768676"
         ],
-        "name": "James Smith"
+        "full_name": "James Smith",
+        "first_name": "James",
+        "preferred_name": "PJames"
     },
     {
         "account_id": "3",
@@ -35,6 +39,8 @@
         "fob_codes": [
             "1291703745"
         ],
-        "name": "Kenneth Hunter"
+        "full_name": "Kenneth Hunter",
+        "first_name": "Kenneth",
+        "preferred_name": "PKenneth"
     }
 ]

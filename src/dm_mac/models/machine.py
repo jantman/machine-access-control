@@ -279,7 +279,7 @@ class MachineState:
         if self.rfid_value:
             ustr = " RFID card is present but unknown."
             if user := users.users_by_fob[self.rfid_value]:
-                ustr = f" Current user is: {user.name}."
+                ustr = f" Current user is: {user.full_name}."
         logging.getLogger("AUTH").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )

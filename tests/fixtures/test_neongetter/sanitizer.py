@@ -47,7 +47,13 @@ class NeonSanitizer:
             load_json_config("NEONGETTER_CONFIG", "neon.config.json"),
         )
         NeonUserUpdater.validate_config(self._neon_config)
-        self.name_fields: List[str] = [self._neon_config["name_field"]]
+        self.full_name_fields: List[str] = [self._neon_config["full_name_field"]]
+        self.first_name_fields: List[str] = [
+            self._neon_config["first_name_field"],
+        ]
+        self.preferred_name_fields: List[str] = [
+            self._neon_config["preferred_name_field"],
+        ]
         self.email_fields: List[str] = [self._neon_config["email_field"]]
         self.acct_id_field: str = self._neon_config["account_id_field"]
         self.tendigit_fields: List[str] = self._neon_config["fob_fields"]
@@ -74,11 +80,19 @@ class NeonSanitizer:
                 item[self.acct_id_field] = str(self.acct_id)
                 self.acct_id += 1
             fname: str
-            # name
-            for fname in self.name_fields:
+            # names
+            for fname in self.full_name_fields:
                 if fname not in item:
                     continue
                 item[fname] = f.name()
+            for fname in self.first_name_fields:
+                if fname not in item:
+                    continue
+                item[fname] = item[self.full_name_fields[0]].split(" ")[0]
+            for fname in self.preferred_name_fields:
+                if fname not in item:
+                    continue
+                item[fname] = "P" + item[self.full_name_fields[0]].split(" ")[0]
             # email
             for fname in self.email_fields:
                 if fname not in item:

@@ -38,9 +38,17 @@ logging.getLogger("urllib3").propagate = True
 CONFIG_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
-        "name_field": {
+        "full_name_field": {
             "type": "string",
-            "description": "Neon field name containing member name.",
+            "description": "Neon field name containing member full name.",
+        },
+        "first_name_field": {
+            "type": "string",
+            "description": "Neon field name containing member first name.",
+        },
+        "preferred_name_field": {
+            "type": "string",
+            "description": "Neon field name containing member preferred name.",
         },
         "email_field": {
             "type": "string",
@@ -67,7 +75,9 @@ CONFIG_SCHEMA: Dict[str, Any] = {
         },
     },
     "required": [
-        "name_field",
+        "full_name_field",
+        "first_name_field",
+        "preferred_name_field",
         "email_field",
         "expiration_field",
         "account_id_field",
@@ -163,7 +173,9 @@ class NeonUserUpdater:
     def example_config() -> Dict[str, Union[str, List[str]]]:
         """Return an example configuration."""
         return {
-            "name_field": "Full Name (F)",
+            "full_name_field": "Full Name (F)",
+            "first_name_field": "First Name",
+            "preferred_name_field": "Preferred Name",
             "email_field": "Email 1",
             "expiration_field": "Membership Expiration Date",
             "account_id_field": "Account ID",
@@ -174,10 +186,12 @@ class NeonUserUpdater:
     def fields_to_get(self) -> List[Union[str, int, List[str]]]:
         """Return a list of custom field names to retrieve from Neon."""
         field_names: List[Union[str, int, List[str]]] = [
-            self._config["name_field"],
+            self._config["full_name_field"],
             self._config["email_field"],
             self._config["expiration_field"],
             self._config["account_id_field"],
+            self._config["first_name_field"],
+            self._config["preferred_name_field"],
         ]
         customs: List[Dict[str, Any]] = self._get_custom_fields_raw()
         logger.debug("Neon API returned %d custom fields", len(customs))
@@ -281,7 +295,9 @@ class NeonUserUpdater:
                 ],
                 "account_id": user[self._config["account_id_field"]],  # type: ignore
                 "email": user[self._config["email_field"]],  # type: ignore
-                "name": user[self._config["name_field"]],  # type: ignore
+                "full_name": user[self._config["full_name_field"]],  # type: ignore
+                "first_name": user[self._config["first_name_field"]],  # type: ignore
+                "preferred_name": user[self._config["preferred_name_field"]],  # type: ignore
                 "expiration_ymd": user[self._config["expiration_field"]],  # type: ignore
                 "authorizations": [
                     x
@@ -293,7 +309,7 @@ class NeonUserUpdater:
                 logger.info(
                     "Found user with no expiration date; account_id=%s name=%s",
                     tmp["account_id"],
-                    tmp["name"],
+                    tmp["full_name"],
                 )
                 tmp["expiration_ymd"] = "2345-01-01"
             user_fobs: List[str] = []
@@ -308,9 +324,9 @@ class NeonUserUpdater:
                 ff: str = user[fobfield]
                 if ff in fobs:
                     dupes.append(
-                        f"fob {ff} is present in user {fobs[ff]['name']} "
+                        f"fob {ff} is present in user {fobs[ff]['full_name']} "
                         f"({fobs[ff]['account_id']}) as well as "
-                        f"{tmp['name']} ({tmp['account_id']})"
+                        f"{tmp['full_name']} ({tmp['account_id']})"
                     )
                     continue
                 fobs[ff] = tmp

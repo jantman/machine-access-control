@@ -27,8 +27,8 @@ class TestUsersConfig:
         shutil.copy(conf_path, os.path.join(tmp_path, "users.json"))
         os.chdir(tmp_path)
         cls: UsersConfig = UsersConfig()
-        assert len(cls.users) == 588
-        assert len(cls.users_by_fob) == 586
+        assert len(cls.users) == 594
+        assert len(cls.users_by_fob) == 594
 
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
@@ -39,7 +39,9 @@ class TestUsersConfig:
                 "email": "brian36@example.com",
                 "expiration_ymd": "2024-08-27",
                 "fob_codes": ["0725858614"],
-                "name": "Andrew Schwartz",
+                "full_name": "Andrew Schwartz",
+                "first_name": "Andrew",
+                "preferred_name": "PAndrew",
             },
             {
                 "account_id": "411",
@@ -47,7 +49,9 @@ class TestUsersConfig:
                 "email": "zyoung@example.org",
                 "expiration_ymd": "2024-08-10",
                 "fob_codes": ["0913350505"],
-                "name": "Tyler Young Jr.",
+                "full_name": "Tyler Young Jr.",
+                "first_name": "Tyler",
+                "preferred_name": "PTyler",
             },
             {
                 "account_id": "412",
@@ -55,7 +59,9 @@ class TestUsersConfig:
                 "email": "joshua99@example.net",
                 "expiration_ymd": "2024-12-18",
                 "fob_codes": ["5683773370"],
-                "name": "Rachel Richmond",
+                "full_name": "Rachel Richmond",
+                "first_name": "Rachel",
+                "preferred_name": "PRachel",
             },
         ]
         cpath: str = str(os.path.join(tmp_path, "foobar.json"))
@@ -80,7 +86,9 @@ class TestUsersConfig:
                 "email": "brian36@example.com",
                 "expiration_ymd": "2024-08-27",
                 "fob_codes": ["0725858614"],
-                "name": "Andrew Schwartz",
+                "full_name": "Andrew Schwartz",
+                "first_name": "Andrew",
+                "preferred_name": "PAndrew",
             },
             {
                 "account_id": "411",
@@ -88,7 +96,9 @@ class TestUsersConfig:
                 "INVALID_KEY": "zyoung@example.org",
                 "expiration_ymd": "2024-08-10",
                 "fob_codes": ["0913350505"],
-                "name": "Tyler Young Jr.",
+                "full_name": "Tyler Young Jr.",
+                "first_name": "Tyler",
+                "preferred_name": "PTyler",
             },
             {
                 "account_id": "412",
@@ -96,7 +106,9 @@ class TestUsersConfig:
                 "email": "joshua99@example.net",
                 "expiration_ymd": "2024-12-18",
                 "fob_codes": ["5683773370"],
-                "name": "Rachel Richmond",
+                "full_name": "Rachel Richmond",
+                "first_name": "Rachel",
+                "preferred_name": "PRachel",
             },
         ]
         cpath: str = str(os.path.join(tmp_path, "users.json"))

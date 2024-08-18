@@ -28,7 +28,12 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                 "type": "string",
                 "description": "Unique Account ID for user.",
             },
-            "name": {"type": "string", "description": "Name of user."},
+            "full_name": {"type": "string", "description": "Full name of user."},
+            "first_name": {"type": "string", "description": "First name of user."},
+            "preferred_name": {
+                "type": "string",
+                "description": "Preferred name of user.",
+            },
             "email": {"type": "string", "description": "User email address."},
             "expiration_ymd": {
                 "type": "string",
@@ -43,7 +48,9 @@ CONFIG_SCHEMA: Dict[str, Any] = {
         "required": [
             "fob_codes",
             "account_id",
-            "name",
+            "full_name",
+            "first_name",
+            "preferred_name",
             "email",
             "expiration_ymd",
             "authorizations",
@@ -60,7 +67,9 @@ class User:
         self,
         fob_codes: List[str],
         account_id: str,
-        name: str,
+        full_name: str,
+        first_name: str,
+        preferred_name: str,
         email: str,
         expiration_ymd: str,
         authorizations: List[str],
@@ -68,7 +77,9 @@ class User:
         """Initialize one user."""
         self.fob_codes: List[str] = fob_codes
         self.account_id: str = account_id
-        self.name: str = name
+        self.full_name: str = full_name
+        self.first_name: str = first_name
+        self.preferred_name: str = preferred_name
         self.email: str = email
         self.expiration_ymd: str = expiration_ymd
         self.authorizations: List[str] = authorizations
@@ -82,7 +93,9 @@ class User:
             "email": self.email,
             "expiration_ymd": self.expiration_ymd,
             "fob_codes": self.fob_codes,
-            "name": self.name,
+            "full_name": self.full_name,
+            "first_name": self.first_name,
+            "preferred_name": self.preferred_name,
         }
 
 
