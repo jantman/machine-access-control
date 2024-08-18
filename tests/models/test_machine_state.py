@@ -48,7 +48,6 @@ class TestInit:
         assert cls.last_update is None
         assert cls.rfid_value is None
         assert cls.rfid_present_since is None
-        assert cls.relay_is_on is False
         assert cls.relay_desired_state is False
         assert cls.is_oopsed is False
         assert cls.is_locked_out is False
@@ -75,7 +74,6 @@ class TestInit:
         assert cls.last_update is None
         assert cls.rfid_value is None
         assert cls.rfid_present_since is None
-        assert cls.relay_is_on is False
         assert cls.relay_desired_state is False
         assert cls.is_oopsed is False
         assert cls.is_locked_out is False
@@ -103,7 +101,6 @@ class TestSaveCache(MachineStateTester):
             "last_update": None,
             "rfid_value": None,
             "rfid_present_since": None,
-            "relay_is_on": False,
             "relay_desired_state": False,
             "is_oopsed": False,
             "is_locked_out": False,
@@ -120,7 +117,6 @@ class TestSaveCache(MachineStateTester):
         self.cls.last_update = 5678
         self.cls.rfid_value = "0123456789"
         self.cls.rfid_present_since = 34567
-        self.cls.relay_is_on = True
         self.cls.relay_desired_state = True
         self.cls.is_oopsed = True
         self.cls.is_locked_out = True
@@ -137,7 +133,6 @@ class TestSaveCache(MachineStateTester):
             "last_update": 5678,
             "rfid_value": "0123456789",
             "rfid_present_since": 34567,
-            "relay_is_on": True,
             "relay_desired_state": True,
             "is_oopsed": True,
             "is_locked_out": True,
@@ -159,7 +154,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.last_update is None
         assert self.cls.rfid_value is None
         assert self.cls.rfid_present_since is None
-        assert self.cls.relay_is_on is False
         assert self.cls.relay_desired_state is False
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
@@ -175,7 +169,6 @@ class TestLoadFromCache(MachineStateTester):
             "last_update": None,
             "rfid_value": None,
             "rfid_present_since": None,
-            "relay_is_on": False,
             "relay_desired_state": False,
             "is_oopsed": False,
             "is_locked_out": False,
@@ -194,7 +187,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.last_update is None
         assert self.cls.rfid_value is None
         assert self.cls.rfid_present_since is None
-        assert self.cls.relay_is_on is False
         assert self.cls.relay_desired_state is False
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
@@ -213,7 +205,6 @@ class TestLoadFromCache(MachineStateTester):
             "last_update": 456,
             "rfid_value": "012345",
             "rfid_present_since": 789,
-            "relay_is_on": True,
             "relay_desired_state": True,
             "is_oopsed": True,
             "is_locked_out": True,
@@ -232,7 +223,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.last_update == 456
         assert self.cls.rfid_value == "012345"
         assert self.cls.rfid_present_since == 789
-        assert self.cls.relay_is_on is True
         assert self.cls.relay_desired_state is True
         assert self.cls.is_oopsed is True
         assert self.cls.is_locked_out is True
@@ -249,7 +239,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.last_update is None
         assert self.cls.rfid_value is None
         assert self.cls.rfid_present_since is None
-        assert self.cls.relay_is_on is False
         assert self.cls.relay_desired_state is False
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
@@ -263,7 +252,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.last_update is None
         assert self.cls.rfid_value is None
         assert self.cls.rfid_present_since is None
-        assert self.cls.relay_is_on is False
         assert self.cls.relay_desired_state is False
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
@@ -298,7 +286,7 @@ class TestUpdateHasChanges(MachineStateTester):
     def test_rfid_removed(self) -> None:
         """Test when an RFID becomes absent."""
         self.cls.rfid_value = "12345"
-        self.cls.relay_is_on = True
+        self.cls.relay_desired_state = True
         assert (
             self.cls.update_has_changes(
                 rfid_value=None, relay_state=True, oops=False, amps=0
@@ -317,7 +305,7 @@ class TestUpdateHasChanges(MachineStateTester):
 
     def test_relay_goes_off(self) -> None:
         """Test when the relay goes off."""
-        self.cls.relay_is_on = True
+        self.cls.relay_desired_state = True
         assert (
             self.cls.update_has_changes(
                 rfid_value=None, relay_state=False, oops=False, amps=0

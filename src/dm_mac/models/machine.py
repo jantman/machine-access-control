@@ -124,14 +124,12 @@ class MachineState:
         #: Float timestamp of the machine's last checkin time
         self.last_checkin: float | None = None
         #: Float timestamp of the last time that machine state changed,
-        #: not counting `current_amps` or timestamps.
+        #: not counting `current_amps` or timestamps / uptime.
         self.last_update: float | None = None
         #: Value of the RFID card/fob in use, or None if not present.
         self.rfid_value: str | None = None
         #: Float timestamp when `rfid_value` last changed to a non-None value.
         self.rfid_present_since: float | None = None
-        #: Whether the output relay is on or not.
-        self.relay_is_on: bool = False
         #: Whether the output relay should be on or not.
         self.relay_desired_state: bool = False
         #: Whether the machine's Oops button has been pressed.
@@ -168,7 +166,6 @@ class MachineState:
                 "last_update": self.last_update,
                 "rfid_value": self.rfid_value,
                 "rfid_present_since": self.rfid_present_since,
-                "relay_is_on": self.relay_is_on,
                 "relay_desired_state": self.relay_desired_state,
                 "is_oopsed": self.is_oopsed,
                 "is_locked_out": self.is_locked_out,
@@ -205,7 +202,7 @@ class MachineState:
         """Return whether or not the update causes changes to significant state values."""
         if (
             rfid_value != self.rfid_value
-            or relay_state != self.relay_is_on
+            or relay_state != self.relay_desired_state
             or oops != self.is_oopsed
         ):
             return True
