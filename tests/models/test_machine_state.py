@@ -222,6 +222,35 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.display_text == "Some text"
         assert self.cls.uptime == 1234
 
+    def test_does_not_exist(self, tmp_path: Path) -> None:
+        """Test when state file does not exist."""
+        # confirm initial values
+        assert self.cls.last_checkin is None
+        assert self.cls.last_update is None
+        assert self.cls.rfid_value is None
+        assert self.cls.rfid_present_since is None
+        assert self.cls.relay_is_on is False
+        assert self.cls.relay_desired_state is False
+        assert self.cls.is_oopsed is False
+        assert self.cls.is_locked_out is False
+        assert self.cls.current_amps == 0
+        assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert self.cls.uptime == 0
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        self.cls._load_from_cache()
+        # should not have any changes
+        assert self.cls.last_checkin is None
+        assert self.cls.last_update is None
+        assert self.cls.rfid_value is None
+        assert self.cls.rfid_present_since is None
+        assert self.cls.relay_is_on is False
+        assert self.cls.relay_desired_state is False
+        assert self.cls.is_oopsed is False
+        assert self.cls.is_locked_out is False
+        assert self.cls.current_amps == 0
+        assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert self.cls.uptime == 0
+
 
 class TestUpdateHasChanges(MachineStateTester):
     """Tests for MachineState.update_has_changes()."""

@@ -91,6 +91,7 @@ class UsersConfig:
 
     def __init__(self) -> None:
         """Initialize UsersConfig."""
+        logger.debug("Initializing UsersConfig")
         self.users_by_fob: Dict[str, User] = {}
         self.users: List[User] = []
         udict: Dict[str, Any]

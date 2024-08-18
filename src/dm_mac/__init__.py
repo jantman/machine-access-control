@@ -7,9 +7,13 @@ from flask import has_request_context
 from flask import request
 from flask.logging import default_handler
 
+from dm_mac.models.machine import MachinesConfig
+from dm_mac.models.users import UsersConfig
 from dm_mac.views.api import api
 from dm_mac.views.machine import machineapi
 
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 # BEGIN adding request information to logs
 
@@ -46,5 +50,7 @@ api.register_blueprint(machineapi)
 def create_app() -> Flask:
     """Factory to create the app."""
     app: Flask = Flask("dm_mac")
+    app.config.update({"MACHINES": MachinesConfig()})
+    app.config.update({"USERS": UsersConfig()})
     app.register_blueprint(api)
     return app

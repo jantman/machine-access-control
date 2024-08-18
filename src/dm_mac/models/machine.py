@@ -82,7 +82,8 @@ class MachinesConfig:
     """Class representing machines configuration file."""
 
     def __init__(self) -> None:
-        """Initialize UsersConfig."""
+        """Initialize MachinesConfig."""
+        logger.debug("Initializing MachinesConfig")
         self.machines_by_name: Dict[str, Machine] = {}
         self.machines: List[Machine] = []
         mdict: Dict[str, Any]
@@ -177,6 +178,9 @@ class MachineState:
 
     def _load_from_cache(self) -> None:
         """Load machine state cache from disk."""
+        if not os.path.exists(self._state_path):
+            logger.info("State file does not yet exist: %s", self._state_path)
+            return
         logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
         lock = FileLock(self._state_path + ".lock")
         with lock:

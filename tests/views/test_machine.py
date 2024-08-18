@@ -1,24 +1,22 @@
 """Tests for /machine API endpoints."""
 
+from pathlib import Path
+
+from flask import Flask
 from flask.testing import FlaskClient
 from werkzeug.test import TestResponse
+
+from .flask_test_helpers import test_app
 
 
 class TestUpdate:
     """Tests for /machine/update API endpoint."""
 
-    def test_noop_update_idle_machine(self, client: FlaskClient) -> None:
+    def test_noop_update_idle_machine(self, tmp_path: Path) -> None:
         """Test for API index response."""
+        app: Flask
+        client: FlaskClient
+        app, client = test_app(tmp_path)
         response: TestResponse = client.post("/api/machine/update", json={"foo": "bar"})
         assert response.status_code == 501
         assert response.json == {"error": "not implemented"}
-
-
-"""
-Questions:
-
-1. Where do I load the machine/user configs? In create_app()?
-2. Do I _need_ to use `app.test_client()` via the pytest fixture, or can I just
-import create_app() here and call its .test_client() within my test methods?
-3. If not, how do I handle setup of the configs unique for each
-"""
