@@ -146,6 +146,12 @@ class MachineState:
         self.status_led_rgb: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         #: status LED brightness value; float 0 to 1
         self.status_led_brightness: float = 0.0
+        #: ESP32 WiFi signal strength in dB
+        self.wifi_signal_db: Optional[float] = None
+        #: ESP32 WiFi signal strength in percent
+        self.wifi_signal_percent: Optional[float] = None
+        #: ESP32 internal temperature in °C
+        self.internal_temperature_c: Optional[float] = None
         #: Path to the directory to save machine state in
         self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
         os.makedirs(self._state_dir, exist_ok=True)
@@ -174,6 +180,9 @@ class MachineState:
                 "uptime": self.uptime,
                 "status_led_rgb": self.status_led_rgb,
                 "status_led_brightness": self.status_led_brightness,
+                "wifi_signal_db": self.wifi_signal_db,
+                "wifi_signal_percent": self.wifi_signal_percent,
+                "internal_temperature_c": self.internal_temperature_c,
             }
             logger.debug("Saving state to: %s", self._state_path)
             with open(self._state_path, "wb") as f:
@@ -216,7 +225,7 @@ class MachineState:
         self._save_cache()
 
     @property
-    def machine_response(self) -> dict[str, str | bool | float | List[float]]:
+    def machine_response(self) -> Dict[str, str | bool | float | List[float]]:
         """Return the response dict to send to the machine."""
         return {
             "relay": self.relay_desired_state,

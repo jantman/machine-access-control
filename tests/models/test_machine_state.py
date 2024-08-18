@@ -56,6 +56,9 @@ class TestInit:
         assert cls.uptime == 0
         assert cls.status_led_rgb == (0, 0, 0)
         assert cls.status_led_brightness == 0
+        assert cls.wifi_signal_db is None
+        assert cls.wifi_signal_percent is None
+        assert cls.internal_temperature_c is None
         assert cls._state_dir == "machine_state"
         assert cls._state_path == "machine_state/MachineName-state.pickle"
 
@@ -82,6 +85,9 @@ class TestInit:
         assert cls.uptime == 0
         assert cls.status_led_rgb == (0, 0, 0)
         assert cls.status_led_brightness == 0
+        assert cls.wifi_signal_db is None
+        assert cls.wifi_signal_percent is None
+        assert cls.internal_temperature_c is None
         assert cls._state_dir == "/foo/bar/baz"
         assert cls._state_path == "/foo/bar/baz/MachineName-state.pickle"
 
@@ -109,6 +115,9 @@ class TestSaveCache(MachineStateTester):
             "uptime": 0,
             "status_led_rgb": (0, 0, 0),
             "status_led_brightness": 0,
+            "wifi_signal_db": None,
+            "wifi_signal_percent": None,
+            "internal_temperature_c": None,
         }
 
     def test_non_defaults(self, tmp_path: Path) -> None:
@@ -123,6 +132,9 @@ class TestSaveCache(MachineStateTester):
         self.cls.current_amps = 12
         self.cls.status_led_rgb = (0.25, 0.3, 0.4)
         self.cls.status_led_brightness = 0.25
+        self.cls.wifi_signal_db = 0.25
+        self.cls.wifi_signal_percent = 0.9
+        self.cls.internal_temperature_c = 52.1
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
         self.cls._save_cache()
         with open(os.path.join(tmp_path, "MachineName-state.pickle"), "rb") as f:
@@ -141,6 +153,9 @@ class TestSaveCache(MachineStateTester):
             "uptime": 0,
             "status_led_rgb": (0.25, 0.3, 0.4),
             "status_led_brightness": 0.25,
+            "wifi_signal_db": 0.25,
+            "wifi_signal_percent": 0.9,
+            "internal_temperature_c": 52.1,
         }
 
 
@@ -160,6 +175,9 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.current_amps == 0
         assert self.cls.status_led_rgb == (0, 0, 0)
         assert self.cls.status_led_brightness == 0
+        assert self.cls.wifi_signal_db is None
+        assert self.cls.wifi_signal_percent is None
+        assert self.cls.internal_temperature_c is None
         assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert self.cls.uptime == 0
         # state data
@@ -177,6 +195,9 @@ class TestLoadFromCache(MachineStateTester):
             "uptime": 0,
             "status_led_rgb": (0, 0, 0),
             "status_led_brightness": 0,
+            "wifi_signal_db": None,
+            "wifi_signal_percent": None,
+            "internal_temperature_c": None,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -195,6 +216,9 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.uptime == 0
         assert self.cls.status_led_rgb == (0, 0, 0)
         assert self.cls.status_led_brightness == 0
+        assert self.cls.wifi_signal_db is None
+        assert self.cls.wifi_signal_percent is None
+        assert self.cls.internal_temperature_c is None
 
     def test_not_defaults(self, tmp_path: Path) -> None:
         """Test loading config with non-defaults."""
@@ -213,6 +237,9 @@ class TestLoadFromCache(MachineStateTester):
             "uptime": 1234,
             "status_led_rgb": (0.25, 0.3, 0.4),
             "status_led_brightness": 0.25,
+            "wifi_signal_db": 0.25,
+            "wifi_signal_percent": 0.9,
+            "internal_temperature_c": 52.1,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -231,6 +258,9 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.uptime == 1234
         assert self.cls.status_led_rgb == (0.25, 0.3, 0.4)
         assert self.cls.status_led_brightness == 0.25
+        assert self.cls.wifi_signal_db == 0.25
+        assert self.cls.wifi_signal_percent == 0.9
+        assert self.cls.internal_temperature_c == 52.1
 
     def test_does_not_exist(self, tmp_path: Path) -> None:
         """Test when state file does not exist."""
@@ -245,6 +275,9 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.current_amps == 0
         assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert self.cls.uptime == 0
+        assert self.cls.wifi_signal_db is None
+        assert self.cls.wifi_signal_percent is None
+        assert self.cls.internal_temperature_c is None
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
         self.cls._load_from_cache()
         # should not have any changes
@@ -260,6 +293,9 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.uptime == 0
         assert self.cls.status_led_rgb == (0, 0, 0)
         assert self.cls.status_led_brightness == 0
+        assert self.cls.wifi_signal_db is None
+        assert self.cls.wifi_signal_percent is None
+        assert self.cls.internal_temperature_c is None
 
 
 class TestUpdateHasChanges(MachineStateTester):
