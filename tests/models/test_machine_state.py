@@ -7,8 +7,6 @@ from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
-from freezegun import freeze_time
-
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
 
@@ -296,83 +294,6 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.wifi_signal_db is None
         assert self.cls.wifi_signal_percent is None
         assert self.cls.internal_temperature_c is None
-
-
-class TestUpdateHasChanges(MachineStateTester):
-    """Tests for MachineState.update_has_changes()."""
-
-    def test_no_changes(self) -> None:
-        """Test when update has no changes."""
-        assert (
-            self.cls.update_has_changes(
-                rfid_value=None, relay_state=False, oops=False, amps=0
-            )
-            is False
-        )
-
-    def test_rfid_inserted(self) -> None:
-        """Test when an RFID becomes present."""
-        assert (
-            self.cls.update_has_changes(
-                rfid_value="12345", relay_state=False, oops=False, amps=0
-            )
-            is True
-        )
-
-    def test_rfid_removed(self) -> None:
-        """Test when an RFID becomes absent."""
-        self.cls.rfid_value = "12345"
-        self.cls.relay_desired_state = True
-        assert (
-            self.cls.update_has_changes(
-                rfid_value=None, relay_state=True, oops=False, amps=0
-            )
-            is True
-        )
-
-    def test_relay_goes_on(self) -> None:
-        """Test when the relay comes on."""
-        assert (
-            self.cls.update_has_changes(
-                rfid_value=None, relay_state=True, oops=False, amps=0
-            )
-            is True
-        )
-
-    def test_relay_goes_off(self) -> None:
-        """Test when the relay goes off."""
-        self.cls.relay_desired_state = True
-        assert (
-            self.cls.update_has_changes(
-                rfid_value=None, relay_state=False, oops=False, amps=0
-            )
-            is True
-        )
-
-    def test_oops(self) -> None:
-        """Test when oops is pressed."""
-        assert (
-            self.cls.update_has_changes(
-                rfid_value=None, relay_state=False, oops=True, amps=0
-            )
-            is True
-        )
-
-
-class TestNoopUpdate(MachineStateTester):
-    """Tests for MachineState.noop_update()."""
-
-    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    def test_happy_path(self) -> None:
-        """Test happy path."""
-        self.cls.current_amps = 23.4
-        self.cls.last_checkin = 1723307862.0
-        with patch(f"{pb}._save_cache") as m_save:
-            self.cls.noop_update(0, 123)
-        assert self.cls.current_amps == 0
-        assert self.cls.last_checkin == 1689477248.0
-        assert self.cls.uptime == 123
-        assert m_save.mock_calls == [call()]
 
 
 class TestMachineResponse(MachineStateTester):

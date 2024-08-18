@@ -1,5 +1,6 @@
 """Model representing a machine."""
 
+import logging
 import os
 import pickle
 from logging import Logger
@@ -15,6 +16,7 @@ from typing import cast
 from filelock import FileLock
 from jsonschema import validate
 
+from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
 
 
@@ -68,6 +70,12 @@ class Machine:
         self.unauthorized_warn_only: bool = unauthorized_warn_only
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
+
+    def update(
+        self, users: UsersConfig, **kwargs: Any
+    ) -> Dict[str, str | bool | float | List[float]]:
+        """Pass directly to self.state and return result."""
+        return self.state.update(users, **kwargs)
 
     @property
     def as_dict(self) -> Dict[str, Any]:
@@ -123,8 +131,8 @@ class MachineState:
         self.machine: Machine = machine
         #: Float timestamp of the machine's last checkin time
         self.last_checkin: float | None = None
-        #: Float timestamp of the last time that machine state changed,
-        #: not counting `current_amps` or timestamps / uptime.
+        #: Float timestamp of the last time that machine state changed in a
+        #: meaningful way, i.e. RFID value or Oops
         self.last_update: float | None = None
         #: Value of the RFID card/fob in use, or None if not present.
         self.rfid_value: str | None = None
@@ -141,7 +149,7 @@ class MachineState:
         #: Text currently displayed on the machine LCD screen
         self.display_text: str = self.DEFAULT_DISPLAY_TEXT
         #: Uptime of the machine's ESP32 in seconds
-        self.uptime: int = 0
+        self.uptime: float = 0.0
         #: RGB values for status LED; floats 0 to 1
         self.status_led_rgb: Tuple[float, float, float] = (0.0, 0.0, 0.0)
         #: status LED brightness value; float 0 to 1
@@ -205,24 +213,56 @@ class MachineState:
                     setattr(self, k, v)
         logger.debug("State loaded.")
 
-    def update_has_changes(
-        self, rfid_value: Optional[str], relay_state: bool, oops: bool, amps: float
-    ) -> bool:
-        """Return whether or not the update causes changes to significant state values."""
-        if (
-            rfid_value != self.rfid_value
-            or relay_state != self.relay_desired_state
-            or oops != self.is_oopsed
-        ):
-            return True
-        return False
+    def _handle_reboot(self) -> None:
+        """Handle when the ESP32 (MCU) has rebooted since last checkin.
 
-    def noop_update(self, amps: float, uptime: int) -> None:
-        """Just update amps, uptime, last_checkin and save cache."""
-        self.current_amps = amps
-        self.uptime = uptime
+        This logs out the current user if logged in and turns off the relay if
+        turned on.
+        """
+        logging.getLogger("AUTH").warning(
+            "Machine %s rebooted; resetting relay and RFID state", self.machine.name
+        )
+        raise NotImplementedError()
+
+    def update(
+        self,
+        users: UsersConfig,
+        oops: Optional[bool] = None,
+        rfid_value: Optional[str] = None,
+        uptime: Optional[float] = None,
+        wifi_signal_db: Optional[float] = None,
+        wifi_signal_percent: Optional[float] = None,
+        internal_temperature_c: Optional[float] = None,
+        amps: Optional[float] = None,
+    ) -> Dict[str, str | bool | float | List[float]]:
+        """Handle an update to the machine via API."""
+        if amps:
+            self.current_amps = amps
+        if uptime:
+            if uptime < self.uptime:
+                logger.warning(
+                    "Uptime of %s is less than last uptime of %s; machine "
+                    "control unit has rebooted",
+                    uptime,
+                    self.uptime,
+                )
+                self._handle_reboot()
+            self.uptime = uptime
+        if wifi_signal_db:
+            self.wifi_signal_db = wifi_signal_db
+        if wifi_signal_percent:
+            self.wifi_signal_percent = wifi_signal_percent
+        if internal_temperature_c:
+            self.internal_temperature_c = internal_temperature_c
         self.last_checkin = time()
-        self._save_cache()
+        if oops == self.is_oopsed and rfid_value == self.rfid_value:
+            # no meaningful changes to state; exit early
+            self._save_cache()
+            return self.machine_response
+        # ok, we have some meaningful change other than a periodic checkin
+        self.last_update = time()
+        # handle oops or rfid_value changes
+        return self.machine_response
 
     @property
     def machine_response(self) -> Dict[str, str | bool | float | List[float]]:

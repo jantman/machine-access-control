@@ -4,13 +4,19 @@ from logging import Logger
 from logging import getLogger
 from typing import Any
 from typing import Dict
+from typing import Optional
 from typing import Tuple
 from typing import cast
 
 from flask import Blueprint
 from flask import Response
+from flask import app
 from flask import jsonify
 from flask import request
+
+from dm_mac.models.machine import Machine
+from dm_mac.models.machine import MachinesConfig
+from dm_mac.models.users import UsersConfig
 
 
 logger: Logger = getLogger(__name__)
@@ -103,10 +109,15 @@ def update() -> Tuple[Response, int]:
     """
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
     logger.warning("UPDATE request: %s", data)
-    # machine_name: str = data.pop("name")
-    # get the MachineState object for this machine, or else return an error
-    #    that error should be formatted for display on the device (helper
-    #    method for this)
-    # check if this data would update the state; if not, just call
-    #    noop_update() and return the same display value
-    return jsonify({"error": "not implemented"}), 501
+    machine_name: str = data.pop("machine_name")
+    mconf: MachinesConfig = app.config["MACHINES"]  # type: ignore # noqa
+    machine: Optional[Machine] = mconf.machines_by_name.get(machine_name)
+    if not machine:
+        return jsonify({"error": f"No such machine: {machine_name}"}), 404
+    users: UsersConfig = app.config["USERS"]  # type: ignore # noqa
+    try:
+        resp = machine.update(users, **data)
+        return jsonify(resp), 200
+    except Exception as ex:
+        logger.error("Error in machine update %s: %s", data, ex, exc_info=True)
+        return jsonify({"error": str(ex)}), 500
