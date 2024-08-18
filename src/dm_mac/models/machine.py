@@ -124,7 +124,7 @@ class MachineState:
 
     DEFAULT_DISPLAY_TEXT: str = "Please Insert\nRFID Card"
 
-    def __init__(self, machine: Machine):
+    def __init__(self, machine: Machine, load_state: bool = True):
         """Initialize a new MachineState instance."""
         logger.debug("Instantiating new MachineState for %s", machine)
         #: The Machine that this state is for
@@ -167,7 +167,10 @@ class MachineState:
         self._state_path: str = os.path.join(
             self._state_dir, f"{self.machine.name}-state.pickle"
         )
-        self._load_from_cache()
+        if load_state:
+            self._load_from_cache()
+        else:
+            logger.warning("State loading disabled for machine %s", self.machine.name)
 
     def _save_cache(self) -> None:
         """Save machine state cache to disk."""

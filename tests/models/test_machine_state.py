@@ -60,6 +60,35 @@ class TestInit:
         assert cls._state_dir == "machine_state"
         assert cls._state_path == "machine_state/MachineName-state.pickle"
 
+    def test_no_load(self) -> None:
+        """Test init method with state loading disabled."""
+        mach: Machine = Mock(spec_set=Machine)
+        type(mach).name = "MachineName"
+        with patch(f"{pb}._load_from_cache", autospec=True) as m_load:
+            with patch.dict(os.environ, {}, clear=True):
+                with patch(f"{pbm}.os.makedirs") as m_make:
+                    cls: MachineState = MachineState(mach, load_state=False)
+        assert m_make.mock_calls == [call("machine_state", exist_ok=True)]
+        assert m_load.mock_calls == []
+        assert cls.machine == mach
+        assert cls.last_checkin is None
+        assert cls.last_update is None
+        assert cls.rfid_value is None
+        assert cls.rfid_present_since is None
+        assert cls.relay_desired_state is False
+        assert cls.is_oopsed is False
+        assert cls.is_locked_out is False
+        assert cls.current_amps == 0
+        assert cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert cls.uptime == 0
+        assert cls.status_led_rgb == (0, 0, 0)
+        assert cls.status_led_brightness == 0
+        assert cls.wifi_signal_db is None
+        assert cls.wifi_signal_percent is None
+        assert cls.internal_temperature_c is None
+        assert cls._state_dir == "machine_state"
+        assert cls._state_path == "machine_state/MachineName-state.pickle"
+
     def test_alternate_state_dir(self) -> None:
         """Test with alternate state dir specified."""
         mach: Machine = Mock(spec_set=Machine)

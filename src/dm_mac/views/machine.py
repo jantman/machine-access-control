@@ -10,7 +10,7 @@ from typing import cast
 
 from flask import Blueprint
 from flask import Response
-from flask import app
+from flask import current_app
 from flask import jsonify
 from flask import request
 
@@ -110,11 +110,13 @@ def update() -> Tuple[Response, int]:
     data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
     logger.warning("UPDATE request: %s", data)
     machine_name: str = data.pop("machine_name")
-    mconf: MachinesConfig = app.config["MACHINES"]  # type: ignore # noqa
+    mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
     machine: Optional[Machine] = mconf.machines_by_name.get(machine_name)
     if not machine:
         return jsonify({"error": f"No such machine: {machine_name}"}), 404
-    users: UsersConfig = app.config["USERS"]  # type: ignore # noqa
+    users: UsersConfig = current_app.config["USERS"]  # noqa
+    if data.get("rfid_value") == "":
+        data["rfid_value"] = None
     try:
         resp = machine.update(users, **data)
         return jsonify(resp), 200
