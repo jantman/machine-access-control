@@ -216,6 +216,12 @@ class MachineState:
         self._save_cache()
 
     @property
-    def machine_response(self) -> dict[str, str | bool]:
+    def machine_response(self) -> dict[str, str | bool | float | List[float]]:
         """Return the response dict to send to the machine."""
-        return {"relay": self.relay_desired_state, "display": self.display_text}
+        return {
+            "relay": self.relay_desired_state,
+            "display": self.display_text,
+            "oops_led": self.is_oopsed,
+            "status_led_rgb": [x for x in self.status_led_rgb],
+            "status_led_brightness": self.status_led_brightness,
+        }

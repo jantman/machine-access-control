@@ -347,13 +347,22 @@ class TestMachineResponse(MachineStateTester):
         assert self.cls.machine_response == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
         }
 
     def test_nondefault_state(self) -> None:
         """Test initial state for a new machine."""
         self.cls.relay_desired_state = True
         self.cls.display_text = "Some other\nText"
+        self.cls.is_oopsed = True
+        self.cls.status_led_rgb = (0.25, 0.3, 0.4)
+        self.cls.status_led_brightness = 0.25
         assert self.cls.machine_response == {
             "relay": True,
             "display": "Some other\nText",
+            "oops_led": True,
+            "status_led_rgb": [0.25, 0.3, 0.4],
+            "status_led_brightness": 0.25,
         }
