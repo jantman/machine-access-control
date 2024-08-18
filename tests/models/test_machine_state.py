@@ -55,6 +55,8 @@ class TestInit:
         assert cls.current_amps == 0
         assert cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert cls.uptime == 0
+        assert cls.status_led_rgb == (0, 0, 0)
+        assert cls.status_led_brightness == 0
         assert cls._state_dir == "machine_state"
         assert cls._state_path == "machine_state/MachineName-state.pickle"
 
@@ -80,6 +82,8 @@ class TestInit:
         assert cls.current_amps == 0
         assert cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert cls.uptime == 0
+        assert cls.status_led_rgb == (0, 0, 0)
+        assert cls.status_led_brightness == 0
         assert cls._state_dir == "/foo/bar/baz"
         assert cls._state_path == "/foo/bar/baz/MachineName-state.pickle"
 
@@ -106,6 +110,8 @@ class TestSaveCache(MachineStateTester):
             "current_amps": 0,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
+            "status_led_rgb": (0, 0, 0),
+            "status_led_brightness": 0,
         }
 
     def test_non_defaults(self, tmp_path: Path) -> None:
@@ -119,6 +125,8 @@ class TestSaveCache(MachineStateTester):
         self.cls.is_oopsed = True
         self.cls.is_locked_out = True
         self.cls.current_amps = 12
+        self.cls.status_led_rgb = (0.25, 0.3, 0.4)
+        self.cls.status_led_brightness = 0.25
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
         self.cls._save_cache()
         with open(os.path.join(tmp_path, "MachineName-state.pickle"), "rb") as f:
@@ -136,6 +144,8 @@ class TestSaveCache(MachineStateTester):
             "current_amps": 12,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
+            "status_led_rgb": (0.25, 0.3, 0.4),
+            "status_led_brightness": 0.25,
         }
 
 
@@ -154,6 +164,8 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
         assert self.cls.current_amps == 0
+        assert self.cls.status_led_rgb == (0, 0, 0)
+        assert self.cls.status_led_brightness == 0
         assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert self.cls.uptime == 0
         # state data
@@ -170,6 +182,8 @@ class TestLoadFromCache(MachineStateTester):
             "current_amps": 0,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
+            "status_led_rgb": (0, 0, 0),
+            "status_led_brightness": 0,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -187,6 +201,8 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.current_amps == 0
         assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert self.cls.uptime == 0
+        assert self.cls.status_led_rgb == (0, 0, 0)
+        assert self.cls.status_led_brightness == 0
 
     def test_not_defaults(self, tmp_path: Path) -> None:
         """Test loading config with non-defaults."""
@@ -204,6 +220,8 @@ class TestLoadFromCache(MachineStateTester):
             "current_amps": 12,
             "display_text": "Some text",
             "uptime": 1234,
+            "status_led_rgb": (0.25, 0.3, 0.4),
+            "status_led_brightness": 0.25,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -221,6 +239,8 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.current_amps == 12
         assert self.cls.display_text == "Some text"
         assert self.cls.uptime == 1234
+        assert self.cls.status_led_rgb == (0.25, 0.3, 0.4)
+        assert self.cls.status_led_brightness == 0.25
 
     def test_does_not_exist(self, tmp_path: Path) -> None:
         """Test when state file does not exist."""
@@ -250,6 +270,8 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.current_amps == 0
         assert self.cls.display_text == MachineState.DEFAULT_DISPLAY_TEXT
         assert self.cls.uptime == 0
+        assert self.cls.status_led_rgb == (0, 0, 0)
+        assert self.cls.status_led_brightness == 0
 
 
 class TestUpdateHasChanges(MachineStateTester):

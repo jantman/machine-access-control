@@ -9,6 +9,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import cast
 
 from filelock import FileLock
@@ -143,6 +144,10 @@ class MachineState:
         self.display_text: str = self.DEFAULT_DISPLAY_TEXT
         #: Uptime of the machine's ESP32 in seconds
         self.uptime: int = 0
+        #: RGB values for status LED; floats 0 to 1
+        self.status_led_rgb: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+        #: status LED brightness value; float 0 to 1
+        self.status_led_brightness: float = 0.0
         #: Path to the directory to save machine state in
         self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
         os.makedirs(self._state_dir, exist_ok=True)
@@ -170,6 +175,8 @@ class MachineState:
                 "current_amps": self.current_amps,
                 "display_text": self.display_text,
                 "uptime": self.uptime,
+                "status_led_rgb": self.status_led_rgb,
+                "status_led_brightness": self.status_led_brightness,
             }
             logger.debug("Saving state to: %s", self._state_path)
             with open(self._state_path, "wb") as f:
