@@ -124,6 +124,12 @@ class MachineState:
 
     DEFAULT_DISPLAY_TEXT: str = "Please Insert\nRFID Card"
 
+    OOPS_DISPLAY_TEXT: str = "Oops!! Please\ncheck/post Slack"
+
+    LOCKOUT_DISPLAY_TEXT: str = "Down for\nmaintenance"
+
+    STATUS_LED_BRIGHTNESS: float = 0.5
+
     def __init__(self, machine: Machine, load_state: bool = True):
         """Initialize a new MachineState instance."""
         logger.debug("Instantiating new MachineState for %s", machine)
@@ -230,7 +236,7 @@ class MachineState:
     def update(
         self,
         users: UsersConfig,
-        oops: Optional[bool] = None,
+        oops: bool = False,
         rfid_value: Optional[str] = None,
         uptime: Optional[float] = None,
         wifi_signal_db: Optional[float] = None,
@@ -239,9 +245,9 @@ class MachineState:
         amps: Optional[float] = None,
     ) -> Dict[str, str | bool | float | List[float]]:
         """Handle an update to the machine via API."""
-        if amps:
+        if amps is not None:
             self.current_amps = amps
-        if uptime:
+        if uptime is not None:
             if uptime < self.uptime:
                 logger.warning(
                     "Uptime of %s is less than last uptime of %s; machine "
@@ -251,21 +257,48 @@ class MachineState:
                 )
                 self._handle_reboot()
             self.uptime = uptime
-        if wifi_signal_db:
+        if wifi_signal_db is not None:
             self.wifi_signal_db = wifi_signal_db
-        if wifi_signal_percent:
+        if wifi_signal_percent is not None:
             self.wifi_signal_percent = wifi_signal_percent
-        if internal_temperature_c:
+        if internal_temperature_c is not None:
             self.internal_temperature_c = internal_temperature_c
         self.last_checkin = time()
-        if oops == self.is_oopsed and rfid_value == self.rfid_value:
-            # no meaningful changes to state; exit early
-            self._save_cache()
-            return self.machine_response
-        # ok, we have some meaningful change other than a periodic checkin
-        self.last_update = time()
-        # handle oops or rfid_value changes
+        if oops:
+            self._handle_oops(users)
+            self.last_update = time()
+        if rfid_value != self.rfid_value:
+            self._handle_rfid_change(users, rfid_value)
+            self.last_update = time()
+        self._save_cache()
         return self.machine_response
+
+    def _handle_oops(self, users: UsersConfig) -> None:
+        """Handle oops button press."""
+        ustr: str = ""
+        if self.rfid_value:
+            ustr = " RFID card is present but unknown."
+            if user := users.users_by_fob[self.rfid_value]:
+                ustr = f" Current user is: {user.name}."
+        logging.getLogger("AUTH").warning(
+            "Machine %s was Oopsed.%s", self.machine.name, ustr
+        )
+        self.is_oopsed = True
+        self.relay_desired_state = False
+        self.display_text = self.OOPS_DISPLAY_TEXT
+        self.status_led_rgb = (1.0, 0.0, 0.0)
+        self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+
+    def _handle_rfid_change(
+        self, users: UsersConfig, rfid_value: Optional[str] = None
+    ) -> None:
+        """Handle change in the RFID value."""
+        """
+        logging.getLogger("AUTH").warning(
+            "Machine %s rebooted; resetting relay and RFID state", self.machine.name
+        )
+        """
+        pass
 
     @property
     def machine_response(self) -> Dict[str, str | bool | float | List[float]]:
