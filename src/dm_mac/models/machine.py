@@ -16,6 +16,7 @@ from typing import cast
 from filelock import FileLock
 from jsonschema import validate
 
+from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
 
@@ -144,6 +145,8 @@ class MachineState:
         self.rfid_value: str | None = None
         #: Float timestamp when `rfid_value` last changed to a non-None value.
         self.rfid_present_since: float | None = None
+        #: Current user logged in to the machine
+        self.current_user: Optional[User] = None
         #: Whether the output relay should be on or not.
         self.relay_desired_state: bool = False
         #: Whether the machine's Oops button has been pressed.
@@ -268,7 +271,10 @@ class MachineState:
             self._handle_oops(users)
             self.last_update = time()
         if rfid_value != self.rfid_value:
-            self._handle_rfid_change(users, rfid_value)
+            if rfid_value is None:
+                self._handle_rfid_remove()
+            else:
+                self._handle_rfid_insert(users, rfid_value)
             self.last_update = time()
         self._save_cache()
         return self.machine_response
@@ -289,16 +295,102 @@ class MachineState:
         self.status_led_rgb = (1.0, 0.0, 0.0)
         self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
 
-    def _handle_rfid_change(
-        self, users: UsersConfig, rfid_value: Optional[str] = None
-    ) -> None:
-        """Handle change in the RFID value."""
-        """
-        logging.getLogger("AUTH").warning(
-            "Machine %s rebooted; resetting relay and RFID state", self.machine.name
+    def _handle_rfid_remove(self) -> None:
+        """Handle RFID card removed."""
+        logging.getLogger("AUTH").info(
+            "RFID logout on %s by %s; session duration %d seconds",
+            self.machine.name,
+            self.current_user.full_name if self.current_user else self.rfid_value,
+            time() - cast(float, self.rfid_present_since),
         )
-        """
-        pass
+        self.rfid_value = None
+        self.rfid_present_since = None
+        self.current_user = None
+        self.relay_desired_state = False
+        self.display_text = self.DEFAULT_DISPLAY_TEXT
+        self.status_led_rgb = (0.0, 0.0, 0.0)
+        self.status_led_brightness = 0.0
+
+    def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
+        """Handle change in the RFID value."""
+        rfid_value = rfid_value.rjust(10, "0")
+        self.rfid_present_since = time()
+        self.rfid_value = rfid_value
+        user: Optional[User] = users.users_by_fob.get(rfid_value)
+        if not user:
+            logging.getLogger("AUTH").warning(
+                "RFID login attempt on %s by unknown fob %s",
+                self.machine.name,
+                rfid_value,
+            )
+            self.display_text = "Unknown fob"
+            self.status_led_rgb = (1.0, 0.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            return
+        # ok, we have a known user
+        logname = f"{user.full_name} ({rfid_value})"
+        if self.is_oopsed:
+            logging.getLogger("AUTH").warning(
+                "RFID login attempt while oopsed on %s by %s",
+                self.machine.name,
+                logname,
+            )
+            # don't change anything
+            return
+        if self.is_locked_out:
+            logging.getLogger("AUTH").warning(
+                "RFID login attempt while locked out on %s by %s",
+                self.machine.name,
+                logname,
+            )
+            # don't change anything
+            return
+        if self._user_is_authorized(user):
+            logging.getLogger("AUTH").info(
+                "User %s (%d) authorized for %s; session start",
+                user.full_name,
+                user.account_id,
+                self.machine.name,
+            )
+            self.current_user = user
+            self.relay_desired_state = True
+            self.display_text = f"Welcome,\n{user.preferred_name}"
+            self.status_led_rgb = (0.0, 1.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+        else:
+            logging.getLogger("AUTH").info(
+                "User %s (%d) UNAUTHORIZED for %s",
+                user.full_name,
+                user.account_id,
+                self.machine.name,
+            )
+            self.relay_desired_state = False
+            self.display_text = "Unauthorized"
+            self.status_led_rgb = (1.0, 0.5, 0.0)  # orange
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+
+    def _user_is_authorized(self, user: User) -> bool:
+        """Return whether user is authorized for this machine."""
+        for auth in self.machine.authorizations_or:
+            if auth in user.authorizations:
+                logger.info(
+                    "User %s (%d) authorized for %s based on %s",
+                    user.full_name,
+                    user.account_id,
+                    self.machine.name,
+                    auth,
+                )
+                return True
+        if self.machine.unauthorized_warn_only:
+            logging.getLogger("AUTH").warning(
+                "User %s (%d) authorized for %s based on "
+                "unauthorized_warn_only==True",
+                user.full_name,
+                user.account_id,
+                self.machine.name,
+            )
+            return True
+        return False
 
     @property
     def machine_response(self) -> Dict[str, str | bool | float | List[float]]:

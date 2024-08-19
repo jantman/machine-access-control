@@ -2,7 +2,11 @@
     {
         "account_id": "1",
         "authorizations": [
-            "Woodshop 101"
+            "Woodshop Orientation",
+            "Woodshop 201",
+            "Woodshop 101",
+            "Metal Mill",
+            "Metal Lathe"
         ],
         "email": "munozmanuel@example.net",
         "expiration_ymd": "2024-08-16",
@@ -17,7 +21,7 @@
         "account_id": "2",
         "authorizations": [
             "Woodshop Orientation",
-            "CNC Router"
+            "Metal Mill"
         ],
         "email": "tony37@example.net",
         "expiration_ymd": "2024-08-18",
