@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -117,3 +118,43 @@ class TestUsersConfig:
         os.chdir(tmp_path)
         with pytest.raises(ValidationError):
             UsersConfig()
+
+
+class TestUser:
+    """Tests for User class."""
+
+    def test_eq(self) -> None:
+        """Test equality."""
+        u1: User = User(
+            fob_codes=["0123", "456"],
+            account_id="100",
+            full_name="John Doe",
+            first_name="John",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+        )
+        u2: User = User(
+            fob_codes=["0123", "456"],
+            account_id="333",
+            full_name="John Doe",
+            first_name="John",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+        )
+        u3: User = User(
+            fob_codes=["0123", "456"],
+            account_id="100",
+            full_name="John Doe",
+            first_name="John",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+        )
+        assert u1 != u2
+        assert u1 == u3
+        assert u1 != Mock()

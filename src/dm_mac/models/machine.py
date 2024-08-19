@@ -78,6 +78,14 @@ class Machine:
         """Pass directly to self.state and return result."""
         return self.state.update(users, **kwargs)
 
+    def lockout(self) -> None:
+        """Pass directly to self.state."""
+        self.state.lockout()
+
+    def unlock(self) -> None:
+        """Pass directly to self.state."""
+        self.state.unlock()
+
     @property
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict representation of this machine."""
@@ -235,7 +243,33 @@ class MachineState:
         logging.getLogger("AUTH").warning(
             "Machine %s rebooted; resetting relay and RFID state", self.machine.name
         )
-        raise NotImplementedError()
+        self.relay_desired_state = False
+        self.current_user = None
+        self.display_text = self.DEFAULT_DISPLAY_TEXT
+        self.status_led_rgb = (0.0, 0.0, 0.0)
+        self.status_led_brightness = 0.0
+
+    def lockout(self) -> None:
+        """Lock-out the machine."""
+        logging.getLogger("AUTH").warning(
+            "Machine %s was locked out.", self.machine.name
+        )
+        self.is_locked_out = True
+        self.relay_desired_state = False
+        self.current_user = None
+        self.display_text = self.LOCKOUT_DISPLAY_TEXT
+        self.status_led_rgb = (1.0, 0.5, 0.0)
+        self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+
+    def unlock(self) -> None:
+        """Un-lock-out the machine."""
+        logging.getLogger("AUTH").warning("Machine %s was unlocked.", self.machine.name)
+        self.is_locked_out = False
+        self.relay_desired_state = False
+        self.current_user = None
+        self.display_text = self.DEFAULT_DISPLAY_TEXT
+        self.status_led_rgb = (0.0, 0.0, 0.0)
+        self.status_led_brightness = 0.0
 
     def update(
         self,
@@ -249,6 +283,8 @@ class MachineState:
         amps: Optional[float] = None,
     ) -> Dict[str, str | bool | float | List[float]]:
         """Handle an update to the machine via API."""
+        if rfid_value is not None:
+            rfid_value = rfid_value.rjust(10, "0")
         if amps is not None:
             self.current_amps = amps
         if uptime is not None:
@@ -285,13 +321,14 @@ class MachineState:
         ustr: str = ""
         if self.rfid_value:
             ustr = " RFID card is present but unknown."
-            if user := users.users_by_fob[self.rfid_value]:
+            if user := users.users_by_fob.get(self.rfid_value):
                 ustr = f" Current user is: {user.full_name}."
         logging.getLogger("AUTH").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
         self.is_oopsed = True
         self.relay_desired_state = False
+        self.current_user = None
         self.display_text = self.OOPS_DISPLAY_TEXT
         self.status_led_rgb = (1.0, 0.0, 0.0)
         self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
@@ -315,7 +352,6 @@ class MachineState:
 
     def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
         """Handle change in the RFID value."""
-        rfid_value = rfid_value.rjust(10, "0")
         self.rfid_present_since = time()
         self.rfid_value = rfid_value
         user: Optional[User] = users.users_by_fob.get(rfid_value)
