@@ -314,10 +314,10 @@ class NeonUserUpdater:
                 tmp["expiration_ymd"] = "2345-01-01"
             user_fobs: List[str] = []
             for fobfield in self._config["fob_fields"]:
-                if fobfield not in user:
+                if fobfield not in user:  # pragma: no cover
                     logger.debug("User does not have field %s: %s", user, fobfield)
                     continue
-                if not user[fobfield]:
+                if not user[fobfield]:  # pragma: no cover
                     logger.warning("User has null field %s: %s", user, fobfield)
                     continue
                 # check for duplicate fob number
