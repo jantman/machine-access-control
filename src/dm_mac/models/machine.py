@@ -308,9 +308,10 @@ class MachineState:
         self.rfid_present_since = None
         self.current_user = None
         self.relay_desired_state = False
-        self.display_text = self.DEFAULT_DISPLAY_TEXT
-        self.status_led_rgb = (0.0, 0.0, 0.0)
-        self.status_led_brightness = 0.0
+        if not self.is_oopsed and not self.is_locked_out:
+            self.display_text = self.DEFAULT_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 0.0, 0.0)
+            self.status_led_brightness = 0.0
 
     def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
         """Handle change in the RFID value."""
@@ -324,7 +325,9 @@ class MachineState:
                 self.machine.name,
                 rfid_value,
             )
-            self.display_text = "Unknown fob"
+            if self.is_oopsed or self.is_locked_out:
+                return
+            self.display_text = "Unknown RFID"
             self.status_led_rgb = (1.0, 0.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
             return

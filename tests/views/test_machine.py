@@ -11,7 +11,7 @@ from werkzeug.test import TestResponse
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
 
-from .flask_test_helpers import test_app
+from .flask_test_helpers import app_and_client
 
 
 class TestRouteSpecialCases:
@@ -23,7 +23,7 @@ class TestRouteSpecialCases:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # send request
         mname: str = "unknown-machine-name"
         response: TestResponse = client.post(
@@ -50,7 +50,7 @@ class TestRouteSpecialCases:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
         response: TestResponse = client.post(
@@ -83,7 +83,7 @@ class TestUpdateNewMachine:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
         response: TestResponse = client.post(
@@ -133,7 +133,7 @@ class TestUpdateNewMachine:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
         response: TestResponse = client.post(
@@ -184,7 +184,7 @@ class TestUpdateNewMachine:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
         response: TestResponse = client.post(
@@ -233,7 +233,7 @@ class TestOops:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -284,7 +284,7 @@ class TestOops:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -367,7 +367,7 @@ class TestRfidNormalState:
         # boilerplate for test
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -416,27 +416,1558 @@ class TestRfidNormalState:
 
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": True,
+            "display": "Welcome,\nPKenneth",
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Welcome,\nPKenneth"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user == app.config["USERS"].users_by_fob["0091703745"]
+        assert ms.relay_desired_state is True
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = True
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.status_led_rgb = (0.0, 1.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Welcome,\nPKenneth"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
 
     def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": "Unauthorized",
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.5, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Unauthorized"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (1.0, 0.5, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.status_led_rgb = (1.0, 0.5, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Unauthorized"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
 
     def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0123456789",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": "Unknown RFID",
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Unknown RFID"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0123456789"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0123456789"
+        m.state.current_user = None
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Unknown RFID"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
 
 
-# repeat that above class for unauthorized_warn_only, oopsed, and locked out
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestRfidUnauthorizedWarnOnly:
+    """Tests for RFID value changed on unauthorized_warn_only machine."""
+
+    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "8114346998",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": True,
+            "display": "Welcome,\nPAshley",
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Welcome,\nPAshley"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "8114346998"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user == app.config["USERS"].users_by_fob["8114346998"]
+        assert ms.relay_desired_state is True
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+
+    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = True
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "8114346998"
+        m.state.current_user = app.config["USERS"].users_by_fob["8114346998"]
+        m.state.status_led_rgb = (0.0, 1.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Welcome,\nPAshley"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+
+    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+        """Test when an unauth RFID card is inserted but < 10 characters."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": True,
+            "display": "Welcome,\nPKenneth",
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Welcome,\nPKenneth"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user == app.config["USERS"].users_by_fob["0091703745"]
+        assert ms.relay_desired_state is True
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+
+    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+        """Test when an unauthorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = True
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.status_led_rgb = (0.0, 1.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Welcome,\nPKenneth"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+
+    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0123456789",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": "Unknown RFID",
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Unknown RFID"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0123456789"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+
+    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "permissive-lathe"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0123456789"
+        m.state.current_user = None
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.display_text = "Unknown RFID"
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+
+
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestRfidOopsed:
+    """Tests for RFID value changed when oopsed."""
+
+    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "8114346998",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "8114346998"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
+        """Test when an auth RFID card is inserted but < 10 characters."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+        """Test when an unauth RFID card is inserted but < 10 characters."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+        """Test when an unauthorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0123456789",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "0123456789"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0123456789"
+        m.state.current_user = None
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is True
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestRfidLockedOut:
+    """Tests for RFID value changed when locked out."""
+
+    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "8114346998",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value == "8114346998"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
+        """Test when an auth RFID card is inserted but < 10 characters."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+        """Test when an authorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+        """Test when an unauth RFID card is inserted but < 10 characters."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "91703745",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value == "0091703745"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+        """Test when an unauthorized RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0091703745"
+        m.state.current_user = app.config["USERS"].users_by_fob["0091703745"]
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is inserted."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0123456789",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value == "0123456789"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0
+
+    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+        """Test when an unknown RFID card is removed."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "hammer"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.uptime = 10.3
+        m.state.last_update = 1689477200.0
+        m.state.last_checkin = 1689477200.0
+        m.state.relay_desired_state = False
+        m.state.rfid_present_since = 1689477200.0
+        m.state.rfid_value = "0123456789"
+        m.state.current_user = None
+        m.state.is_locked_out = True
+        m.state.display_text = MachineState.LOCKOUT_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": False,
+            "display": MachineState.LOCKOUT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_oopsed is False
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_locked_out is True
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.current_user is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update == 1689477248.0

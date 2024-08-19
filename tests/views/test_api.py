@@ -6,7 +6,7 @@ from flask import Flask
 from flask.testing import FlaskClient
 from werkzeug.test import TestResponse
 
-from .flask_test_helpers import test_app
+from .flask_test_helpers import app_and_client
 
 
 class TestIndex:
@@ -16,7 +16,7 @@ class TestIndex:
         """Test for API index response."""
         app: Flask
         client: FlaskClient
-        app, client = test_app(tmp_path)
+        app, client = app_and_client(tmp_path)
         response: TestResponse = client.get("/api/")
         assert response.status_code == 200
         assert response.text == "Nothing to see here..."

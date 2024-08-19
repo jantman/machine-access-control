@@ -11,7 +11,7 @@ from flask.testing import FlaskClient
 from dm_mac import create_app
 
 
-def test_app(
+def app_and_client(
     tmp_path: Path, user_conf: str = "users.json", machine_conf: str = "machines.json"
 ) -> Tuple[Flask, FlaskClient]:
     """Test App - app instance configured for testing.
