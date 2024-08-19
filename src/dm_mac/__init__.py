@@ -43,6 +43,9 @@ default_handler.setFormatter(formatter)
 # enable logging from libraries (i.e. everything but the views)
 logging.getLogger().addHandler(default_handler)
 
+logging.getLogger("AUTH").setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.INFO)
+
 # see: https://github.com/pallets/flask/issues/4786#issuecomment-1416354177
 api.register_blueprint(machineapi)
 

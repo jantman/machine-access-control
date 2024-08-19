@@ -235,3 +235,4 @@ fabric.properties
 pytest.xml
 pytest.html
 venv
+machine_state/

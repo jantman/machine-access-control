@@ -46,5 +46,23 @@
         "full_name": "Kenneth Hunter",
         "first_name": "Kenneth",
         "preferred_name": "PKenneth"
+    },
+    {
+        "account_id": "4",
+        "authorizations": [
+            "Woodshop Orientation",
+            "Woodshop 201",
+            "Woodshop 101",
+            "Metal Mill",
+            "Metal Lathe"
+        ],
+        "email": "jason@jasonantman.com",
+        "expiration_ymd": "2099-01-01",
+        "fob_codes": [
+            "0014916441"
+        ],
+        "full_name": "Jason Antman",
+        "first_name": "Jason",
+        "preferred_name": "jantman"
     }
 ]

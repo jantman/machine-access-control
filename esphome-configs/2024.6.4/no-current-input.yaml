@@ -3,12 +3,12 @@
 # - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO23
 # - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO25
 # - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
+# - oops button LED connected directly to GPIO5
 # - output relay on GPIO33
 # - neopixel (clockless / 1-wire) output on GPIO27
 #
 # And the following secrets in ESPHome's secrets.yaml:
 #
-# - api_encryption_key - this is needed for the ESPHome web UI functionality, like wirelessly streaming logs
 # - ota_password - password for OTA updates
 # - wifi_ssid
 # - wifi_password
@@ -50,15 +50,54 @@ wifi:
   reboot_timeout: "1min"
   on_connect:
     then:
-      - lambda: |-
-            id(display_content) = "Please insert\naccess card";
+      - http_request.post:
+          url: !secret mac_url
+          headers:
+            Content-Type: application/json
+          json: |-
+            root["machine_name"] = App.get_name().c_str();
+            root["oops"] = id(oops_button).state;
+            root["rfid_value"] = id(rfid_tag);
+            root["uptime"] = id(uptime_sensor).state;
+            root["wifi_signal_db"] = id(wifi_signal_db).state;
+            root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+            root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
 
 globals:
   - id: display_content
     type: std::string
     restore_value: False
     max_restore_data_length: 34
-    initial_value: '"Connecting to WiFi"'
+    initial_value: '"Connecting to\nWiFi"'
   - id: rfid_tag
     type: std::string
     restore_value: False
@@ -118,6 +157,36 @@ binary_sensor:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+            capture_response: true
+            on_response:
+              then:
+                - lambda: |-
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                        if ( root["relay"]) {
+                          ESP_LOGI("RELAY", "Turn relay on");
+                          id(relay_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY", "Turn relay off");
+                          id(relay_output).turn_off();
+                        }
+                        std::string dcontent = root["display"];
+                        id(display_content) = dcontent;
+                        id(my_display).print(dcontent);
+                        if ( root["oops_led"]) {
+                          ESP_LOGI("OOPS", "Turn oops LED on");
+                          id(oops_led).turn_on();
+                        } else {
+                          ESP_LOGI("OOPS", "Turn oops LED off");
+                          id(oops_led).turn_off();
+                        }
+                        auto call = id(status_led).turn_on();
+                        float brightness = root["status_led_brightness"];
+                        call.set_brightness(brightness);
+                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                        call.perform();
+                        return true;
+                    });
+
   - platform: gpio
     pin:
       number: GPIO32
@@ -146,6 +215,35 @@ binary_sensor:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+            capture_response: true
+            on_response:
+              then:
+                - lambda: |-
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                        if ( root["relay"]) {
+                          ESP_LOGI("RELAY", "Turn relay on");
+                          id(relay_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY", "Turn relay off");
+                          id(relay_output).turn_off();
+                        }
+                        std::string dcontent = root["display"];
+                        id(display_content) = dcontent;
+                        id(my_display).print(dcontent);
+                        if ( root["oops_led"]) {
+                          ESP_LOGI("OOPS", "Turn oops LED on");
+                          id(oops_led).turn_on();
+                        } else {
+                          ESP_LOGI("OOPS", "Turn oops LED off");
+                          id(oops_led).turn_off();
+                        }
+                        auto call = id(status_led).turn_on();
+                        float brightness = root["status_led_brightness"];
+                        call.set_brightness(brightness);
+                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                        call.perform();
+                        return true;
+                    });
 
 button:
   - platform: restart
@@ -155,6 +253,9 @@ output:
   - platform: gpio
     pin: GPIO33
     id: relay_output
+  - platform: gpio
+    pin: GPIO5
+    id: oops_led
 
 light:
   - platform: esp32_rmt_led_strip
@@ -188,6 +289,35 @@ wiegand:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
 
 display:
   - platform: lcd_pcf8574

@@ -413,7 +413,7 @@ class MachineState:
         """Return whether user is authorized for this machine."""
         for auth in self.machine.authorizations_or:
             if auth in user.authorizations:
-                logger.info(
+                logging.getLogger("AUTH").info(
                     "User %s (%s) authorized for %s based on %s",
                     user.full_name,
                     user.account_id,

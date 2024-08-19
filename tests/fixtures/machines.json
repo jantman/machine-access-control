@@ -13,5 +13,9 @@
   "restrictive-lathe": {
     "authorizations_or": ["Metal Lathe"],
     "unauthorized_warn_only": false
+  },
+  "esp32test": {
+    "authorizations_or": ["Metal Lathe"],
+    "unauthorized_warn_only": true
   }
 }
