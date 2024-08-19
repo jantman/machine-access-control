@@ -355,6 +355,7 @@ class TestOops:
         pass
 
 
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
 class TestRfidNormalState:
     """Tests for RFID value changed in a normal state.
 
@@ -363,7 +364,55 @@ class TestRfidNormalState:
 
     def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
-        pass
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = test_app(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "8114346998",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {
+            "relay": True,
+            "display": "Welcome,\nPAshley",
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == "Welcome,\nPAshley"
+        assert ms.current_amps == 0
+        assert ms.uptime == 13.6
+        assert ms.wifi_signal_db == -54
+        assert ms.wifi_signal_percent == 92
+        assert ms.internal_temperature_c == 53.89
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value == "8114346998"
+        assert ms.rfid_present_since == 1689477248.0
+        assert ms.current_user == app.config["USERS"].users_by_fob["8114346998"]
+        assert ms.relay_desired_state is True
+        assert ms.last_update == 1689477248.0
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""

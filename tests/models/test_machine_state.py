@@ -47,6 +47,7 @@ class TestInit:
         assert cls.rfid_value is None
         assert cls.rfid_present_since is None
         assert cls.relay_desired_state is False
+        assert cls.current_user is None
         assert cls.is_oopsed is False
         assert cls.is_locked_out is False
         assert cls.current_amps == 0
@@ -76,6 +77,7 @@ class TestInit:
         assert cls.rfid_value is None
         assert cls.rfid_present_since is None
         assert cls.relay_desired_state is False
+        assert cls.current_user is None
         assert cls.is_oopsed is False
         assert cls.is_locked_out is False
         assert cls.current_amps == 0
@@ -105,6 +107,7 @@ class TestInit:
         assert cls.rfid_value is None
         assert cls.rfid_present_since is None
         assert cls.relay_desired_state is False
+        assert cls.current_user is None
         assert cls.is_oopsed is False
         assert cls.is_locked_out is False
         assert cls.current_amps == 0

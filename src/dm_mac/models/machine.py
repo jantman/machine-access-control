@@ -347,7 +347,7 @@ class MachineState:
             return
         if self._user_is_authorized(user):
             logging.getLogger("AUTH").info(
-                "User %s (%d) authorized for %s; session start",
+                "User %s (%s) authorized for %s; session start",
                 user.full_name,
                 user.account_id,
                 self.machine.name,
@@ -359,7 +359,7 @@ class MachineState:
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
         else:
             logging.getLogger("AUTH").info(
-                "User %s (%d) UNAUTHORIZED for %s",
+                "User %s (%s) UNAUTHORIZED for %s",
                 user.full_name,
                 user.account_id,
                 self.machine.name,
@@ -374,7 +374,7 @@ class MachineState:
         for auth in self.machine.authorizations_or:
             if auth in user.authorizations:
                 logger.info(
-                    "User %s (%d) authorized for %s based on %s",
+                    "User %s (%s) authorized for %s based on %s",
                     user.full_name,
                     user.account_id,
                     self.machine.name,
@@ -383,7 +383,7 @@ class MachineState:
                 return True
         if self.machine.unauthorized_warn_only:
             logging.getLogger("AUTH").warning(
-                "User %s (%d) authorized for %s based on "
+                "User %s (%s) authorized for %s based on "
                 "unauthorized_warn_only==True",
                 user.full_name,
                 user.account_id,
