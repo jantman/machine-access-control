@@ -411,7 +411,7 @@ class TestRfidNormalState:
         assert ms.current_user == app.config["USERS"].users_by_fob["8114346998"]
         assert ms.relay_desired_state is True
         assert ms.last_update == 1689477248.0
-        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:

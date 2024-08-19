@@ -9,6 +9,8 @@ from unittest.mock import patch
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
+from dm_mac.models.users import User
+from dm_mac.models.users import UsersConfig
 
 
 pbm: str = "dm_mac.models.machine"
@@ -148,13 +150,24 @@ class TestSaveCache(MachineStateTester):
             "wifi_signal_db": None,
             "wifi_signal_percent": None,
             "internal_temperature_c": None,
+            "current_user": None,
         }
 
-    def test_non_defaults(self, tmp_path: Path) -> None:
+    def test_non_defaults(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test happy path."""
+        with patch.dict(
+            "os.environ",
+            {
+                "USERS_CONFIG": os.path.join(fixtures_path, "users.json"),
+                "MACHINES_CONFIG": os.path.join(fixtures_path, "machines.json"),
+            },
+        ):
+            uconf: UsersConfig = UsersConfig()
+        user: User = uconf.users_by_fob["8682768676"]
         self.cls.last_checkin = 1234
         self.cls.last_update = 5678
-        self.cls.rfid_value = "0123456789"
+        self.cls.rfid_value = "8682768676"
+        self.cls.current_user = user
         self.cls.rfid_present_since = 34567
         self.cls.relay_desired_state = True
         self.cls.is_oopsed = True
@@ -173,7 +186,7 @@ class TestSaveCache(MachineStateTester):
             "machine_name": "MachineName",
             "last_checkin": 1234,
             "last_update": 5678,
-            "rfid_value": "0123456789",
+            "rfid_value": "8682768676",
             "rfid_present_since": 34567,
             "relay_desired_state": True,
             "is_oopsed": True,
@@ -186,19 +199,21 @@ class TestSaveCache(MachineStateTester):
             "wifi_signal_db": 0.25,
             "wifi_signal_percent": 0.9,
             "internal_temperature_c": 52.1,
+            "current_user": user,
         }
 
 
 class TestLoadFromCache(MachineStateTester):
     """Test loading cache."""
 
-    def test_defaults(self, tmp_path: Path) -> None:
+    def test_defaults(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test loading config with defaults."""
         # confirm initial values
         assert self.cls.last_checkin is None
         assert self.cls.last_update is None
         assert self.cls.rfid_value is None
         assert self.cls.rfid_present_since is None
+        assert self.cls.current_user is None
         assert self.cls.relay_desired_state is False
         assert self.cls.is_oopsed is False
         assert self.cls.is_locked_out is False
@@ -228,6 +243,7 @@ class TestLoadFromCache(MachineStateTester):
             "wifi_signal_db": None,
             "wifi_signal_percent": None,
             "internal_temperature_c": None,
+            "current_user": None,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -249,15 +265,25 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.wifi_signal_db is None
         assert self.cls.wifi_signal_percent is None
         assert self.cls.internal_temperature_c is None
+        assert self.cls.current_user is None
 
-    def test_not_defaults(self, tmp_path: Path) -> None:
+    def test_not_defaults(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test loading config with non-defaults."""
+        with patch.dict(
+            "os.environ",
+            {
+                "USERS_CONFIG": os.path.join(fixtures_path, "users.json"),
+                "MACHINES_CONFIG": os.path.join(fixtures_path, "machines.json"),
+            },
+        ):
+            uconf: UsersConfig = UsersConfig()
+        user: User = uconf.users_by_fob["8682768676"]
         # state data
         state = {
             "machine_name": "MachineName",
             "last_checkin": 123,
             "last_update": 456,
-            "rfid_value": "012345",
+            "rfid_value": "8682768676",
             "rfid_present_since": 789,
             "relay_desired_state": True,
             "is_oopsed": True,
@@ -270,6 +296,7 @@ class TestLoadFromCache(MachineStateTester):
             "wifi_signal_db": 0.25,
             "wifi_signal_percent": 0.9,
             "internal_temperature_c": 52.1,
+            "current_user": user,
         }
         # write save file
         self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
@@ -278,7 +305,7 @@ class TestLoadFromCache(MachineStateTester):
         self.cls._load_from_cache()
         assert self.cls.last_checkin == 123
         assert self.cls.last_update == 456
-        assert self.cls.rfid_value == "012345"
+        assert self.cls.rfid_value == "8682768676"
         assert self.cls.rfid_present_since == 789
         assert self.cls.relay_desired_state is True
         assert self.cls.is_oopsed is True
@@ -291,6 +318,7 @@ class TestLoadFromCache(MachineStateTester):
         assert self.cls.wifi_signal_db == 0.25
         assert self.cls.wifi_signal_percent == 0.9
         assert self.cls.internal_temperature_c == 52.1
+        assert self.cls.current_user == user
 
     def test_does_not_exist(self, tmp_path: Path) -> None:
         """Test when state file does not exist."""

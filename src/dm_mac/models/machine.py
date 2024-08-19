@@ -203,6 +203,7 @@ class MachineState:
                 "wifi_signal_db": self.wifi_signal_db,
                 "wifi_signal_percent": self.wifi_signal_percent,
                 "internal_temperature_c": self.internal_temperature_c,
+                "current_user": self.current_user,
             }
             logger.debug("Saving state to: %s", self._state_path)
             with open(self._state_path, "wb") as f:

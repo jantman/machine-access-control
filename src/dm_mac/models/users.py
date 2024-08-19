@@ -84,6 +84,12 @@ class User:
         self.expiration_ymd: str = expiration_ymd
         self.authorizations: List[str] = authorizations
 
+    def __eq__(self, other: Any) -> bool:
+        """Check equality between Users."""
+        if not isinstance(other, User):
+            return NotImplemented
+        return self.account_id == other.account_id
+
     @property
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict representation of this user."""
