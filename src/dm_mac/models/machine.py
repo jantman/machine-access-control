@@ -256,8 +256,8 @@ class MachineState:
 
     def lockout(self) -> None:
         """Lock-out the machine."""
-        logging.getLogger("AUTH").warning(
-            "Machine %s was locked out.", self.machine.name
+        logging.getLogger("OOPS").warning(
+            "Machine %s was locked out for maintenance.", self.machine.name
         )
         with self._lock:
             self.is_locked_out = True
@@ -269,7 +269,9 @@ class MachineState:
 
     def unlock(self) -> None:
         """Un-lock-out the machine."""
-        logging.getLogger("AUTH").warning("Machine %s was unlocked.", self.machine.name)
+        logging.getLogger("OOPS").warning(
+            "Machine %s was removed from maintenance lock-out.", self.machine.name
+        )
         with self._lock:
             self.is_locked_out = False
             self.relay_desired_state = False
@@ -331,7 +333,7 @@ class MachineState:
             ustr = " RFID card is present but unknown."
             if user := users.users_by_fob.get(self.rfid_value):
                 ustr = f" Current user is: {user.full_name}."
-        logging.getLogger("AUTH").warning(
+        logging.getLogger("OOPS").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
         # locking handled in update()
