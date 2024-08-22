@@ -5,6 +5,7 @@ import os
 import pickle
 from logging import Logger
 from logging import getLogger
+from threading import Lock
 from time import time
 from typing import Any
 from typing import Dict
@@ -142,6 +143,7 @@ class MachineState:
     def __init__(self, machine: Machine, load_state: bool = True):
         """Initialize a new MachineState instance."""
         logger.debug("Instantiating new MachineState for %s", machine)
+        self._lock: Lock = Lock()
         #: The Machine that this state is for
         self.machine: Machine = machine
         #: Float timestamp of the machine's last checkin time
@@ -192,30 +194,31 @@ class MachineState:
     def _save_cache(self) -> None:
         """Save machine state cache to disk."""
         logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
-        lock = FileLock(self._state_path + ".lock")
-        with lock:
-            data: Dict[str, Any] = {
-                "machine_name": self.machine.name,
-                "last_checkin": self.last_checkin,
-                "last_update": self.last_update,
-                "rfid_value": self.rfid_value,
-                "rfid_present_since": self.rfid_present_since,
-                "relay_desired_state": self.relay_desired_state,
-                "is_oopsed": self.is_oopsed,
-                "is_locked_out": self.is_locked_out,
-                "current_amps": self.current_amps,
-                "display_text": self.display_text,
-                "uptime": self.uptime,
-                "status_led_rgb": self.status_led_rgb,
-                "status_led_brightness": self.status_led_brightness,
-                "wifi_signal_db": self.wifi_signal_db,
-                "wifi_signal_percent": self.wifi_signal_percent,
-                "internal_temperature_c": self.internal_temperature_c,
-                "current_user": self.current_user,
-            }
-            logger.debug("Saving state to: %s", self._state_path)
-            with open(self._state_path, "wb") as f:
-                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        with self._lock:
+            lock = FileLock(self._state_path + ".lock")
+            with lock:
+                data: Dict[str, Any] = {
+                    "machine_name": self.machine.name,
+                    "last_checkin": self.last_checkin,
+                    "last_update": self.last_update,
+                    "rfid_value": self.rfid_value,
+                    "rfid_present_since": self.rfid_present_since,
+                    "relay_desired_state": self.relay_desired_state,
+                    "is_oopsed": self.is_oopsed,
+                    "is_locked_out": self.is_locked_out,
+                    "current_amps": self.current_amps,
+                    "display_text": self.display_text,
+                    "uptime": self.uptime,
+                    "status_led_rgb": self.status_led_rgb,
+                    "status_led_brightness": self.status_led_brightness,
+                    "wifi_signal_db": self.wifi_signal_db,
+                    "wifi_signal_percent": self.wifi_signal_percent,
+                    "internal_temperature_c": self.internal_temperature_c,
+                    "current_user": self.current_user,
+                }
+                logger.debug("Saving state to: %s", self._state_path)
+                with open(self._state_path, "wb") as f:
+                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
         logger.debug("State saved.")
 
     def _load_from_cache(self) -> None:
@@ -224,14 +227,15 @@ class MachineState:
             logger.info("State file does not yet exist: %s", self._state_path)
             return
         logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
-        lock = FileLock(self._state_path + ".lock")
-        with lock:
-            logger.debug("Loading state from: %s", self._state_path)
-            with open(self._state_path, "rb") as f:
-                data = pickle.load(f)
-            for k, v in data.items():
-                if hasattr(self, k):
-                    setattr(self, k, v)
+        with self._lock:
+            lock = FileLock(self._state_path + ".lock")
+            with lock:
+                logger.debug("Loading state from: %s", self._state_path)
+                with open(self._state_path, "rb") as f:
+                    data = pickle.load(f)
+                for k, v in data.items():
+                    if hasattr(self, k):
+                        setattr(self, k, v)
         logger.debug("State loaded.")
 
     def _handle_reboot(self) -> None:
@@ -243,6 +247,7 @@ class MachineState:
         logging.getLogger("AUTH").warning(
             "Machine %s rebooted; resetting relay and RFID state", self.machine.name
         )
+        # locking handled in update()
         self.relay_desired_state = False
         self.current_user = None
         self.display_text = self.DEFAULT_DISPLAY_TEXT
@@ -254,22 +259,24 @@ class MachineState:
         logging.getLogger("AUTH").warning(
             "Machine %s was locked out.", self.machine.name
         )
-        self.is_locked_out = True
-        self.relay_desired_state = False
-        self.current_user = None
-        self.display_text = self.LOCKOUT_DISPLAY_TEXT
-        self.status_led_rgb = (1.0, 0.5, 0.0)
-        self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+        with self._lock:
+            self.is_locked_out = True
+            self.relay_desired_state = False
+            self.current_user = None
+            self.display_text = self.LOCKOUT_DISPLAY_TEXT
+            self.status_led_rgb = (1.0, 0.5, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
 
     def unlock(self) -> None:
         """Un-lock-out the machine."""
         logging.getLogger("AUTH").warning("Machine %s was unlocked.", self.machine.name)
-        self.is_locked_out = False
-        self.relay_desired_state = False
-        self.current_user = None
-        self.display_text = self.DEFAULT_DISPLAY_TEXT
-        self.status_led_rgb = (0.0, 0.0, 0.0)
-        self.status_led_brightness = 0.0
+        with self._lock:
+            self.is_locked_out = False
+            self.relay_desired_state = False
+            self.current_user = None
+            self.display_text = self.DEFAULT_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 0.0, 0.0)
+            self.status_led_brightness = 0.0
 
     def update(
         self,
@@ -285,34 +292,35 @@ class MachineState:
         """Handle an update to the machine via API."""
         if rfid_value is not None:
             rfid_value = rfid_value.rjust(10, "0")
-        if amps is not None:
-            self.current_amps = amps
-        if uptime is not None:
-            if uptime < self.uptime:
-                logger.warning(
-                    "Uptime of %s is less than last uptime of %s; machine "
-                    "control unit has rebooted",
-                    uptime,
-                    self.uptime,
-                )
-                self._handle_reboot()
-            self.uptime = uptime
-        if wifi_signal_db is not None:
-            self.wifi_signal_db = wifi_signal_db
-        if wifi_signal_percent is not None:
-            self.wifi_signal_percent = wifi_signal_percent
-        if internal_temperature_c is not None:
-            self.internal_temperature_c = internal_temperature_c
-        self.last_checkin = time()
-        if oops:
-            self._handle_oops(users)
-            self.last_update = time()
-        if rfid_value != self.rfid_value:
-            if rfid_value is None:
-                self._handle_rfid_remove()
-            else:
-                self._handle_rfid_insert(users, rfid_value)
-            self.last_update = time()
+        with self._lock:
+            if amps is not None:
+                self.current_amps = amps
+            if uptime is not None:
+                if uptime < self.uptime:
+                    logger.warning(
+                        "Uptime of %s is less than last uptime of %s; machine "
+                        "control unit has rebooted",
+                        uptime,
+                        self.uptime,
+                    )
+                    self._handle_reboot()
+                self.uptime = uptime
+            if wifi_signal_db is not None:
+                self.wifi_signal_db = wifi_signal_db
+            if wifi_signal_percent is not None:
+                self.wifi_signal_percent = wifi_signal_percent
+            if internal_temperature_c is not None:
+                self.internal_temperature_c = internal_temperature_c
+            self.last_checkin = time()
+            if oops:
+                self._handle_oops(users)
+                self.last_update = time()
+            if rfid_value != self.rfid_value:
+                if rfid_value is None:
+                    self._handle_rfid_remove()
+                else:
+                    self._handle_rfid_insert(users, rfid_value)
+                self.last_update = time()
         self._save_cache()
         return self.machine_response
 
@@ -326,6 +334,7 @@ class MachineState:
         logging.getLogger("AUTH").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
+        # locking handled in update()
         self.is_oopsed = True
         self.relay_desired_state = False
         self.current_user = None
@@ -341,6 +350,7 @@ class MachineState:
             self.current_user.full_name if self.current_user else self.rfid_value,
             time() - cast(float, self.rfid_present_since),
         )
+        # locking handled in update()
         self.rfid_value = None
         self.rfid_present_since = None
         self.current_user = None
@@ -352,6 +362,7 @@ class MachineState:
 
     def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
         """Handle change in the RFID value."""
+        # locking handled in update()
         self.rfid_present_since = time()
         self.rfid_value = rfid_value
         user: Optional[User] = users.users_by_fob.get(rfid_value)
