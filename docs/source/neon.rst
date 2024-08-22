@@ -23,6 +23,8 @@ obtained by running ``neongetter --dump-fields``.
 
 You can either save your configuration file to ``neon.config.json`` in the directory that you run ``neongetter`` from, or specify the full path to the file in the ``NEONGETTER_CONFIG`` environment variable.
 
+In order to activate the newly-updated users config immediately (i.e. without restarting the machine-access-control server), set the ``MAC_USER_RELOAD_URL`` environment variable to the full URL to the ``/api/reload-users`` endpoint. If you are running MAC in a Docker container and neongetter in the same container (i.e. via ``docker exec``), you could set ``MAC_USER_RELOAD_URL=http://localhost:5000/api/reload-users`` on the container itself.
+
 .. _neon.config.schema:
 
 Configuration Schema

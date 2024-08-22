@@ -221,6 +221,58 @@ class TestRun:
         assert result == expected
 
     @responses.activate(registry=OrderedRegistry)
+    def test_config_reload(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Happy path test."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run-config-reload.yaml")
+        )
+        # get config fixture path
+        conf_path: str = os.path.join(fixtures_path, "neon.config.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(
+            os.environ,
+            {
+                "NEONGETTER_CONFIG": conf_path,
+                "MAC_USER_RELOAD_URL": "http://localhost:5000/api/reload-users",
+            },
+        ):
+            NeonUserUpdater().run(output_path="users.json")
+        with open("users.json") as fh:
+            result: str = json.load(fh)
+        with open(
+            os.path.join(fixtures_path, "test_neongetter", "users-happy.json")
+        ) as fh:
+            expected: str = json.load(fh)
+        assert result == expected
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_config_reload_error(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test API returns HTTP error."""
+        # load recoreded fixture from file
+        responses._add_from_file(
+            os.path.join(
+                fixtures_path, "test_neongetter", "run-config-reload-error.yaml"
+            )
+        )
+        # get config fixture path
+        conf_path: str = os.path.join(fixtures_path, "neon.config.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(
+            os.environ,
+            {
+                "NEONGETTER_CONFIG": conf_path,
+                "MAC_USER_RELOAD_URL": "http://localhost:5000/api/reload-users",
+            },
+        ):
+            with pytest.raises(HTTPError):
+                NeonUserUpdater().run(output_path="users.json")
+
+    @responses.activate(registry=OrderedRegistry)
     def test_duplicate_fob(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test exception raised for duplicate fob."""
         # load recoreded fixture from file

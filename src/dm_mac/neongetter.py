@@ -3,6 +3,7 @@
 import argparse
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from datetime import timedelta
@@ -278,6 +279,24 @@ class NeonUserUpdater:
         )
         return users
 
+    def _mac_users_reload(self) -> None:
+        """If env var set, trigger users config reload."""
+        if "MAC_USER_RELOAD_URL" not in os.environ:
+            logger.info("MAC_USER_RELOAD_URL env var not set; not reloading config")
+            return
+        url: str = os.environ["MAC_USER_RELOAD_URL"]
+        logger.debug("POST to %s", url)
+        r = requests.post(url, timeout=20)
+        logger.debug("POST returned HTTP %d: %s", r.status_code, r.text)
+        try:
+            r.raise_for_status()
+        except requests.exceptions.HTTPError:
+            logger.exception(
+                "POST to %s returned HTTP %d: %s", url, r.status_code, r.text
+            )
+            raise
+        logger.info("Reloaded users config in MAC: %s", r.json())
+
     def run(self, output_path: str) -> None:
         """Run the update."""
         field_names: List[Union[str, int, List[str]]] = self.fields_to_get()
@@ -340,6 +359,7 @@ class NeonUserUpdater:
         logger.info("Writing users config for %d fobs to %s", len(users), output_path)
         with open(output_path, "w") as fh:
             json.dump(users, fh, sort_keys=True, indent=4)
+        self._mac_users_reload()
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:

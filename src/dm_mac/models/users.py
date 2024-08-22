@@ -1,9 +1,11 @@
 """Models for users and tools for loading users config."""
 
 import logging
+from time import time
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Tuple
 from typing import cast
 
 from jsonschema import validate
@@ -90,6 +92,10 @@ class User:
             return NotImplemented
         return self.account_id == other.account_id
 
+    def __repr__(self) -> str:
+        """Return a string representation of the user."""
+        return f"User(account_id={self.account_id}, full_name={self.full_name})"
+
     @property
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict representation of this user."""
@@ -120,6 +126,7 @@ class UsersConfig:
             self.users.append(user)
             for fob in user.fob_codes:
                 self.users_by_fob[fob] = user
+        self.load_time: float = time()
 
     def _load_and_validate_config(self) -> List[Dict[str, Any]]:
         """Load and validate the config file."""
@@ -136,3 +143,72 @@ class UsersConfig:
         logger.debug("Validating Users config")
         validate(config, CONFIG_SCHEMA)
         logger.debug("Users is valid")
+
+    def reload(self) -> Tuple[int, int, int]:
+        """Reload configuration from config file on disk.
+
+        Returns a 3-tuple of counts of users removed, updated, and added.
+        """
+        logger.info("Reloading users config.")
+        try:
+            nconf: UsersConfig = UsersConfig()
+        except Exception as ex:
+            logger.error("Error reloading users config: %s", ex, exc_info=True)
+            raise
+        added: int = 0
+        updated: int = 0
+        removed: int = 0
+        nusers: Dict[str, User] = {x.account_id: x for x in nconf.users}
+        users: Dict[str, User] = {x.account_id: x for x in self.users}
+        user: User
+        nuser: User
+        for acctid, user in users.items():
+            if acctid not in nusers:
+                logger.warning("Removing user: %s", user)
+                for fc in user.fob_codes:
+                    self.users_by_fob.pop(fc)
+                self.users.remove(user)
+                removed += 1
+                continue
+            nuser = nusers[acctid]
+            if user.as_dict != nuser.as_dict:
+                updated += 1
+                for k in [
+                    "full_name",
+                    "first_name",
+                    "preferred_name",
+                    "email",
+                    "expiration_ymd",
+                    "authorizations",
+                ]:
+                    if getattr(user, k) != getattr(nuser, k):
+                        logger.warning(
+                            "Updating user: %s %s from %s to %s",
+                            user,
+                            k,
+                            getattr(user, k),
+                            getattr(nuser, k),
+                        )
+                        setattr(user, k, getattr(nuser, k))
+                if user.fob_codes != nuser.fob_codes:
+                    logger.warning(
+                        "Updating user: %s fob codes from %s to %s",
+                        user,
+                        getattr(user, k),
+                        getattr(nuser, k),
+                    )
+                    for fc in user.fob_codes:
+                        self.users_by_fob.pop(fc)
+                    user.fob_codes = nuser.fob_codes
+                    for fob in nuser.fob_codes:
+                        self.users_by_fob[fob] = nuser
+        for acctid, nuser in nusers.items():
+            if acctid not in users:
+                logger.warning("Adding new user: %s", nuser)
+                self.users.append(nuser)
+                for fob in nuser.fob_codes:
+                    self.users_by_fob[fob] = nuser
+                added += 1
+        logger.info("Done reloading users config.")
+        self.load_time = time()
+        return removed, updated, added
