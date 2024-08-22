@@ -29,8 +29,8 @@ class TestMachinesConfig:
         os.chdir(tmp_path)
         with patch(f"{pbm}.MachineState", autospec=True):
             cls: MachinesConfig = MachinesConfig()
-        assert len(cls.machines) == 4
-        assert len(cls.machines_by_name) == 4
+        assert len(cls.machines) == 5
+        assert len(cls.machines_by_name) == 5
 
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
