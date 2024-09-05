@@ -5,6 +5,25 @@ Hardware
 
 The "machine control unit" devices use ESP32 microcontrollers; our reference builds use ESP32-DevKitC / ESP32-WROOM-32D boards such as `these from Amazon <https://www.amazon.com/gp/product/B09Z7Q5LKQ/>_. For reasons described in :ref:`the introduction <introduction.mcu-software>` we use `ESPHome <https://esphome.io/>`__ as the software on the ESP32s.
 
+.. _hardware.v1:
+
+Version 1 Hardware
+------------------
+
+.. _hardware.v1.components:
+
+Components
+++++++++++
+
+TBD.
+
+.. _hardware.v1.enclosure:
+
+Enclosure
++++++++++
+
+RFID card/fob holder - https://github.com/jantman/laser-cutter-projects/tree/main/rfid-card-fob-holder
+
 .. _hardware.esphome-configs:
 
 ESPHome Configurations
