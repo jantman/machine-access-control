@@ -1,4 +1,4 @@
-lcd();
+//lcd();
 
 module lcd() {
     translate([0, 0, -0.064]) {
