@@ -103,4 +103,6 @@ module display() {
     hw061();
 }
 
-display();
+scale([1/25.4, 1/25.4, 1/25.4]) {
+    display();
+}
