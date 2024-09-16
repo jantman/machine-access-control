@@ -2,12 +2,15 @@
 // dimensioned in inches
 $fn = 360;
 
+//gx16_8();
+
 module gx16_8() {
     include <config.scad>
+    conn_diameter = 0.615;
     panel_setback = 0.813 - (0.219 + 0.058);
     translate([0, 0, -1 * panel_setback]) {
         union() {
-            cylinder(d=0.615, h=0.813);
+            cylinder(d=conn_diameter, h=0.813);
             translate([0, 0, panel_setback]) {
                 cylinder(d=0.715, h=0.058);
             }

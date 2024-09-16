@@ -2,6 +2,8 @@
 // dimensioned in inches
 $fn = 360;
 
+rfid();
+
 module rfid() {
     hole_dia = 0.131;
     translate([0, 0, 0]) {
@@ -15,12 +17,17 @@ module rfid() {
                     cube([1.000, 1.000, 0.092]);
                 }
             }
-            translate([0.137 + (hole_dia/2), 1.030 - (0.140 + (hole_dia/2)), -0.5]) {
-                cylinder(d=hole_dia, h=1);
-            }
-            translate([1.860 - (0.130 + (hole_dia/2)), 0.132 + (hole_dia/2), -0.5]) {
-                cylinder(d=hole_dia, h=1);
-            }
+            rfid_mounting_holes();
         }
+    }
+}
+
+module rfid_mounting_holes() {
+    hole_dia = 0.131;
+    translate([0.137 + (hole_dia/2), 1.030 - (0.140 + (hole_dia/2)), -0.5]) {
+        cylinder(d=hole_dia, h=1);
+    }
+    translate([1.860 - (0.130 + (hole_dia/2)), 0.132 + (hole_dia/2), -0.5]) {
+        cylinder(d=hole_dia, h=1);
     }
 }
