@@ -25,6 +25,7 @@ Components
 * 1x 3.3v controlled optoisolated relay module to switch up to 10A; I'm currently using one of `these from Amazon <https://www.amazon.com/gp/product/B09SZ71K4L/>`__
 * 1x 16mm red LED-backlit momentary pushbutton with flip-up transparent shield/cover. I specifically use the `MPJA 34155 SW pushbutton <https://www.mpja.com/SPDT-Momentary-Pushbutton-Switch-12V-Red/productinfo/34155+SW/>`__ and the now-discontinued `MPJA 34167 SW transparent shield <https://www.mpja.com/16mm-Pushbutton-Switch-Transparent-Shield/productinfo/34167+SW/>`__ but any standard SPST or SPDT momentary pushbutton will work **as long as** its LED can be driven directly by 3.3VDC.
 * 1x wiegand protocol 3.3-5VDC RFID reader with a card present output. I'm currently using `this item from the e_goto Processors Store on AliExpress <https://www.aliexpress.us/item/2255800841398634.html>`__ that ships directly from the manufacturer in China. The only important part about this specific item is it's a fairly rare unit that can work directly on 3.3VDC with 3.3V communication, so it doesn't require an additional two channels of level converter. Also, it has a ``CST`` line that's pulled high when a RFID tag is within range of the reader.
+* 1x GX16-8 locking connector pair, such as `MPJA 32426 PL <https://www.mpja.com/Connector-Pair-Locking-8-Pin/productinfo/32426+PL/>`__.
 
 .. _hardware.v1.wiring:
 
