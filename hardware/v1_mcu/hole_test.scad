@@ -16,16 +16,16 @@ difference() {
         translate([0.5, 0.875, 0]) {
             // GX16-8
             conn_diameter = 0.615;
-            cylinder(d=conn_diameter, h=1);
+            cylinder(d=conn_diameter + 0.020, h=1);
         }
         translate([1.25, 1.25, 0]) {
             // neopixel
-            cylinder(d=0.301, h=1);
+            cylinder(d=0.301 + 0.020, h=1);
         }
         translate([1.25, 0.5, 0]) {
             // oops button
             conn_diameter = 0.625;
-            cylinder(d=conn_diameter, h=1);
+            cylinder(d=conn_diameter + 0.020, h=1);
         }
         translate([0, 0.125, 0]) {
             // relay mounting holes
@@ -36,7 +36,7 @@ difference() {
         }
         translate([1.5, 1, 0]) {
             translate([0, 0, 0]) {
-                lcd();
+                lcd(display_padding=0.030);
             }
             lcd_mounting_holes();
         }
