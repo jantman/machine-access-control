@@ -41,6 +41,10 @@ intersection() {
                 lcd_mounting_holes();
             }
         }
+        // just to verify orientation
+        translate([2, 2.3, -0.1]) {
+            cube([0.1, 0.05, 1]);
+        }
     }
     translate([1.5, 1, 0]) {
         cube([3.25, 1.420, 0.064]); // PCB
