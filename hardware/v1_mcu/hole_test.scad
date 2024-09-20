@@ -37,7 +37,7 @@ intersection() {
             }
             translate([1.5, 1, 0]) {
                 lcd_hole_dia = 0.120;
-                lcd(display_padding=0.030);
+                lcd();
                 lcd_mounting_holes();
             }
         }
@@ -47,6 +47,6 @@ intersection() {
         }
     }
     translate([1.5, 1, 0]) {
-        cube([3.152, 1.420, 0.064]); // PCB
+        cube([3.25, 1.420, 0.064]); // PCB
     }
 }
