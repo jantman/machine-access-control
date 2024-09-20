@@ -1,11 +1,12 @@
 lcd();
 
 module lcd(display_padding = 0.0) {
+    hole_dia = 0.120;
     translate([0, 0, -0.064]) {
         difference() {
             union() {
                 cube([3.152, 1.420, 0.064]); // PCB
-                translate([0.170 - (display_padding / 2), 0.205 - (display_padding / 2), 0]) {
+                translate([0.170 - (display_padding / 2), 0.205 - (display_padding / 2) + (hole_dia / 2), 0]) {
                     cube([2.805 + display_padding, 0.960 + display_padding, 0.275]); // display
                 }
                 i2c_height = (0.690 - (0.275 + 0.064));
