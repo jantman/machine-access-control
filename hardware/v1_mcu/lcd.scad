@@ -31,16 +31,16 @@ module lcd_mounting_holes() {
     hole_x_spacing = 2.970;
     hole_y_inset = 0.042;
     hole_y_spacing = 1.218;
-    translate([hole_x_inset + (hole_dia / 2), hole_y_inset + (hole_dia / 2), -0.5]) {
+    translate([hole_x_inset + (hole_dia / 2), hole_y_inset + hole_dia, -0.5]) {
         cylinder(d=hole_dia, h=1);
     }
-    translate([hole_x_inset + (hole_dia / 2), hole_y_inset + (hole_dia / 2) + hole_y_spacing, -0.5]) {
+    translate([hole_x_inset + (hole_dia / 2), hole_y_inset + hole_dia + hole_y_spacing, -0.5]) {
         cylinder(d=hole_dia, h=1);
     }
-    translate([hole_x_inset + (hole_dia / 2) + hole_x_spacing, hole_y_inset + (hole_dia / 2), -0.5]) {
+    translate([hole_x_inset + (hole_dia / 2) + hole_x_spacing, hole_y_inset + hole_dia, -0.5]) {
         cylinder(d=hole_dia, h=1);
     }
-    translate([hole_x_inset + (hole_dia / 2) + hole_x_spacing, hole_y_inset + (hole_dia / 2) + hole_y_spacing, -0.5]) {
+    translate([hole_x_inset + (hole_dia / 2) + hole_x_spacing, hole_y_inset + hole_dia + hole_y_spacing, -0.5]) {
         cylinder(d=hole_dia, h=1);
     }
 }
