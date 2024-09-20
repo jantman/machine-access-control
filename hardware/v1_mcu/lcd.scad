@@ -28,7 +28,7 @@ module lcd_mounting_holes() {
     $fn = 360;
     hole_dia = 0.120;
     hole_x_inset = 0.042;
-    hole_x_spacing = 3;
+    hole_x_spacing = 2.950;
     hole_y_inset = 0.042;
     hole_y_spacing = 1.218;
     translate([hole_x_inset + (hole_dia / 2), hole_y_inset + (hole_dia / 2), -0.5]) {
