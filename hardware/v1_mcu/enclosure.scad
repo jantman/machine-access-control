@@ -1,3 +1,9 @@
+/*
+@TODO:
+baseMounts
+
+*/
+
 use <esp32.scad>;
 use <neopixel.scad>;
 use <relay.scad>;
@@ -9,12 +15,14 @@ include <./YAPPgenerator_v3.scad>;
 
 show_components = true;
 
-// BEGIN dm-mac v1 MCU configuration
-
-// END dm-mac v1 MCU configuration
-
 function inch(n) = n * 25.4;
 function mm(n) = n;
+
+// BEGIN dm-mac v1 MCU configuration
+lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
+lid_insert_dia = mm(4.1); // M3 threaded insert; M4 = 4.9
+lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
+// END dm-mac v1 MCU configuration
 
 //---------------------------------------------------------
 // This design is parameterized based on the size of a PCB.
@@ -55,8 +63,8 @@ printDisplayClips     = false;
 // The Following will be used as the first element in the pbc array
 
 //Defined here so you can define the "Main" PCB using these if wanted
-pcbLength           = mm(150); // front to back (X axis)
-pcbWidth            = mm(100); // side to side (Y axis)
+pcbLength           = inch(8); // front to back (X axis)
+pcbWidth            = inch(5); // side to side (Y axis)
 pcbThickness        = mm(1.6);
 standoffHeight      = mm(1.0); //-- How much the PCB needs to be raised from the base to leave room for solderings and whatnot
 standoffDiameter    = mm(7);
@@ -107,9 +115,9 @@ paddingRight        = mm(2);
 paddingLeft         = mm(2);
 
 //-- Edit these parameters for your own box dimensions
-wallThickness       = mm(2.0);
-basePlaneThickness  = mm(1.5);
-lidPlaneThickness   = mm(1.5);
+wallThickness       = mm(4.0);
+basePlaneThickness  = mm(4.0);
+lidPlaneThickness   = mm(2.0);
 
 //-- Total height of box = lidPlaneThickness
 //                       + lidWallHeight
@@ -117,8 +125,8 @@ lidPlaneThickness   = mm(1.5);
 //                       + basePlaneThickness
 //-- space between pcb and lidPlane :=
 //--      (bottonWallHeight+lidWallHeight) - (standoffHeight+pcbThickness)
-baseWallHeight      = mm(25);
-lidWallHeight       = mm(23);
+baseWallHeight      = inch(1.5);
+lidWallHeight       = inch(0.25);
 
 //-- ridge where base and lid off box can overlap
 //-- Make sure this isn't less than lidWallHeight
@@ -264,6 +272,7 @@ pcbStands =
 //-------------------------------------------------------------------
 connectors   =
 [
+    [7, 7, inch(1), lid_screw_dia, lid_screw_head_dia, lid_insert_dia, lid_insert_dia * 2, a=yappAllCorners]
 ];
 
 
