@@ -10,6 +10,7 @@ use <relay.scad>;
 use <rfid.scad>;
 use <esp32.scad>;
 use <lcd.scad>;
+use <rfid_holder/modules.scad>;
 include <config.scad>;
 include <./YAPPgenerator_v3.scad>;
 
@@ -22,6 +23,24 @@ function mm(n) = n;
 lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
 lid_insert_dia = mm(4.1); // M3 threaded insert; M4 = 4.9
 lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
+
+//===========================================================
+//-- origin = box(0,0,0)
+module hookBaseCutouts()
+{
+  //if (printMessages) echo("hookBaseCutouts() ..");
+
+} //-- hookBaseCutouts()
+
+//===========================================================
+//-- origin = box(0,0,0)
+module hookLidCutouts()
+{
+  translate([20, 20, 0]) {
+    #mounting_holes();
+  }
+} //-- hookLidCutouts()
+
 // END dm-mac v1 MCU configuration
 
 //---------------------------------------------------------
@@ -271,9 +290,7 @@ pcbStands =
 //    n(f) = { yappThroughLid = changes the screwhole to the lid and the socket to the base}
 //-------------------------------------------------------------------
 connectors   =
-[
-    [7, 7, inch(1), lid_screw_dia, lid_screw_head_dia, lid_insert_dia, lid_insert_dia * 2, a=yappAllCorners]
-];
+[];
 
 
 //===================================================================

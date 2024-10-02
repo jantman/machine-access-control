@@ -1,31 +1,31 @@
 module mounting_holes() {
-    include <config.scad>
+    include <./config.scad>
     //
     // mounting holes
     //
     // bottom left
     translate([side_support_width / 2, bottom_support_height / 2, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
     // bottom right
     translate([side_support_width + card_cutout_width + (side_support_width / 2), bottom_support_height / 2, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
     // middle left
     translate([side_support_width / 2, overall_height / 2, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
     // middle right
     translate([side_support_width + card_cutout_width + (side_support_width / 2), overall_height / 2, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
     // top left
     translate([side_support_width / 2, overall_height - (bottom_support_height / 2) - top_tab_height, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
     // top right
     translate([side_support_width + card_cutout_width + (side_support_width / 2), overall_height - (bottom_support_height / 2) - top_tab_height, -0.1]) {
-        cylinder(d=mounting_hole_dia, h=material_thickness + 0.2);
+        cylinder(d=mounting_hole_dia, h=material_thickness + 200);
     }
 }
 
