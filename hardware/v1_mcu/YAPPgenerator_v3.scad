@@ -943,6 +943,22 @@ module hookBaseOutside()
 } //-- hookBaseOutside()
 
 //===========================================================
+//-- origin = box(0,0,0)
+module hookBaseCutouts()
+{
+  //if (printMessages) echo("hookBaseCutouts() ..");
+
+} //-- hookBaseCutouts()
+
+//===========================================================
+//-- origin = box(0,0,0)
+module hookLidCutouts()
+{
+  //if (printMessages) echo("hookLidCutouts() ..");
+
+} //-- hookLidCutouts()
+
+//===========================================================
 //===========================================================
 
 //-- **********************************************************
@@ -3534,6 +3550,9 @@ module baseShell()
 
         } //union
       } // hideBaseWalls=false
+      translate([shellInsideLength/-2, shellInsideWidth/-2, (baseWallHeight * -1) - basePlaneThickness]) {
+        hookBaseCutouts();
+      } // translate()
     } // difference(b)
   } // translate
 
@@ -3638,6 +3657,9 @@ module lidShell()
                       roundRadius);
         }
       } //  if normal
+      translate([shellInsideLength/-2, shellInsideWidth/-2, (baseWallHeight * -1) + lidPlaneThickness]) {
+        hookLidCutouts();
+      } // translate()
     } // difference(d1)
   } // translate
 
