@@ -25,3 +25,7 @@ See the hardware docs for details.
 * [oops_button.scad](oops_button.scad) - 16mm backlit red button with cover
 * [relay.scad](relay.scad) - 3.3v optoisolated relay board
 * [rfid.scad](rfid.scad) - RFID reader
+
+## Enclosure Notes
+
+The enclosure itself is built using v3 of [Willem Aandewiel](https://willem.aandewiel.nl/)'s excellent [YAPP_Box](https://github.com/mrWheel/YAPP_Box) OpenSCAD enclosure generator, with a [patch](https://github.com/jantman/machine-access-control/commit/c860e23d8b0bcd43c924b47d14e1e0748aece98f) for custom cutouts.
