@@ -37,9 +37,28 @@ module hookBaseCutouts()
 module hookLidCutouts()
 {
   translate([20, 20, 0]) {
-    #mounting_holes();
+    scale([25.4, 25.4, 25.4]) {
+        mounting_holes();
+    }
   }
 } //-- hookLidCutouts()
+
+module hookLidOutside() {
+    include <rfid_holder/config.scad>;
+    if(show_components) {
+        translate([20, 20, 0]) {
+            scale([25.4, 25.4, 25.4]) {
+                bottom_layer();
+                translate([0, 0, material_thickness]) {
+                    middle_layer();
+                }
+                translate([0, 0, material_thickness * 2]) {
+                    top_layer();
+                }
+            }
+        }
+    }
+}
 
 // END dm-mac v1 MCU configuration
 
