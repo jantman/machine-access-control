@@ -393,6 +393,7 @@ connectors   =
     m3_threaded_insert * 2, // outsideDiameter
     yappAllCorners,
     yappThroughLid, // changes the screwhole to the lid and the socket to the base
+    yappNoFillet, // @TODO as of YAPP 3.2.0, fillets are broken (raised above surface) when yappThroughLid is used. They're also omitted on the base in this instance.
   ]
 ];
 
