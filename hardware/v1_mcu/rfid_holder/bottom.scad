@@ -4,10 +4,10 @@ include <config.scad>
 use <modules.scad>
 
 projection(cut=true) {
-    translate([0, 0, -1 * (material_thickness / 2)]) {
+    translate([0, 0, -1 * (rfid_material_thickness / 2)]) {
         intersection() {
             bottom_layer();
-            cube([overall_width / 2, overall_height, material_thickness]);
+            cube([rfid_overall_width / 2, rfid_overall_height, rfid_material_thickness]);
         }
     }
 }
