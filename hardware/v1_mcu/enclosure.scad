@@ -25,7 +25,9 @@ include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 use <fillets.scad>;
 
-show_components = true;
+show_components = false;
+printBaseShell  = false;
+printLidShell   = true;
 
 // BEGIN dm-mac v1 MCU configuration
 
@@ -227,8 +229,6 @@ module filleted_standoff(h, d, bore, fillet_width, end="bottom") {
 
 
 //-- which part(s) do you want to print?
-printBaseShell        = true;
-printLidShell         = true;
 printSwitchExtenders  = false;
 printDisplayClips     = false;
 
