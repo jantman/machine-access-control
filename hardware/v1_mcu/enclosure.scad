@@ -18,10 +18,8 @@ use <fillets.scad>;
 show_components = true;
 
 // BEGIN dm-mac v1 MCU configuration
-lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
-lid_insert_dia = mm(4.1); // M3 threaded insert; M4 = 4.9
-lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
 
+// BEGIN YAPP box config variables used in dm-mac custom code
 wallThickness       = mm(4.0);
 basePlaneThickness  = mm(4.0);
 lidPlaneThickness   = mm(2.0);
@@ -31,11 +29,22 @@ paddingFront        = mm(2);
 paddingBack         = mm(2);
 paddingRight        = mm(2);
 paddingLeft         = mm(2);
+baseWallHeight      = inch(1.5);
+lidWallHeight       = inch(0.25);
+// END YAPP box config variables used in dm-mac custom code
 
-rfid_holder_translate = [pcbLength - inch(rfid_overall_width), ((pcbWidth - inch(rfid_overall_height)) / 2) + paddingFront];
+lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
+lid_insert_dia = mm(4.1); // M3 threaded insert; M4 = 4.9
+lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
+
+rfid_holder_left_edge = pcbLength - inch(rfid_overall_width);
+rfid_holder_translate = [rfid_holder_left_edge, ((pcbWidth - inch(rfid_overall_height)) / 2) + paddingFront];
 rfid_reader_translate = [rfid_holder_translate[0] + ((inch(rfid_overall_width) - inch(1.030)) / 2), rfid_holder_translate[1] + (inch(rfid_cover_plate_height) - inch(fob_cutout_depth) - inch(0.425)), 0];
 rfid_reader_board_thickness = inch(0.040);
 rfid_reader_overall_height = inch(0.185);
+
+lcd_width = inch(3.152);
+lcd_translate = [(rfid_holder_left_edge - lcd_width) / 2, (pcbWidth / 3) + paddingFront + inch(lcd_centerline), 0];
 
 //===========================================================
 //-- origin = box(0,0,0)
@@ -52,9 +61,15 @@ module hookLidCutouts()
   // mounting holes for RFID card/fob holder
   translate([rfid_holder_translate[0], rfid_holder_translate[1], 0]) {
     scale([25.4, 25.4, 25.4]) {
-        rfid_holder_mounting_holes();
+      rfid_holder_mounting_holes();
     }
-  }
+  } // mounting holes for RFID card/fob holder
+  // LCD display cutout
+  translate([lcd_translate[0], lcd_translate[1], baseWallHeight + inch(lcd_display_depth)]) {
+    scale([25.4, 25.4, 25.4]) {
+      lcd();
+    }
+  } // LCD display cutout
 } //-- hookLidCutouts()
 
 module hookLidOutside() {
@@ -96,6 +111,26 @@ module hookLidInside()
       } // translate
     } // scale
   } // RFID reader
+  // LCD display
+  translate([lcd_translate[0], lcd_translate[1], -1 * inch(lcd_display_depth)]) {
+    scale([25.4, 25.4, 25.4]) {
+      if(show_components) { lcd(); }
+      // BEGIN LCD mounting standoffs
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia, 0]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+      }
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+      }
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia, 0]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+      }
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+      }
+      // END LCD mounting standoffs
+    }
+  } // LCD display
 } //-- hookLidInside()
 
 // END dm-mac v1 MCU configuration
@@ -203,8 +238,6 @@ pcb =
 //                       + basePlaneThickness
 //-- space between pcb and lidPlane :=
 //--      (bottonWallHeight+lidWallHeight) - (standoffHeight+pcbThickness)
-baseWallHeight      = inch(1.5);
-lidWallHeight       = inch(0.25);
 
 //-- ridge where base and lid off box can overlap
 //-- Make sure this isn't less than lidWallHeight
