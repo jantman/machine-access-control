@@ -349,7 +349,19 @@ pcbStands =
 //    n(f) = { yappThroughLid = changes the screwhole to the lid and the socket to the base}
 //-------------------------------------------------------------------
 connectors   =
-[];
+[
+  [
+    mm(7), // posx
+    mm(7), // posy
+    0, // pcbStandHeight
+    m3_clearance, // screwDiameter
+    m3_flat_head_dia * 1.1, // screwHeadDiameter
+    m3_threaded_insert, // insertDiameter
+    m3_threaded_insert * 2, // outsideDiameter
+    yappAllCorners,
+    yappThroughLid, // changes the screwhole to the lid and the socket to the base
+  ]
+];
 
 
 //===================================================================
