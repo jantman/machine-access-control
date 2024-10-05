@@ -12,6 +12,7 @@ use <esp32.scad>;
 use <lcd.scad>;
 use <rfid_holder/modules.scad>;
 include <config.scad>;
+include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 
 show_components = true;
@@ -23,6 +24,18 @@ function mm(n) = n;
 lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
 lid_insert_dia = mm(4.1); // M3 threaded insert; M4 = 4.9
 lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
+
+wallThickness       = mm(4.0);
+basePlaneThickness  = mm(4.0);
+lidPlaneThickness   = mm(2.0);
+pcbLength           = inch(8); // front to back (X axis)
+pcbWidth            = inch(5); // side to side (Y axis)
+paddingFront        = mm(2);
+paddingBack         = mm(2);
+paddingRight        = mm(2);
+paddingLeft         = mm(2);
+
+rfid_holder_translate = [pcbLength - inch(rfid_overall_width), ((pcbWidth - inch(rfid_overall_height)) / 2) + paddingFront];
 
 //===========================================================
 //-- origin = box(0,0,0)
@@ -36,9 +49,9 @@ module hookBaseCutouts()
 //-- origin = box(0,0,0)
 module hookLidCutouts()
 {
-  translate([20, 20, 0]) {
+  translate([rfid_holder_translate[0], rfid_holder_translate[1], 0]) {
     scale([25.4, 25.4, 25.4]) {
-        mounting_holes();
+        rfid_holder_mounting_holes();
     }
   }
 } //-- hookLidCutouts()
@@ -46,13 +59,13 @@ module hookLidCutouts()
 module hookLidOutside() {
     include <rfid_holder/config.scad>;
     if(show_components) {
-        translate([20, 20, 0]) {
+        translate([rfid_holder_translate[0], rfid_holder_translate[1], lidPlaneThickness]) {
             scale([25.4, 25.4, 25.4]) {
                 bottom_layer();
-                translate([0, 0, material_thickness]) {
+                translate([0, 0, rfid_material_thickness]) {
                     middle_layer();
                 }
-                translate([0, 0, material_thickness * 2]) {
+                translate([0, 0, rfid_material_thickness * 2]) {
                     top_layer();
                 }
             }
@@ -101,8 +114,6 @@ printDisplayClips     = false;
 // The Following will be used as the first element in the pbc array
 
 //Defined here so you can define the "Main" PCB using these if wanted
-pcbLength           = inch(8); // front to back (X axis)
-pcbWidth            = inch(5); // side to side (Y axis)
 pcbThickness        = mm(1.6);
 standoffHeight      = mm(1.0); //-- How much the PCB needs to be raised from the base to leave room for solderings and whatnot
 standoffDiameter    = mm(7);
@@ -147,15 +158,6 @@ pcb =
 
 //-------------------------------------------------------------------
 //-- padding between pcb and inside wall
-paddingFront        = mm(2);
-paddingBack         = mm(2);
-paddingRight        = mm(2);
-paddingLeft         = mm(2);
-
-//-- Edit these parameters for your own box dimensions
-wallThickness       = mm(4.0);
-basePlaneThickness  = mm(4.0);
-lidPlaneThickness   = mm(2.0);
 
 //-- Total height of box = lidPlaneThickness
 //                       + lidWallHeight
