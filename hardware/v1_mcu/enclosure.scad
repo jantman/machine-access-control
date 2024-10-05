@@ -9,6 +9,7 @@ use <rfid.scad>;
 use <esp32.scad>;
 use <lcd.scad>;
 use <rfid_holder/modules.scad>;
+use <oops_button.scad>;
 include <config.scad>;
 include <dims.scad>;
 include <rfid_holder/config.scad>;
@@ -46,6 +47,9 @@ rfid_reader_overall_height = inch(0.185);
 lcd_width = inch(3.152);
 lcd_translate = [(rfid_holder_left_edge - lcd_width) / 2, (pcbWidth / 3) + paddingFront + inch(lcd_centerline), 0];
 
+oops_translate = [(rfid_holder_left_edge / 3) + paddingBack, (pcbWidth / 3) + paddingFront - (inch(0.625) / 2), 0];
+neopixel_translate = [((rfid_holder_left_edge / 3) * 2) + paddingBack, (pcbWidth / 3) + paddingFront - (inch(0.321) / 2), 0];
+
 //===========================================================
 //-- origin = box(0,0,0)
 module hookBaseCutouts()
@@ -70,6 +74,14 @@ module hookLidCutouts()
       lcd();
     }
   } // LCD display cutout
+  // Oops button
+  translate([oops_translate[0], oops_translate[1], baseWallHeight - 10]) {
+    cylinder(d=inch(0.645), h=20);
+  } // Oops button
+  // neopixel status LED
+  translate([neopixel_translate[0], neopixel_translate[1], baseWallHeight - 10]) {
+    cylinder(d=inch(0.301 + 0.020), h=20);
+  } // neopixel status LED
 } //-- hookLidCutouts()
 
 module hookLidOutside() {
@@ -87,6 +99,18 @@ module hookLidOutside() {
         }
       }
     } // RFID card/fob holder
+    // Oops button
+    translate([oops_translate[0], oops_translate[1], (baseWallHeight - 10) - inch(0.790+0.300)]) {
+      scale([25.4, 25.4, 25.4]) {
+        oops_button();
+      }
+    } // Oops button
+    // neopixel status LED
+    translate([neopixel_translate[0], neopixel_translate[1], baseWallHeight - 10 + inch(-1.38 + 0.301)]) {
+      scale([25.4, 25.4, 25.4]) {
+        neopixel();
+      }
+    } // neopixel status LED
   }
 }
 
@@ -131,6 +155,22 @@ module hookLidInside()
       // END LCD mounting standoffs
     }
   } // LCD display
+  // Oops button
+  if(show_components) {
+    translate([oops_translate[0], oops_translate[1], (baseWallHeight - 10) - inch(0.790+0.300)]) {
+      scale([25.4, 25.4, 25.4]) {
+        oops_button();
+      }
+    }
+  } // Oops button
+  // neopixel status LED
+  if(show_components) {
+    translate([neopixel_translate[0], neopixel_translate[1], baseWallHeight - 10 + inch(-0.301)]) {
+      scale([25.4, 25.4, 25.4]) {
+        neopixel();
+      }
+    }
+  } // neopixel status LED
 } //-- hookLidInside()
 
 // END dm-mac v1 MCU configuration
