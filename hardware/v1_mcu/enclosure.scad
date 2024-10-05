@@ -1,3 +1,12 @@
+/*
+@TODO:
+
+- relay
+- esp32
+- gx16-8 connector
+
+*/
+
 function inch(n) = n * 25.4;
 function mm(n) = n;
 function mm_inside_inch_scale(n) = n / 25.4;
