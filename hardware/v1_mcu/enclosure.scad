@@ -1,8 +1,6 @@
-/*
-@TODO:
-baseMounts
-
-*/
+function inch(n) = n * 25.4;
+function mm(n) = n;
+function mm_inside_inch_scale(n) = n / 25.4;
 
 use <esp32.scad>;
 use <neopixel.scad>;
@@ -12,13 +10,12 @@ use <esp32.scad>;
 use <lcd.scad>;
 use <rfid_holder/modules.scad>;
 include <config.scad>;
+include <dims.scad>;
 include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
+use <fillets.scad>;
 
 show_components = true;
-
-function inch(n) = n * 25.4;
-function mm(n) = n;
 
 // BEGIN dm-mac v1 MCU configuration
 lid_screw_dia = mm(3.2); // M3 screw clearance; M4 = 4.25
@@ -36,6 +33,9 @@ paddingRight        = mm(2);
 paddingLeft         = mm(2);
 
 rfid_holder_translate = [pcbLength - inch(rfid_overall_width), ((pcbWidth - inch(rfid_overall_height)) / 2) + paddingFront];
+rfid_reader_translate = [rfid_holder_translate[0] + ((inch(rfid_overall_width) - inch(1.030)) / 2), rfid_holder_translate[1] + (inch(rfid_cover_plate_height) - inch(fob_cutout_depth) - inch(0.425)), 0];
+rfid_reader_board_thickness = inch(0.040);
+rfid_reader_overall_height = inch(0.185);
 
 //===========================================================
 //-- origin = box(0,0,0)
@@ -49,6 +49,7 @@ module hookBaseCutouts()
 //-- origin = box(0,0,0)
 module hookLidCutouts()
 {
+  // mounting holes for RFID card/fob holder
   translate([rfid_holder_translate[0], rfid_holder_translate[1], 0]) {
     scale([25.4, 25.4, 25.4]) {
         rfid_holder_mounting_holes();
@@ -57,23 +58,60 @@ module hookLidCutouts()
 } //-- hookLidCutouts()
 
 module hookLidOutside() {
-    include <rfid_holder/config.scad>;
-    if(show_components) {
-        translate([rfid_holder_translate[0], rfid_holder_translate[1], lidPlaneThickness]) {
-            scale([25.4, 25.4, 25.4]) {
-                bottom_layer();
-                translate([0, 0, rfid_material_thickness]) {
-                    middle_layer();
-                }
-                translate([0, 0, rfid_material_thickness * 2]) {
-                    top_layer();
-                }
-            }
+  include <rfid_holder/config.scad>;
+  if(show_components) {
+    // RFID card/fob holder
+    translate([rfid_holder_translate[0], rfid_holder_translate[1], lidPlaneThickness]) {
+      scale([25.4, 25.4, 25.4]) {
+        bottom_layer();
+        translate([0, 0, rfid_material_thickness]) {
+            middle_layer();
         }
-    }
+        translate([0, 0, rfid_material_thickness * 2]) {
+            top_layer();
+        }
+      }
+    } // RFID card/fob holder
+  }
 }
 
+module hookLidInside()
+{
+  // RFID reader
+  translate([rfid_reader_translate[0], rfid_reader_translate[1], (-1 * rfid_reader_overall_height) + 0]) {
+    scale([25.4, 25.4, 25.4]) {
+      translate([1.030, 0, 0]) {
+        rotate([0, 0, 90]) {
+          if(show_components) { translate([0, 0, -1 * mm_inside_inch_scale(rfid_reader_board_thickness)]) { rfid(); } } // show model if desired
+          // mounting standoffs
+          rfid_reader_hole_dia = 0.131;
+          translate([0.137 + (rfid_reader_hole_dia/2), 1.030 - (0.140 + (rfid_reader_hole_dia/2)), 0]) {
+              filleted_standoff(mm_inside_inch_scale(rfid_reader_overall_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+          }
+          translate([1.860 - (0.130 + (rfid_reader_hole_dia/2)), 0.132 + (rfid_reader_hole_dia/2), 0]) {
+              filleted_standoff(mm_inside_inch_scale(rfid_reader_overall_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2), end="top");
+          }
+          // END mounting standoffs
+        } // rotate
+      } // translate
+    } // scale
+  } // RFID reader
+} //-- hookLidInside()
+
 // END dm-mac v1 MCU configuration
+
+module filleted_standoff(h, d, bore, fillet_width, end="bottom") {
+  difference() {
+    if(end == "bottom") {
+      cylinder_fillet_outside(h=h, r=d/2, top=0, bottom=fillet_width, $fn=360, fillet_fn=360);
+    } else {
+      cylinder_fillet_outside(h=h, r=d/2, top=fillet_width, bottom=0, $fn=360, fillet_fn=360);
+    }
+    translate([0, 0, -0.1]) {
+      cylinder(d=bore, h=h+1, $fn=360);
+    }
+  }
+}
 
 //---------------------------------------------------------
 // This design is parameterized based on the size of a PCB.
