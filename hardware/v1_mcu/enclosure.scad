@@ -91,7 +91,19 @@ module hookBaseCutouts()
         mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height);
       }
     }
-    // end "left" (front in OpenSCAD view) mounting
+    // END "left" (front in OpenSCAD view) mounting
+    // BEGIN "right" (rear in OpenSCAD view) mounting
+    translate([
+      (wallThickness / 2) + (mounting_screw_block_width / 2) + ((pcbLength - side_mounting_center_to_center) / 2) - (mounting_screw_block_width / 2) + wallThickness,
+      pcbWidth + paddingLeft + wallThickness + paddingRight + wallThickness,
+      basePlaneThickness
+    ]) {
+      rotate([0, 0, 180]) { mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      translate([side_mounting_center_to_center, 0, 0]) {
+        rotate([0, 0, 180]) { mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      }
+    }
+    // END "right" (rear in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseCutouts()
 
@@ -282,7 +294,20 @@ module hookBaseInside()
         mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height);
       }
     }
-    // end "left" (front in OpenSCAD view) mounting
+    // END "left" (front in OpenSCAD view) mounting
+    // BEGIN "right" (rear in OpenSCAD view) mounting
+    translate([
+      (wallThickness / 2) + (mounting_screw_block_width / 2) + ((pcbLength - side_mounting_center_to_center) / 2) - (mounting_screw_block_width / 2),
+      pcbWidth + paddingLeft + wallThickness + paddingRight,
+      //pcbWidth + (mounting_screw_bore_length + mounting_nut_height),
+      0
+    ]) {
+      rotate([0, 0, 180]) { mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      translate([side_mounting_center_to_center, 0, 0]) {
+        rotate([0, 0, 180]) { mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      }
+    }
+    // END "right" (rear in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseInside()
 
