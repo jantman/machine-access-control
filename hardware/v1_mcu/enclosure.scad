@@ -116,6 +116,18 @@ module hookBaseCutouts()
       }
     }
     // END "back" (left in OpenSCAD view) mounting
+    // BEGIN "front" (right in OpenSCAD view) mounting
+    translate([
+      pcbLength + wallThickness + paddingFront + (wallThickness * 1.5),
+      ((pcbWidth - side_mounting_center_to_center) / 2) + wallThickness,
+      basePlaneThickness
+    ]) {
+      rotate([0, 0, 90]) { mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness * 1.5); }
+      translate([0, side_mounting_center_to_center, 0]) {
+        rotate([0, 0, 90]) { mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness * 1.5); }
+      }
+    }
+    // END "front" (right in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseCutouts()
 
@@ -332,6 +344,18 @@ module hookBaseInside()
       }
     }
     // END "back" (left in OpenSCAD view) mounting
+    // BEGIN "front" (right in OpenSCAD view) mounting
+    translate([
+      pcbLength + wallThickness + paddingFront,
+      ((pcbWidth - side_mounting_center_to_center) / 2),
+      0
+    ]) {
+      rotate([0, 0, 90]) { mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      translate([0, side_mounting_center_to_center, 0]) {
+        rotate([0, 0, 90]) { mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height, bore_extra_length=wallThickness); }
+      }
+    }
+    // END "front" (right in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseInside()
 
@@ -483,9 +507,9 @@ showOriginCoordBoxInside  = false;      //-> Shows blue bars representing the or
 showOriginCoordPCB        = false;      //-> Shows blue bars representing the origin for yappCoordBoxInside : only in preview
 showMarkersPCB            = false;      //-> Shows black bars corners of the PCB : only in preview
 showMarkersCenter         = false;      //-> Shows magenta bars along the centers of all faces
-inspectX                  = 0;          //-> 0=none (>0 from Back)
+inspectX                  = 58;          //-> 0=none (>0 from Back)
 inspectY                  = 0;          //-> 0=none (>0 from Right)
-inspectZ                  = 23;          //-> 0=none (>0 from Bottom)
+inspectZ                  = 0;          //-> 0=none (>0 from Bottom)
 inspectXfromBack          = true;       //-> View from the inspection cut foreward
 inspectYfromLeft          = true;       //-> View from the inspection cut to the right
 inspectZfromBottom        = true;       //-> View from the inspection cut up
