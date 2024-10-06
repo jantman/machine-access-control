@@ -6,6 +6,7 @@ include <dims.scad>;
 // BEGIN YAPPbox
 wallThickness       = mm(4.0);
 basePlaneThickness  = mm(4.0);
+baseWallHeight      = inch(1.5);
 // END YAPPbox
 
 panel_thickness = 0.15; // front/top wall thickness (where the controls are)
@@ -40,3 +41,5 @@ mounting_nut_height = 3.2; // 3.2mm for M4 hex nut
 mounting_screw_bore_dia = m4_clearance;
 mounting_screw_bore_length = 9; // let's try that, about 3x the nut height
 mounting_screw_block_width = 12;
+side_mounting_center_to_center = inch(1.912);
+mount_extra_height = (baseWallHeight - mounting_screw_block_width) / 2;

@@ -6,11 +6,13 @@ use <esp32.scad>;
 use <lcd.scad>;
 use <rfid_holder/modules.scad>;
 use <oops_button.scad>;
+include <rfid_holder/config.scad>;
 include <config.scad>;
 include <dims.scad>;
-include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 use <fillets.scad>;
+include <config.scad>;
+include <dims.scad>;
 use <mounting_nut_catch.scad>;
 
 show_components             = true;
@@ -29,7 +31,6 @@ paddingFront        = mm(2);
 paddingBack         = mm(2);
 paddingRight        = mm(2);
 paddingLeft         = mm(2);
-baseWallHeight      = inch(1.5);
 lidWallHeight       = inch(0.25);
 // END YAPP box config variables used in dm-mac custom code
 
@@ -79,6 +80,18 @@ module hookBaseCutouts()
       translate([100, 100, 0]) { mounting_nut_catch(part="hole", face="base"); }
     }
     // END VESA 100x100 mounting on back
+    // BEGIN "left" (front in OpenSCAD view) mounting
+    translate([
+      paddingBack + wallThickness + (mounting_screw_block_width / 2) + ((pcbLength - side_mounting_center_to_center) / 2) - (mounting_screw_block_width / 2),
+      (paddingLeft / -2) + (wall_line_width * 2),
+      basePlaneThickness
+    ]) {
+      mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height);
+      translate([side_mounting_center_to_center, 0, 0]) {
+        mounting_nut_catch(part="hole", face="wall", wall_centerline_height=mount_extra_height);
+      }
+    }
+    // end "left" (front in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseCutouts()
 
@@ -258,6 +271,18 @@ module hookBaseInside()
       translate([100, 100, 0]) { mounting_nut_block_with_hole(face="base"); }
     }
     // END VESA 100x100 mounting on back
+    // BEGIN "left" (front in OpenSCAD view) mounting
+    translate([
+      (wallThickness / 2) + (mounting_screw_block_width / 2) + ((pcbLength - side_mounting_center_to_center) / 2) - (mounting_screw_block_width / 2),
+      (paddingLeft / -2) - 0.01,
+      0
+    ]) {
+      mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height);
+      translate([side_mounting_center_to_center, 0, 0]) {
+        mounting_nut_block_with_hole(face="wall", wall_centerline_height=mount_extra_height);
+      }
+    }
+    // end "left" (front in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
 } //-- hookBaseInside()
 
@@ -409,9 +434,9 @@ showOriginCoordBoxInside  = false;      //-> Shows blue bars representing the or
 showOriginCoordPCB        = false;      //-> Shows blue bars representing the origin for yappCoordBoxInside : only in preview
 showMarkersPCB            = false;      //-> Shows black bars corners of the PCB : only in preview
 showMarkersCenter         = false;      //-> Shows magenta bars along the centers of all faces
-inspectX                  = paddingBack + wallThickness + 1 + ((pcbLength - 100) / 2) - (mounting_screw_block_width / 2) + 3;          //-> 0=none (>0 from Back)
+inspectX                  = 0;          //-> 0=none (>0 from Back)
 inspectY                  = 0;          //-> 0=none (>0 from Right)
-inspectZ                  = 0;          //-> 0=none (>0 from Bottom)
+inspectZ                  = 23;          //-> 0=none (>0 from Bottom)
 inspectXfromBack          = true;       //-> View from the inspection cut foreward
 inspectYfromLeft          = true;       //-> View from the inspection cut to the right
 inspectZfromBottom        = true;       //-> View from the inspection cut up

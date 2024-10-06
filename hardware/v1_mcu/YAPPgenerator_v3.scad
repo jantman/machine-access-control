@@ -5040,6 +5040,10 @@ module YAPPgenerate()
           cutoutsForScrewHoles(yappPartBase);
           makeRidgeExt(yappPartBase,true);
           makeCutouts(yappPartBase);
+          //translate([shellInsideLength/-2, shellInsideWidth/-2, (baseWallHeight * -1) - basePlaneThickness]) {
+          translate([0, 0, 0]) {
+            hookBaseCutouts();
+          } // translate()
 
           // Draw the labels that are carved into the case
           color("Red") drawLabels(yappPartBase, true);

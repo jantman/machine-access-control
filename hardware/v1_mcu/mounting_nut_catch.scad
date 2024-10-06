@@ -48,13 +48,13 @@ module mounting_nut_catch(part = "block", face = "base", wall_centerline_height 
   } // translate
 }
 
-module mounting_nut_block_with_hole(face = "base", wall_centerline_height = 0) {
+module mounting_nut_block_with_hole(face, wall_centerline_height = 0) {
   include <config.scad>;
   difference() {
-    mounting_nut_catch(part="block", face = "base", wall_centerline_height = 0);
+    mounting_nut_catch(part="block", face=face, wall_centerline_height=wall_centerline_height);
     tr = face == "base" ? [0, 0, (-1 * (initial_layer_height + layer_height + 0.001))] : [0, 0, 0];
     translate(tr) {
-      mounting_nut_catch(part="hole", face = "base", wall_centerline_height = 0);
+      mounting_nut_catch(part="hole", face=face, wall_centerline_height=wall_centerline_height);
     }
   }
 }
