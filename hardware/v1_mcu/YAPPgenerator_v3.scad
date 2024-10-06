@@ -952,6 +952,14 @@ module hookBaseCutouts()
 
 //===========================================================
 //-- origin = box(0,0,0)
+module hookBaseSideCutouts()
+{
+  //if (printMessages) echo("hookBaseSideCutouts() ..");
+
+} //-- hookBaseSideCutouts()
+
+//===========================================================
+//-- origin = box(0,0,0)
 module hookLidCutouts()
 {
   //if (printMessages) echo("hookLidCutouts() ..");
@@ -3550,6 +3558,9 @@ module baseShell()
 
         } //union
       } // hideBaseWalls=false
+      translate([shellInsideLength/-2, shellInsideWidth/-2, (baseWallHeight * -1) - basePlaneThickness]) {
+        hookBaseCutouts();
+      } // translate()
     } // difference(b)
   } // translate
 
@@ -5037,7 +5048,7 @@ module YAPPgenerate()
           cutoutsForScrewHoles(yappPartBase);
           makeRidgeExt(yappPartBase,true);
           makeCutouts(yappPartBase);
-          hookBaseCutouts();
+          hookBaseSideCutouts();
 
           // Draw the labels that are carved into the case
           color("Red") drawLabels(yappPartBase, true);

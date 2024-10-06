@@ -80,6 +80,14 @@ module hookBaseCutouts()
       translate([100, 100, 0]) { mounting_nut_catch(part="hole", face="base"); }
     }
     // END VESA 100x100 mounting on back
+  } // if enable_mounting_nut_catches
+} //-- hookBaseCutouts()
+
+//===========================================================
+//-- origin = box(0,0,0)
+module hookBaseSideCutouts()
+{
+  if(enable_mounting_nut_catches) {
     // BEGIN "left" (front in OpenSCAD view) mounting
     translate([
       paddingBack + wallThickness + (mounting_screw_block_width / 2) + ((pcbLength - side_mounting_center_to_center) / 2) - (mounting_screw_block_width / 2),
@@ -129,7 +137,7 @@ module hookBaseCutouts()
     }
     // END "front" (right in OpenSCAD view) mounting
   } // if enable_mounting_nut_catches
-} //-- hookBaseCutouts()
+} //-- hookBaseSideCutouts()
 
 //===========================================================
 //-- origin = box(0,0,0)
@@ -507,7 +515,7 @@ showOriginCoordBoxInside  = false;      //-> Shows blue bars representing the or
 showOriginCoordPCB        = false;      //-> Shows blue bars representing the origin for yappCoordBoxInside : only in preview
 showMarkersPCB            = false;      //-> Shows black bars corners of the PCB : only in preview
 showMarkersCenter         = false;      //-> Shows magenta bars along the centers of all faces
-inspectX                  = 58;          //-> 0=none (>0 from Back)
+inspectX                  = 0;          //-> 0=none (>0 from Back)
 inspectY                  = 0;          //-> 0=none (>0 from Right)
 inspectZ                  = 0;          //-> 0=none (>0 from Bottom)
 inspectXfromBack          = true;       //-> View from the inspection cut foreward
