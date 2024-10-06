@@ -15,10 +15,10 @@ include <config.scad>;
 include <dims.scad>;
 use <mounting_nut_catch.scad>;
 
-show_components             = false;
+show_components             = true;
 printBaseShell              = true;
-printLidShell               = false;
-showSideBySide              = false;
+printLidShell               = true;
+showSideBySide              = true;
 enable_mounting_nut_catches = true;
 
 // BEGIN dm-mac v1 MCU configuration
