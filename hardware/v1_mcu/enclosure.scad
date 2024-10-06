@@ -25,8 +25,8 @@ include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 use <fillets.scad>;
 
-show_components = false;
-printBaseShell  = false;
+show_components = true;
+printBaseShell  = true;
 printLidShell   = true;
 
 // BEGIN dm-mac v1 MCU configuration

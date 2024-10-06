@@ -1,18 +1,24 @@
 # machine-access-control hardware/v1_mcu
 
-This directory holds information related to the Version 1 Machine Control Unit (MCU) hardware.
+This directory holds information related to the Version 1 Machine Control Unit (MCU) hardware, mainly the designs for the 3D printed enclosure and laser-cut acrylic RFID card/fob holder, as well as the wiring diagram (such as it is). Full details of the electronic components and wiring can be seen in the documentation at https://jantman.github.io/machine-access-control/hardware.html#version-1-hardware
 
-For full details, see the documentation at: https://jantman.github.io/machine-access-control/hardware.html#version-1-hardware
+## RFID Card / Fob Holder
 
-3D models of the components and the 3d printed enclosure are in the ``.scad`` files, for [OpenSCAD](https://openscad.org/). **Note** that the SCAD files are dimensioned in inches; when slicing for 3d printing, they almost certainly need to be converted to metric.
+The [rfid_holder/](rfid_holder/) subdirectory contains models for the laser-cut acrylic pocket mounted to the front of the enclosure to hold the RFID card/fob. See there for details.
 
-The models are designed with the Z origin as follows:
+## Enclosure
 
-* For through-hole objects that are glued to the inside of the enclosure sticking out (i.e. the neopixel) or that mount on standoffs (i.e. the display), the Z origin is at the inner surface of the enclosure.
-* For through-hole objects that screw to the enclosure walls (i.e. the button and connector), the Z origin is at the outer surface of the enclosure.
-* For objects that mount on standoffs, the Z origin is at the top of the standoff, on the side facing the standoff.
+The enclosure is designed to be 3D printed; prototypes were printed on a (highly modified) Creality CR10S with PLA+ filament. 3D models of the components and the 3d printed enclosure are in the ``.scad`` files, for [OpenSCAD](https://openscad.org/). **Note** that the SCAD files have original dimensions in a mix of inch and metric depending on the original source; they models are dimensioned in mm but have an ``inch()`` function in heavy use to convert from imperial dimensions. I've tried my best to parameterize the models well, but note that cut-outs, screw holes, and standoff bores can have quite close tolerances and may need to be adjusted for your specific printer.
 
-## Models
+### Required Hardware
+
+* 4 each, M3 x ??? flat head screws and threaded inserts, to secure lid to base.
+* 6 each, M4 x ??? screws and nylon lock nuts, to secure RFID pocket to front of enclosure. Choose screw head type as desired.
+* 2 each, M3 x ??? screws to mount RFID reader to standoffs.
+* 4 each, M3 x ??? screws to mount LCD board to standoffs.
+* Adhesive or hot glue, to mount the Neopixel status LED and (if needed) seal around the LCD display.
+
+### Models
 
 See the hardware docs for details.
 
@@ -26,6 +32,6 @@ See the hardware docs for details.
 * [relay.scad](relay.scad) - 3.3v optoisolated relay board
 * [rfid.scad](rfid.scad) - RFID reader
 
-## Enclosure Notes
+### Enclosure Notes
 
 The enclosure itself is built using v3 of [Willem Aandewiel](https://willem.aandewiel.nl/)'s excellent [YAPP_Box](https://github.com/mrWheel/YAPP_Box) OpenSCAD enclosure generator, with a [patch](https://github.com/jantman/machine-access-control/commit/c860e23d8b0bcd43c924b47d14e1e0748aece98f) for custom cutouts.

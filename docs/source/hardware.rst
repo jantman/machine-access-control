@@ -85,7 +85,7 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 Enclosure
 +++++++++
 
-RFID card/fob holder - https://github.com/jantman/laser-cutter-projects/tree/main/rfid-card-fob-holder
+There is an example enclosure for the unit, 3D printed with a few laser cut parts, in `the hardware/v1_mcu directory of the GitHub repo <https://github.com/jantman/machine-access-control/tree/main/hardware/v1_mcu>`__. See that directory for information on fabrication and assembly.
 
 .. _hardware.esphome-configs:
 
