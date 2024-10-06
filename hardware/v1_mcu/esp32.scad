@@ -1,4 +1,4 @@
-//esp32();
+esp32();
 
 module esp32() {
     board_thickness = 0.060;
@@ -23,22 +23,18 @@ module esp32() {
 }
 
 module esp32_hole_pattern() {
+    include <config.scad>;
     $fn = 360;
-    hole_dia = 0.118;
-    hole_x_inset = 0.742 + (hole_dia / 2);
-    hole_x_spacing = 0.397;
-    hole_y_inset = 0.588 + (hole_dia / 2);
-    hole_y_spacing = 1.397;
-    translate([hole_x_inset, hole_y_inset, -0.01]) {
-        cylinder(d=hole_dia, h=1);
+    translate([esp32_hole_x_inset, esp32_hole_y_inset, -0.01]) {
+        cylinder(d=esp32_hole_dia, h=1);
     }
-    translate([hole_x_inset + hole_x_spacing, hole_y_inset, -0.01]) {
-        cylinder(d=hole_dia, h=1);
+    translate([esp32_hole_x_inset + esp32_hole_x_spacing, esp32_hole_y_inset, -0.01]) {
+        cylinder(d=esp32_hole_dia, h=1);
     }
-    translate([hole_x_inset, hole_y_inset + hole_y_spacing, -0.01]) {
-        cylinder(d=hole_dia, h=1);
+    translate([esp32_hole_x_inset, esp32_hole_y_inset + esp32_hole_y_spacing, -0.01]) {
+        cylinder(d=esp32_hole_dia, h=1);
     }
-    translate([hole_x_inset + hole_x_spacing, hole_y_inset + hole_y_spacing, -0.01]) {
-        cylinder(d=hole_dia, h=1);
+    translate([esp32_hole_x_inset + esp32_hole_x_spacing, esp32_hole_y_inset + esp32_hole_y_spacing, -0.01]) {
+        cylinder(d=esp32_hole_dia, h=1);
     }
 }

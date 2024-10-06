@@ -16,6 +16,8 @@ The enclosure is designed to be 3D printed; prototypes were printed on a (highly
 * 6 each, M4 x ??? screws and nylon lock nuts, to secure RFID pocket to front of enclosure. Choose screw head type as desired.
 * 2 each, M3 x ??? screws to mount RFID reader to standoffs.
 * 4 each, M3 x ??? screws to mount LCD board to standoffs.
+* 4 each, M3 x ??? screws to mount ESP32 carrier board to standoffs.
+* 4 each, M2.5 x ??? screws to mount relay board to standoffs.
 * Adhesive or hot glue, to mount the Neopixel status LED and (if needed) seal around the LCD display.
 
 ### Models

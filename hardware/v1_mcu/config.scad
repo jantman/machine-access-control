@@ -11,3 +11,12 @@ lcd_hole_x_inset = 0.042;
 lcd_hole_x_spacing = 2.970;
 lcd_hole_y_inset = 0.042;
 lcd_hole_y_spacing = 1.218;
+
+relay_length = 2.765;
+relay_width = 0.685;
+
+esp32_hole_dia = 0.118;
+esp32_hole_x_inset = 0.742 + (esp32_hole_dia / 2);
+esp32_hole_x_spacing = 0.397;
+esp32_hole_y_inset = 0.588 + (esp32_hole_dia / 2);
+esp32_hole_y_spacing = 1.397;

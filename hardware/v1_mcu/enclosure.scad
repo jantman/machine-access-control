@@ -25,9 +25,10 @@ include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 use <fillets.scad>;
 
-show_components = true;
-printBaseShell  = true;
-printLidShell   = true;
+show_components  = true;
+printBaseShell   = true;
+printLidShell    = true;
+showSideBySide   = true;
 
 // BEGIN dm-mac v1 MCU configuration
 
@@ -51,7 +52,11 @@ lid_screw_head_dia = mm(7); // M3 flat head screw head diameter
 
 rfid_holder_left_edge = pcbLength - inch(rfid_overall_width);
 rfid_holder_translate = [rfid_holder_left_edge, ((pcbWidth - inch(rfid_overall_height)) / 2) + paddingFront];
-rfid_reader_translate = [rfid_holder_translate[0] + ((inch(rfid_overall_width) - inch(1.030)) / 2), rfid_holder_translate[1] + (inch(rfid_cover_plate_height) - inch(fob_cutout_depth) - inch(0.425)), 0];
+rfid_reader_translate = [
+  rfid_holder_translate[0] + ((inch(rfid_overall_width) - inch(1.030)) / 2),
+  rfid_holder_translate[1] + (inch(rfid_cover_plate_height) - inch(fob_cutout_depth) - inch(0.425)),
+  0
+];
 rfid_reader_board_thickness = inch(0.040);
 rfid_reader_overall_height = inch(0.185);
 
@@ -60,6 +65,15 @@ lcd_translate = [(rfid_holder_left_edge - lcd_width) / 2, (pcbWidth / 3) + paddi
 
 oops_translate = [(rfid_holder_left_edge / 3) + paddingBack, (pcbWidth / 3) + paddingFront - (inch(0.625) / 2), 0];
 neopixel_translate = [((rfid_holder_left_edge / 3) * 2) + paddingBack, (pcbWidth / 3) + paddingFront - (inch(0.321) / 2), 0];
+
+esp32_standoff_height = 6;
+esp32_translate = [lcd_translate[0] + lcd_width, inch(1), 0];
+relay_standoff_height = esp32_standoff_height;
+relay_translate = [
+  inch(relay_width) + oops_translate[0] + ((neopixel_translate[0] - oops_translate[0]) / 2) - inch(relay_width / 2),
+  ((pcbWidth - inch(relay_length)) / 2),
+  0
+];
 
 //===========================================================
 //-- origin = box(0,0,0)
@@ -183,6 +197,56 @@ module hookLidInside()
     }
   } // neopixel status LED
 } //-- hookLidInside()
+
+module hookBaseInside()
+{
+  // ESP32
+  translate([esp32_translate[0], esp32_translate[1], 0]) {
+    scale([25.4, 25.4, 25.4]) {
+      if(show_components) {
+        translate([0, 0, mm_inside_inch_scale(esp32_standoff_height)]) { esp32(); }
+      }
+      // BEGIN ESP32 standoffs - at least 0.081" - call it 6mm - M3
+      translate([esp32_hole_x_inset, esp32_hole_y_inset, 0]) {
+        filleted_standoff(mm_inside_inch_scale(esp32_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
+      }
+      translate([esp32_hole_x_inset + esp32_hole_x_spacing, esp32_hole_y_inset, 0]) {
+        filleted_standoff(mm_inside_inch_scale(esp32_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
+      }
+      translate([esp32_hole_x_inset, esp32_hole_y_inset + esp32_hole_y_spacing, 0]) {
+        filleted_standoff(mm_inside_inch_scale(esp32_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
+      }
+      translate([esp32_hole_x_inset + esp32_hole_x_spacing, esp32_hole_y_inset + esp32_hole_y_spacing, 0]) {
+        filleted_standoff(mm_inside_inch_scale(esp32_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
+      }
+      // END ESP32 standoffs
+    } // scale
+  } // translate ESP32
+  // relay
+  translate([relay_translate[0], relay_translate[1], 0]) {
+    rotate([0, 0, 90]) {
+      scale([25.4, 25.4, 25.4]) {
+        if(show_components) {
+          translate([0, 0, mm_inside_inch_scale(relay_standoff_height)]) { relay(); }
+        }
+        // BEGIN relay standoffs
+        translate([(relay_length-2.601)/2, (0.622-0.518)/2, 0]) {
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+        }
+        translate([(relay_length-2.601)/2, ((0.622-0.518)/2) + 0.518, 0]) {
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+        }
+        translate([((relay_length-2.601)/2) + 2.601, (0.622-0.501)/2, 0]) {
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+        }
+        translate([((relay_length-2.601)/2) + 2.601, ((0.622-0.501)/2) + 0.501, 0]) {
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+        }
+        // END relay standoffs
+      } // scale
+    } // rotate
+  } // translate relay
+} //-- hookBaseInside()
 
 // END dm-mac v1 MCU configuration
 
@@ -315,7 +379,6 @@ renderQuality             = 8;          //-> from 1 to 32, Default = 8
 
 // --Preview --
 previewQuality            = 5;          //-> from 1 to 32, Default = 5
-showSideBySide            = true;       //-> Default = true
 onLidGap                  = 0;  // tip don't override to animate the lid opening
 colorLid                  = "YellowGreen";
 alphaLid                  = 1;
