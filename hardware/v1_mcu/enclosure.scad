@@ -1,16 +1,3 @@
-/*
-@TODO:
-
-- relay
-- esp32
-- gx16-8 connector
-
-*/
-
-function inch(n) = n * 25.4;
-function mm(n) = n;
-function mm_inside_inch_scale(n) = n / 25.4;
-
 use <esp32.scad>;
 use <neopixel.scad>;
 use <relay.scad>;
@@ -24,17 +11,17 @@ include <dims.scad>;
 include <rfid_holder/config.scad>;
 include <./YAPPgenerator_v3.scad>;
 use <fillets.scad>;
+use <mounting_nut_catch.scad>;
 
-show_components  = true;
-printBaseShell   = true;
-printLidShell    = true;
-showSideBySide   = true;
+show_components             = true;
+printBaseShell              = true;
+printLidShell               = true;
+showSideBySide              = true;
+enable_mounting_nut_catches = true;
 
 // BEGIN dm-mac v1 MCU configuration
 
 // BEGIN YAPP box config variables used in dm-mac custom code
-wallThickness       = mm(4.0);
-basePlaneThickness  = mm(4.0);
 lidPlaneThickness   = mm(2.0);
 pcbLength           = inch(8); // front to back (X axis)
 pcbWidth            = inch(5); // side to side (Y axis)
@@ -79,8 +66,20 @@ relay_translate = [
 //-- origin = box(0,0,0)
 module hookBaseCutouts()
 {
-  //if (printMessages) echo("hookBaseCutouts() ..");
-
+  if(enable_mounting_nut_catches) {
+    // BEGIN VESA 100x100 mounting on back
+    translate([
+      paddingBack + wallThickness + 1 + ((pcbLength - 100) / 2) - (mounting_screw_block_width / 2),
+      paddingLeft + wallThickness + ((pcbWidth - 100) / 2) - (mounting_screw_block_width / 2),
+      0
+    ]) {
+      mounting_nut_catch(part="hole", face="base");
+      translate([100, 0, 0]) { mounting_nut_catch(part="hole", face="base"); }
+      translate([0, 100, 0]) { mounting_nut_catch(part="hole", face="base"); }
+      translate([100, 100, 0]) { mounting_nut_catch(part="hole", face="base"); }
+    }
+    // END VESA 100x100 mounting on back
+  } // if enable_mounting_nut_catches
 } //-- hookBaseCutouts()
 
 //===========================================================
@@ -246,11 +245,26 @@ module hookBaseInside()
       } // scale
     } // rotate
   } // translate relay
+  if(enable_mounting_nut_catches) {
+    // BEGIN VESA 100x100 mounting on back
+    translate([
+      paddingBack + wallThickness + 1 + ((pcbLength - 100) / 2) - (mounting_screw_block_width / 2),
+      paddingLeft + wallThickness + ((pcbWidth - 100) / 2) - (mounting_screw_block_width / 2),
+      0
+    ]) {
+      mounting_nut_block_with_hole(face="base");
+      translate([100, 0, 0]) { mounting_nut_block_with_hole(face="base"); }
+      translate([0, 100, 0]) { mounting_nut_block_with_hole(face="base"); }
+      translate([100, 100, 0]) { mounting_nut_block_with_hole(face="base"); }
+    }
+    // END VESA 100x100 mounting on back
+  } // if enable_mounting_nut_catches
 } //-- hookBaseInside()
 
 // END dm-mac v1 MCU configuration
 
 module filleted_standoff(h, d, bore, fillet_width, end="bottom") {
+  assert((end == "bottom" || end == "top"), "filleted_standoff end param must be bottom or top");
   difference() {
     if(end == "bottom") {
       cylinder_fillet_outside(h=h, r=d/2, top=0, bottom=fillet_width, $fn=360, fillet_fn=360);
@@ -395,7 +409,7 @@ showOriginCoordBoxInside  = false;      //-> Shows blue bars representing the or
 showOriginCoordPCB        = false;      //-> Shows blue bars representing the origin for yappCoordBoxInside : only in preview
 showMarkersPCB            = false;      //-> Shows black bars corners of the PCB : only in preview
 showMarkersCenter         = false;      //-> Shows magenta bars along the centers of all faces
-inspectX                  = 0;          //-> 0=none (>0 from Back)
+inspectX                  = paddingBack + wallThickness + 1 + ((pcbLength - 100) / 2) - (mounting_screw_block_width / 2) + 3;          //-> 0=none (>0 from Back)
 inspectY                  = 0;          //-> 0=none (>0 from Right)
 inspectZ                  = 0;          //-> 0=none (>0 from Bottom)
 inspectXfromBack          = true;       //-> View from the inspection cut foreward

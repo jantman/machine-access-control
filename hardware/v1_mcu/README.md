@@ -10,6 +10,12 @@ The [rfid_holder/](rfid_holder/) subdirectory contains models for the laser-cut 
 
 The enclosure is designed to be 3D printed; prototypes were printed on a (highly modified) Creality CR10S with PLA+ filament. 3D models of the components and the 3d printed enclosure are in the ``.scad`` files, for [OpenSCAD](https://openscad.org/). **Note** that the SCAD files have original dimensions in a mix of inch and metric depending on the original source; they models are dimensioned in mm but have an ``inch()`` function in heavy use to convert from imperial dimensions. I've tried my best to parameterize the models well, but note that cut-outs, screw holes, and standoff bores can have quite close tolerances and may need to be adjusted for your specific printer.
 
+### Printing Notes
+
+I'm slicing with Cura. If the mounting nut catches are enabled, be sure to enable supports and also set your wall line width, initial layer height, and layer height in [config.scad](config.scad).
+
+The connector used for power and control is a GX16-8 style round connector as specified in the [documentation](https://jantman.github.io/machine-access-control/hardware.html#version-1-hardware) and mounts using a single round through-hole of at least 0.615 inches (nominally 5/8" or 16mm). Due to the wide variety of mounting options, this hole is left out of the model and can be drilled after printing in whichever location is most suitable for the final mounting.
+
 ### Required Hardware
 
 * 4 each, M3 x ??? flat head screws and threaded inserts, to secure lid to base.
@@ -18,7 +24,14 @@ The enclosure is designed to be 3D printed; prototypes were printed on a (highly
 * 4 each, M3 x ??? screws to mount LCD board to standoffs.
 * 4 each, M3 x ??? screws to mount ESP32 carrier board to standoffs.
 * 4 each, M2.5 x ??? screws to mount relay board to standoffs.
+* If using mounting holes, M4 hardware as described below.
 * Adhesive or hot glue, to mount the Neopixel status LED and (if needed) seal around the LCD display.
+
+### Mounting
+
+The enclosure has (optionally; on by default) nut catches on the sides and back for mounting. These are designed with clearance for an M4 screw and to capture an M4 hex nut or hex head bolt; you can either put nuts on the inside and use a screw from the outside, or put a hex head bolt in the internal nut catch and secure in place with a few drops of CA glue. All of these mounting holes are printed with two layers of filament (0.4 to 0.8 mm using my slicing settings) over the outside of the holes, to seal whichever ones are not used. These can be drilled/punched/cut out to reveal whichever mounting holes are most useful.
+
+The back of the enclosure has four screw catches spaced for M4 screws in a 100x100mm VESA mounting standard. Each side of the enclosure has a pair of M4 screw catches spaced 1.912" on center, designed to match the AMPS hole pattern used on RAM and similar flexible mounts.
 
 ### Models
 
