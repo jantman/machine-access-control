@@ -15,8 +15,8 @@ include <config.scad>;
 include <dims.scad>;
 use <mounting_nut_catch.scad>;
 
-show_components             = true;
-printBaseShell              = true;
+show_components             = false;
+printBaseShell              = false;
 printLidShell               = true;
 showSideBySide              = true;
 enable_mounting_nut_catches = true;
