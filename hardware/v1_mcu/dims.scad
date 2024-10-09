@@ -11,6 +11,7 @@ m3_major = mm(3.0); // 0.118"
 m3_clearance = mm(3.2); // 0.126"
 m3_threaded_insert = mm(4.1); // 0.161"
 m3_flat_head_dia = mm(7); // 0.276"
+m3_shcs_head_dia = mm(5.5); // 0.217"
 
 m35_minor = mm(2.850); // 0.112"
 m35_major = mm(3.5); // 0.138"

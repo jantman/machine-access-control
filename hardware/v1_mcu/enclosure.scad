@@ -620,9 +620,9 @@ connectors   =
     mm(7), // posy
     0, // pcbStandHeight
     m3_clearance, // screwDiameter
-    m3_flat_head_dia * 1.1, // screwHeadDiameter
+    m3_shcs_head_dia * 1.1, // screwHeadDiameter
     m3_threaded_insert, // insertDiameter
-    m3_threaded_insert * 2, // outsideDiameter
+    m3_shcs_head_dia * 1.75, // outsideDiameter
     yappAllCorners,
     yappThroughLid, // changes the screwhole to the lid and the socket to the base
     yappNoFillet, // @TODO as of YAPP 3.2.0, fillets are broken (raised above surface) when yappThroughLid is used. They're also omitted on the base in this instance.
