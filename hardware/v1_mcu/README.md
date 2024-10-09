@@ -18,12 +18,14 @@ The connector used for power and control is a GX16-8 style round connector as sp
 
 ### Required Hardware
 
-* 4 each, M3 x ??? flat head screws and threaded inserts, to secure lid to base.
-* 6 each, M4 x ??? screws and nylon lock nuts, to secure RFID pocket to front of enclosure. Choose screw head type as desired.
-* 2 each, M3 x ??? screws to mount RFID reader to standoffs.
-* 4 each, M3 x ??? screws to mount LCD board to standoffs.
-* 4 each, M3 x ??? screws to mount ESP32 carrier board to standoffs.
-* 4 each, M2.5 x ??? screws to mount relay board to standoffs.
+* M3x4x5mm or M3x6x5mm threaded inserts, qty 4, to secure lid to base.
+* M3x??? socket head cap screws, qty 4, to secure lid to base.
+* M4x16 flat head screws and M4 nylon lock nuts, qty 6 each, to secure RFID pocket to front of enclosure.
+* M2.5x6 flat head screws, qty 10
+  * 2 each to mount RFID reader to standoffs.
+  * 4 each to mount ESP32 carrier board to standoffs.
+  * 4 each to mount relay board to standoffs.
+* M2.5x??? flat head screws, 4 each, to mount LCD board to standoffs.
 * If using mounting holes, M4 hardware as described below.
 * Adhesive or hot glue, to mount the Neopixel status LED and (if needed) seal around the LCD display.
 
