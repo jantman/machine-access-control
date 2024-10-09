@@ -1,13 +1,6 @@
 difference() {
-  mounting_nut_catch(part="block", face="wall", wall_centerline_height = 6, bore_extra_length = 6);
-  mounting_nut_catch(part="hole", face="wall", wall_centerline_height = 6, bore_extra_length = 6);
-}
-
-translate([20, 0, 0]) {
-  difference() {
-    mounting_nut_catch(part="block");
-    mounting_nut_catch(part="hole");
-  }
+  mounting_nut_catch(part="block");
+  mounting_nut_catch(part="hole");
 }
 
 module mounting_nut_catch(part = "block", face = "base", wall_centerline_height = 0, bore_extra_length = 0) {
