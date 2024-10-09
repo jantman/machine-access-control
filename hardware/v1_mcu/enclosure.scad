@@ -221,17 +221,17 @@ module hookLidInside()
     scale([25.4, 25.4, 25.4]) {
       if(show_components) { lcd(); }
       // BEGIN LCD mounting standoffs
-      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia, 0]) {
-        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia, 0.025]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_depth + 2), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
       }
-      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0]) {
-        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2), lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0.025]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_depth + 2), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
       }
-      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia, 0]) {
-        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia, 0.025]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_depth + 2), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
       }
-      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0]) {
-        filleted_standoff(mm_inside_inch_scale(lcd_display_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
+      translate([lcd_hole_x_inset + (lcd_hole_dia / 2) + lcd_hole_x_spacing, lcd_hole_y_inset + lcd_hole_dia + lcd_hole_y_spacing, 0.025]) {
+        filleted_standoff(mm_inside_inch_scale(lcd_display_depth + 2), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(1), end="top");
       }
       // END LCD mounting standoffs
     }
