@@ -619,7 +619,7 @@ connectors   =
     mm(7), // posx
     mm(7), // posy
     0, // pcbStandHeight
-    m3_clearance, // screwDiameter
+    m4_clearance, // screwDiameter
     m3_shcs_head_dia * 1.1, // screwHeadDiameter
     m3_threaded_insert, // insertDiameter
     m3_shcs_head_dia * 1.75, // outsideDiameter
