@@ -287,16 +287,16 @@ module hookBaseInside()
         }
         // BEGIN relay standoffs
         translate([(relay_length-2.601)/2, (0.622-0.518)/2, 0]) {
-          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
         }
         translate([(relay_length-2.601)/2, ((0.622-0.518)/2) + 0.518, 0]) {
-          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
         }
         translate([((relay_length-2.601)/2) + 2.601, (0.622-0.501)/2, 0]) {
-          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
         }
         translate([((relay_length-2.601)/2) + 2.601, ((0.622-0.501)/2) + 0.501, 0]) {
-          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m25_minor), mm_inside_inch_scale(2));
+          filleted_standoff(mm_inside_inch_scale(relay_standoff_height), mm_inside_inch_scale(4), mm_inside_inch_scale(m3_minor), mm_inside_inch_scale(2));
         }
         // END relay standoffs
       } // scale
