@@ -111,6 +111,7 @@ class MachinesConfig:
             mach: Machine = Machine(name=mname, **mdict)
             self.machines.append(mach)
             self.machines_by_name[mach.name] = mach
+        self.load_time: float = time()
 
     def _load_and_validate_config(self) -> Dict[str, Dict[str, Any]]:
         """Load and validate the config file."""
