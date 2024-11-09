@@ -15,3 +15,4 @@ Submodules
 
    dm_mac.views.api
    dm_mac.views.machine
+   dm_mac.views.prometheus
