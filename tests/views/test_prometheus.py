@@ -13,7 +13,7 @@ from dm_mac.views.prometheus import CONTENT_TYPE_LATEST
 from .flask_test_helpers import app_and_client
 
 
-class TestProm:
+class TestPrometheus:
     """Tests for API Prometheus view."""
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
