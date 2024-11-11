@@ -80,6 +80,17 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
   * ``In`` to ``GPIO33``
   * ``VCC`` to ``3v3``
 
+* GX16-8 (8 pin) connector for power, control, and additional inputs. The MCU should have the female socket which has visible pins in it, and the wire going to it should have the male plug which has a bakelite housing that accepts those pins. Note that GX16-8 connectors have an alignment notch, a ring of 7 contacts, and one central contact. Contacts are numbered 1-7 clockwise from the alignment notch with 8 in the center.
+
+  * ``1`` to +5VDC power in
+  * ``2`` to power supply ground
+  * ``3`` to relay input / common
+  * ``4`` to relay output Normally Open
+  * ``5`` to ESP32 ``GPIO12`` for tamper switch (not yet implemented in software)
+  * ``6`` to ESP32 ``GPIO14`` for future use
+  * ``7`` reserved for future ammeter / current clamp use (not implemented in V1)
+  * ``8`` reserved for future ammeter / current clamp use (not implemented in V1)
+
 .. _hardware.v1.enclosure:
 
 Enclosure

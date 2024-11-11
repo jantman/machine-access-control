@@ -64,3 +64,10 @@ other exigent circumstance, the machine control unit software is
 configured with a list of permanently-authorized RFID cards that will
 enable the machine without requiring authorization from the control
 server.
+
+.. _introduction.hardware:
+
+Hardware Components
+-------------------
+
+The hardware (see :ref:`hardware` for details) is made up of a main Machine Control Unit (MCU) that houses the RFID reader, display, buttons, processor, and a 10A control relay. The MCU has a GX16-8 connector that takes +5VDC power in and provides a dry contact connection to the relay output to control machine power. This can be connected to separate dedicated enclosure controlling AC mains power to a machine, or to something such as a VFD as needed.

@@ -1,6 +1,7 @@
 """Decatur Makers Machine Access Control."""
 
 import logging
+from time import time
 
 from flask import Flask
 from flask import has_request_context
@@ -11,6 +12,7 @@ from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
 from dm_mac.views.api import api
 from dm_mac.views.machine import machineapi
+from dm_mac.views.prometheus import prometheus_route
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -55,5 +57,7 @@ def create_app() -> Flask:
     app: Flask = Flask("dm_mac")
     app.config.update({"MACHINES": MachinesConfig()})
     app.config.update({"USERS": UsersConfig()})
+    app.config.update({"START_TIME": time()})
     app.register_blueprint(api)
+    app.add_url_rule("/metrics", view_func=prometheus_route)
     return app

@@ -11,6 +11,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
+from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
 
 from dm_mac.models.users import User
@@ -20,6 +21,7 @@ from dm_mac.models.users import UsersConfig
 class TestUsersConfig:
     """Tests for models.users.UsersConfig."""
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_default_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf_path: str = os.path.join(
@@ -30,7 +32,9 @@ class TestUsersConfig:
         cls: UsersConfig = UsersConfig()
         assert len(cls.users) == 594
         assert len(cls.users_by_fob) == 594
+        assert cls.load_time == 1689477248.0
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf: List[Dict[str, Any]] = [
@@ -77,6 +81,7 @@ class TestUsersConfig:
         for x in range(0, len(conf)):
             assert isinstance(cls.users[x], User)
             assert cls.users[x].as_dict == conf[x]
+        assert cls.load_time == 1689477248.0
 
     def test_invalid_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""

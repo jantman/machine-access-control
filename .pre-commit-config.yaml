@@ -19,13 +19,14 @@ repos:
         language: system
         types: [text]
         stages: [commit, push, manual]
+        exclude: ^hardware/
       - id: flake8
         name: flake8
         entry: flake8
         language: system
         types: [python]
         require_serial: true
-        args: ["--ignore=S301,S403,W503,C901", --darglint-ignore-regex, .*]
+        args: ["--ignore=E203,S301,S403,W503,C901", --darglint-ignore-regex, .*]
       - id: isort
         name: isort
         entry: isort

@@ -11,6 +11,7 @@
    Installation <installation>
    Configuration <configuration>
    Hardware <hardware>
+   Administration <admin>
    Contributing and Development <contributing>
    NeonOne Integration <neon>
    Python API <modules>

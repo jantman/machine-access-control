@@ -10,6 +10,7 @@ from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
+from freezegun import freeze_time
 from jsonschema.exceptions import ValidationError
 
 from dm_mac.models.machine import Machine
@@ -22,6 +23,7 @@ pbm: str = "dm_mac.models.machine"
 class TestMachinesConfig:
     """Tests for models.machine.MachinesConfig."""
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_default_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf_path: str = os.path.join(fixtures_path, "machines.json")
@@ -31,7 +33,9 @@ class TestMachinesConfig:
             cls: MachinesConfig = MachinesConfig()
         assert len(cls.machines) == 5
         assert len(cls.machines_by_name) == 5
+        assert cls.load_time == 1689477248.0
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
         conf: Dict[str, Dict[str, Any]] = {
@@ -67,6 +71,7 @@ class TestMachinesConfig:
             "authorizations_or": ["Metal Mill"],
             "unauthorized_warn_only": False,
         }
+        assert cls.load_time == 1689477248.0
 
     def test_invalid_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""
