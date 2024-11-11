@@ -84,8 +84,8 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 
   * ``1`` to +5VDC power in
   * ``2`` to power supply ground
-  * ``3`` to relay input
-  * ``4`` to relay output
+  * ``3`` to relay input / common
+  * ``4`` to relay output Normally Open
   * ``5`` to ESP32 ``GPIO12`` for tamper switch (not yet implemented in software)
   * ``6`` to ESP32 ``GPIO14`` for future use
   * ``7`` reserved for future ammeter / current clamp use (not implemented in V1)
