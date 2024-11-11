@@ -8,8 +8,7 @@ from typing import Optional
 
 from flask import Response
 from flask import current_app
-from prometheus_client import REGISTRY
-from prometheus_client import Gauge
+from prometheus_client import CollectorRegistry
 from prometheus_client import generate_latest
 from prometheus_client.core import Metric
 from prometheus_client.samples import Sample
@@ -59,6 +58,29 @@ class PromCustomCollector:
     def collect(self) -> Generator[LabeledGaugeMetricFamily, None, None]:
         """Collect custom metrics."""
         mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
+        uconf: UsersConfig = current_app.config["USERS"]  # noqa
+        mconf_load: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_config_load_timestamp",
+            "The timestamp when the machine config was loaded",
+        )
+        mconf_load.add_metric({}, mconf.load_time)
+        uconf_load: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "user_config_load_timestamp",
+            "The timestamp when the users config was loaded",
+        )
+        uconf_load.add_metric({}, uconf.load_time)
+        stime: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "app_start_timestamp", "The timestamp when the server app started"
+        )
+        stime.add_metric({}, current_app.config["START_TIME"])
+        numu: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "user_count", "The number of users configured"
+        )
+        numu.add_metric({}, len(uconf.users))
+        numf: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "fob_count", "The number of fobs configured"
+        )
+        numf.add_metric({}, len(uconf.users_by_fob))
         # Machine metrics
         relay_state: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
             "machine_relay_state", "The state of the machine relay"
@@ -160,6 +182,11 @@ class PromCustomCollector:
                 {"machine_name": m.name, "led_attribute": "brightness"},
                 m.state.status_led_brightness,
             )
+        yield mconf_load
+        yield uconf_load
+        yield stime
+        yield numu
+        yield numf
         yield relay_state
         yield oops_state
         yield lockout_state
@@ -179,24 +206,6 @@ class PromCustomCollector:
 
 def prometheus_route() -> Response:
     """API method to return Prometheus-compatible metrics."""
-    mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
-    uconf: UsersConfig = current_app.config["USERS"]  # noqa
-    mconf_load: Gauge = Gauge(
-        "machine_config_load_timestamp",
-        "The timestamp when the machine config was loaded",
-    )
-    mconf_load.set(mconf.load_time)
-    uconf_load: Gauge = Gauge(
-        "user_config_load_timestamp", "The timestamp when the users config was loaded"
-    )
-    uconf_load.set(uconf.load_time)
-    stime: Gauge = Gauge(
-        "app_start_timestamp", "The timestamp when the server app started"
-    )
-    stime.set(current_app.config["START_TIME"])
-    numu: Gauge = Gauge("user_count", "The number of users configured")
-    numu.set(len(uconf.users))
-    numf: Gauge = Gauge("fob_count", "The number of fobs configured")
-    numf.set(len(uconf.users_by_fob))
-    REGISTRY.register(PromCustomCollector())  # type: ignore
-    return Response(generate_latest(), mimetype=CONTENT_TYPE_LATEST)
+    registry: CollectorRegistry = CollectorRegistry()
+    registry.register(PromCustomCollector())  # type: ignore
+    return Response(generate_latest(registry), mimetype=CONTENT_TYPE_LATEST)
