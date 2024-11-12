@@ -144,7 +144,6 @@ binary_sensor:
             id(rfid_tag) = "";
             id(display_content) = "Please insert\naccess card";
             id(my_display).print("Please insert\naccess card");
-        # NOTE: need to add machine name to post. maybe WiFi sensors and temperature too?
         - http_request.post:
             url: !secret mac_url
             headers:
@@ -327,4 +326,48 @@ display:
     lambda: |-
       it.print(id(display_content));
 
-# @TODO add interval here to HTTP POST every 10 seconds
+interval:
+  - interval: 10s
+    startup_delay: 30s
+    then:
+      - http_request.post:
+          url: !secret mac_url
+          headers:
+            Content-Type: application/json
+          json: |-
+            root["machine_name"] = App.get_name().c_str();
+            root["oops"] = id(oops_button).state;
+            root["rfid_value"] = id(rfid_tag);
+            root["uptime"] = id(uptime_sensor).state;
+            root["wifi_signal_db"] = id(wifi_signal_db).state;
+            root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+            root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
