@@ -2391,3 +2391,54 @@ class TestRfidLockedOut:
         assert ms.current_user is None
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
+
+
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestOopsApi:
+    """Tests for oops API."""
+
+    def test_oops_post(self, tmp_path: Path) -> None:
+        """Test oops POST."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        assert m.state.is_oopsed is False
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/oops/metal-mill",
+            json={},
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        assert ms.is_oopsed is True
+
+    def test_oops_delete(self, tmp_path: Path) -> None:
+        """Test oops POST."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_oopsed = True
+        m.state._save_cache()
+        # send request
+        response: TestResponse = client.delete(
+            "/api/machine/oops/metal-mill",
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        assert ms.is_oopsed is False
