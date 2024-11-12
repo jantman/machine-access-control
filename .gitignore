@@ -236,3 +236,5 @@ pytest.xml
 pytest.html
 venv
 machine_state/
+machines.json
+users.json
