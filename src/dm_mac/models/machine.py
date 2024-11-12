@@ -3,6 +3,7 @@
 import logging
 import os
 import pickle
+from contextlib import nullcontext
 from logging import Logger
 from logging import getLogger
 from threading import Lock
@@ -86,6 +87,14 @@ class Machine:
     def unlock(self) -> None:
         """Pass directly to self.state."""
         self.state.unlock()
+
+    def oops(self) -> None:
+        """Pass directly to self.state."""
+        self.state.oops()
+
+    def unoops(self) -> None:
+        """Pass directly to self.state."""
+        self.state.unoops()
 
     @property
     def as_dict(self) -> Dict[str, Any]:
@@ -281,6 +290,32 @@ class MachineState:
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0.0
 
+    def oops(self, do_locking: bool = True) -> None:
+        """Oops the machine."""
+        logging.getLogger("OOPS").warning("Machine %s was Oopsed.", self.machine.name)
+        locker = self._lock if do_locking else nullcontext()
+        with locker:  # type: ignore
+            self.is_oopsed = True
+            self.relay_desired_state = False
+            self.current_user = None
+            self.display_text = self.OOPS_DISPLAY_TEXT
+            self.status_led_rgb = (1.0, 0.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+
+    def unoops(self, do_locking: bool = True) -> None:
+        """Un-oops the machine."""
+        logging.getLogger("OOPS").warning(
+            "Machine %s was un-Oopsed.", self.machine.name
+        )
+        locker = self._lock if do_locking else nullcontext()
+        with locker:  # type: ignore
+            self.is_oopsed = False
+            self.relay_desired_state = False
+            self.current_user = None
+            self.display_text = self.DEFAULT_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 0.0, 0.0)
+            self.status_led_brightness = 0
+
     def update(
         self,
         users: UsersConfig,
@@ -338,12 +373,7 @@ class MachineState:
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
         # locking handled in update()
-        self.is_oopsed = True
-        self.relay_desired_state = False
-        self.current_user = None
-        self.display_text = self.OOPS_DISPLAY_TEXT
-        self.status_led_rgb = (1.0, 0.0, 0.0)
-        self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+        self.oops(do_locking=False)
 
     def _handle_rfid_remove(self) -> None:
         """Handle RFID card removed."""

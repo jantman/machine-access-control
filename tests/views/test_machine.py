@@ -2410,7 +2410,6 @@ class TestOopsApi:
         # send request
         response: TestResponse = client.post(
             "/api/machine/oops/metal-mill",
-            json={},
         )
         # check response
         assert response.status_code == 200
@@ -2419,6 +2418,11 @@ class TestOopsApi:
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
         assert ms.is_oopsed is True
+        assert ms.relay_desired_state is False
+        assert ms.current_user is None
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
     def test_oops_delete(self, tmp_path: Path) -> None:
         """Test oops POST."""
@@ -2442,3 +2446,96 @@ class TestOopsApi:
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
         assert ms.is_oopsed is False
+        assert ms.relay_desired_state is False
+        assert ms.current_user is None
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+
+    def test_oops_post_no_machine(self, tmp_path: Path) -> None:
+        """Test oops POST with invalid machine name."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/oops/invalid-machine-name",
+        )
+        # check response
+        assert response.status_code == 404
+        assert response.json == {"error": "No such machine: invalid-machine-name"}
+
+
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestLockApi:
+    """Tests for lockout API."""
+
+    def test_lockout_post(self, tmp_path: Path) -> None:
+        """Test lockout POST."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        assert m.state.is_oopsed is False
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/locked_out/metal-mill",
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        assert ms.is_locked_out is True
+        assert ms.relay_desired_state is False
+        assert ms.current_user is None
+        assert ms.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.5, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+
+    def test_lockout_delete(self, tmp_path: Path) -> None:
+        """Test locked_out POST."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_oopsed = True
+        m.state._save_cache()
+        # send request
+        response: TestResponse = client.delete(
+            "/api/machine/locked_out/metal-mill",
+        )
+        # check response
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        assert ms.is_locked_out is False
+        assert ms.relay_desired_state is False
+        assert ms.current_user is None
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+
+    def test_lockout_post_no_machine(self, tmp_path: Path) -> None:
+        """Test lockout POST with invalid machine name."""
+        # boilerplate for test
+        app: Flask
+        client: FlaskClient
+        app, client = app_and_client(tmp_path)
+        # send request
+        response: TestResponse = client.post(
+            "/api/machine/locked_out/invalid-machine-name",
+        )
+        # check response
+        assert response.status_code == 404
+        assert response.json == {"error": "No such machine: invalid-machine-name"}

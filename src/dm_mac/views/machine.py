@@ -136,14 +136,41 @@ def oops(machine_name: str) -> Tuple[Response, int]:
         return jsonify({"error": f"No such machine: {machine_name}"}), 404
     try:
         if method == "DELETE":
-            machine.state.is_oopsed = False
+            machine.unoops()
         else:
-            machine.state.is_oopsed = True
+            machine.oops()
         machine.state._save_cache()
         return jsonify({"success": True}), 200
     except Exception as ex:
         logger.error(
             "Error in %s oops for machine %s: %s",
+            method,
+            machine_name,
+            ex,
+            exc_info=True,
+        )
+        return jsonify({"error": str(ex)}), 500
+
+
+@machineapi.route("/locked_out/<machine_name>", methods=["POST", "DELETE"])
+def locked_out(machine_name: str) -> Tuple[Response, int]:
+    """API method to set or un-set machine locked out state."""
+    method: str = request.method
+    logger.warning("%s lock-out on machine %s", method, machine_name)
+    mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
+    machine: Optional[Machine] = mconf.machines_by_name.get(machine_name)
+    if not machine:
+        return jsonify({"error": f"No such machine: {machine_name}"}), 404
+    try:
+        if method == "DELETE":
+            machine.unlock()
+        else:
+            machine.lockout()
+        machine.state._save_cache()
+        return jsonify({"success": True}), 200
+    except Exception as ex:
+        logger.error(
+            "Error in %s locked_out for machine %s: %s",
             method,
             machine_name,
             ex,
