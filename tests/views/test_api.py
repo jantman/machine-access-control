@@ -5,14 +5,14 @@ from pathlib import Path
 from shutil import copy
 from unittest.mock import patch
 
-from flask import Flask
-from flask.testing import FlaskClient
+from quart import Quart
+from quart.testing import QuartClient
 from freezegun import freeze_time
 from werkzeug.test import TestResponse
 
 from dm_mac.models.users import UsersConfig
 
-from .flask_test_helpers import app_and_client
+from .quart_test_helpers import app_and_client
 
 
 class TestIndex:
@@ -20,8 +20,8 @@ class TestIndex:
 
     def test_index_response(self, tmp_path: Path) -> None:
         """Test for API index response."""
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         response: TestResponse = client.get("/api/")
         assert response.status_code == 200
@@ -39,8 +39,8 @@ class TestReloadUsers:
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: QuartClient
             app, client = app_and_client(tmp_path)
             users: UsersConfig = app.config["USERS"]
             users.load_time = 123456.0
@@ -68,8 +68,8 @@ class TestReloadUsers:
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: QuartClient
             app, client = app_and_client(tmp_path)
             users: UsersConfig = app.config["USERS"]
             users.load_time = 123456.0
@@ -90,8 +90,8 @@ class TestReloadUsers:
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: QuartClient
             app, client = app_and_client(tmp_path)
             app.config["USERS"].load_time = 123456.0
             copy(os.path.join(fixtures_path, "users-changed.json"), uconf)

@@ -3,10 +3,10 @@
 import logging
 from time import time
 
-from flask import Flask
-from flask import has_request_context
-from flask import request
-from flask.logging import default_handler
+from quart import Quart
+from quart import has_request_context
+from quart import request
+from quart.logging import default_handler
 
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
@@ -52,9 +52,9 @@ logging.getLogger().setLevel(logging.INFO)
 api.register_blueprint(machineapi)
 
 
-def create_app() -> Flask:
+def create_app() -> Quart:
     """Factory to create the app."""
-    app: Flask = Flask("dm_mac")
+    app: Quart = Quart("dm_mac")
     app.config.update({"MACHINES": MachinesConfig()})
     app.config.update({"USERS": UsersConfig()})
     app.config.update({"START_TIME": time()})

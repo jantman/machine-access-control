@@ -4,10 +4,10 @@ from logging import Logger
 from logging import getLogger
 from typing import Tuple
 
-from flask import Blueprint
-from flask import Response
-from flask import current_app
-from flask import jsonify
+from quart import Blueprint
+from quart import Response
+from quart import current_app
+from quart import jsonify
 
 from dm_mac.models.users import UsersConfig
 

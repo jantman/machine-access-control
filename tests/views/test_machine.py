@@ -3,15 +3,15 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from flask import Flask
-from flask.testing import FlaskClient
+from quart import Quart
+from quart.testing import QuartClient
 from freezegun import freeze_time
 from werkzeug.test import TestResponse
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
 
-from .flask_test_helpers import app_and_client
+from .quart_test_helpers import app_and_client
 
 
 class TestRouteSpecialCases:
@@ -21,8 +21,8 @@ class TestRouteSpecialCases:
     def test_unknown_machine(self, tmp_path: Path) -> None:
         """Test unknown machine."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "unknown-machine-name"
@@ -48,8 +48,8 @@ class TestRouteSpecialCases:
     def test_execption(self, tmp_path: Path) -> None:
         """Test exception during machine update."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
@@ -81,8 +81,8 @@ class TestUpdateNewMachine:
     def test_initial_update(self, tmp_path: Path) -> None:
         """Test first update for a new machine."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
@@ -131,8 +131,8 @@ class TestUpdateNewMachine:
     def test_initial_update_with_amps(self, tmp_path: Path) -> None:
         """Test first update for a new machine."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
@@ -182,8 +182,8 @@ class TestUpdateNewMachine:
     def test_empty_update(self, tmp_path: Path) -> None:
         """Test first incorrectly empty update for a new machine."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
@@ -231,8 +231,8 @@ class TestOops:
     def test_oops_without_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with no user logged in."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -282,8 +282,8 @@ class TestOops:
     def test_oops_released_without_user(self, tmp_path: Path) -> None:
         """Test nothing different happens when oops button is released."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -341,8 +341,8 @@ class TestOops:
     def test_oops_with_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with a user logged in (and relay on)."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -403,8 +403,8 @@ class TestOops:
     def test_oops_released_with_user(self, tmp_path: Path) -> None:
         """Test nothing different happens when oops button is released."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -466,8 +466,8 @@ class TestOops:
     def test_oops_unknown_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with an unknown user logged in."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -533,8 +533,8 @@ class TestLockOut:
     def test_lockout_no_user(self, tmp_path: Path) -> None:
         """Test locking out a machine with no user logged in."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -587,8 +587,8 @@ class TestLockOut:
     def test_lockout_with_user(self, tmp_path: Path) -> None:
         """Test locking out a machine with a user logged in."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -650,8 +650,8 @@ class TestLockOut:
     def test_unlock(self, tmp_path: Path) -> None:
         """Test unlocking a machine."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -715,8 +715,8 @@ class TestReboot:
     def test_reboot_with_user(self, tmp_path: Path) -> None:
         """Test reboot with a user logged in (and relay on)."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -785,8 +785,8 @@ class TestRfidNormalState:
     def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -837,8 +837,8 @@ class TestRfidNormalState:
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -892,8 +892,8 @@ class TestRfidNormalState:
     def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -954,8 +954,8 @@ class TestRfidNormalState:
     def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1009,8 +1009,8 @@ class TestRfidNormalState:
     def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1071,8 +1071,8 @@ class TestRfidNormalState:
     def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1126,8 +1126,8 @@ class TestRfidNormalState:
     def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -1193,8 +1193,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1245,8 +1245,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1307,8 +1307,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1362,8 +1362,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1424,8 +1424,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1479,8 +1479,8 @@ class TestRfidUnauthorizedWarnOnly:
     def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "permissive-lathe"
@@ -1546,8 +1546,8 @@ class TestRfidOopsed:
     def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1602,8 +1602,8 @@ class TestRfidOopsed:
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -1661,8 +1661,8 @@ class TestRfidOopsed:
     def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -1724,8 +1724,8 @@ class TestRfidOopsed:
     def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1783,8 +1783,8 @@ class TestRfidOopsed:
     def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1846,8 +1846,8 @@ class TestRfidOopsed:
     def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -1905,8 +1905,8 @@ class TestRfidOopsed:
     def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -1973,8 +1973,8 @@ class TestRfidLockedOut:
     def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2029,8 +2029,8 @@ class TestRfidLockedOut:
     def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -2088,8 +2088,8 @@ class TestRfidLockedOut:
     def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -2151,8 +2151,8 @@ class TestRfidLockedOut:
     def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2210,8 +2210,8 @@ class TestRfidLockedOut:
     def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2273,8 +2273,8 @@ class TestRfidLockedOut:
     def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2332,8 +2332,8 @@ class TestRfidLockedOut:
     def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "hammer"
@@ -2400,8 +2400,8 @@ class TestOopsApi:
     def test_oops_post(self, tmp_path: Path) -> None:
         """Test oops POST."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2427,8 +2427,8 @@ class TestOopsApi:
     def test_oops_delete(self, tmp_path: Path) -> None:
         """Test oops POST."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2455,8 +2455,8 @@ class TestOopsApi:
     def test_oops_post_no_machine(self, tmp_path: Path) -> None:
         """Test oops POST with invalid machine name."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         response: TestResponse = client.post(
@@ -2474,8 +2474,8 @@ class TestLockApi:
     def test_lockout_post(self, tmp_path: Path) -> None:
         """Test lockout POST."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2501,8 +2501,8 @@ class TestLockApi:
     def test_lockout_delete(self, tmp_path: Path) -> None:
         """Test locked_out POST."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # set up state
         mname: str = "metal-mill"
@@ -2529,8 +2529,8 @@ class TestLockApi:
     def test_lockout_post_no_machine(self, tmp_path: Path) -> None:
         """Test lockout POST with invalid machine name."""
         # boilerplate for test
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
         response: TestResponse = client.post(

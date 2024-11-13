@@ -8,11 +8,11 @@ from typing import Optional
 from typing import Tuple
 from typing import cast
 
-from flask import Blueprint
-from flask import Response
-from flask import current_app
-from flask import jsonify
-from flask import request
+from quart import Blueprint
+from quart import Response
+from quart import current_app
+from quart import jsonify
+from quart import request
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig

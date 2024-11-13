@@ -4,8 +4,8 @@ from pathlib import Path
 from textwrap import dedent
 from time import time
 
-from flask import Flask
-from flask.testing import FlaskClient
+from quart import Quart
+from quart.testing import QuartClient
 from freezegun import freeze_time
 from werkzeug.test import TestResponse
 
@@ -15,7 +15,7 @@ from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 from dm_mac.views.prometheus import CONTENT_TYPE_LATEST
 
-from .flask_test_helpers import app_and_client
+from .quart_test_helpers import app_and_client
 
 
 class TestPrometheus:
@@ -24,8 +24,8 @@ class TestPrometheus:
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_metrics_nondefaults(self, tmp_path: Path) -> None:
         """Test for API metrics response with non-default state."""
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         now: float = time()
         uconf: UsersConfig = app.config["USERS"]
@@ -214,8 +214,8 @@ class TestPrometheus:
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_metrics_defaults(self, tmp_path: Path) -> None:
         """Test for API metrics response with default state."""
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: QuartClient
         app, client = app_and_client(tmp_path)
         response: TestResponse = client.get("/metrics")
         assert response.status_code == 200
