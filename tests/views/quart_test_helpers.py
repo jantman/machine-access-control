@@ -6,14 +6,14 @@ from typing import Tuple
 from unittest.mock import patch
 
 from quart import Quart
-from quart.testing import QuartClient
+from quart.typing import TestClientProtocol
 
 from dm_mac import create_app
 
 
 def app_and_client(
     tmp_path: Path, user_conf: str = "users.json", machine_conf: str = "machines.json"
-) -> Tuple[Quart, QuartClient]:
+) -> Tuple[Quart, TestClientProtocol]:
     """Test App - app instance configured for testing.
 
     Doing this as a pytest fixture is a complete pain in the ass because I want

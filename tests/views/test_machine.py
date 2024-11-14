@@ -3,10 +3,10 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from quart import Quart
-from quart.testing import QuartClient
 from freezegun import freeze_time
-from werkzeug.test import TestResponse
+from quart import Quart
+from quart import Response
+from quart.testing import QuartClient
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
@@ -18,7 +18,7 @@ class TestRouteSpecialCases:
     """Tests for /machine/update API endpoint special cases."""
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    def test_unknown_machine(self, tmp_path: Path) -> None:
+    async def test_unknown_machine(self, tmp_path: Path) -> None:
         """Test unknown machine."""
         # boilerplate for test
         app: Quart
@@ -26,7 +26,7 @@ class TestRouteSpecialCases:
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "unknown-machine-name"
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -40,12 +40,12 @@ class TestRouteSpecialCases:
         )
         # check response
         assert response.status_code == 404
-        assert response.json == {
+        assert await response.json == {
             "error": "No such machine: unknown-machine-name",
         }
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    def test_execption(self, tmp_path: Path) -> None:
+    async def test_execption(self, tmp_path: Path) -> None:
         """Test exception during machine update."""
         # boilerplate for test
         app: Quart
@@ -53,7 +53,7 @@ class TestRouteSpecialCases:
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -68,7 +68,7 @@ class TestRouteSpecialCases:
         )
         # check response
         assert response.status_code == 500
-        assert response.json == {
+        assert await response.json == {
             "error": "MachineState.update() got an unexpected keyword "
             "argument 'foo'",
         }
@@ -78,7 +78,7 @@ class TestRouteSpecialCases:
 class TestUpdateNewMachine:
     """Tests for /machine/update API endpoint for a brand new machine."""
 
-    def test_initial_update(self, tmp_path: Path) -> None:
+    async def test_initial_update(self, tmp_path: Path) -> None:
         """Test first update for a new machine."""
         # boilerplate for test
         app: Quart
@@ -86,7 +86,7 @@ class TestUpdateNewMachine:
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -100,7 +100,7 @@ class TestUpdateNewMachine:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -128,7 +128,7 @@ class TestUpdateNewMachine:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_initial_update_with_amps(self, tmp_path: Path) -> None:
+    async def test_initial_update_with_amps(self, tmp_path: Path) -> None:
         """Test first update for a new machine."""
         # boilerplate for test
         app: Quart
@@ -136,7 +136,7 @@ class TestUpdateNewMachine:
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -151,7 +151,7 @@ class TestUpdateNewMachine:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -179,7 +179,7 @@ class TestUpdateNewMachine:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_empty_update(self, tmp_path: Path) -> None:
+    async def test_empty_update(self, tmp_path: Path) -> None:
         """Test first incorrectly empty update for a new machine."""
         # boilerplate for test
         app: Quart
@@ -187,7 +187,7 @@ class TestUpdateNewMachine:
         app, client = app_and_client(tmp_path)
         # send request
         mname: str = "metal-mill"
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -195,7 +195,7 @@ class TestUpdateNewMachine:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -228,7 +228,7 @@ class TestUpdateNewMachine:
 class TestOops:
     """Tests for oops button being pressed."""
 
-    def test_oops_without_user(self, tmp_path: Path) -> None:
+    async def test_oops_without_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with no user logged in."""
         # boilerplate for test
         app: Quart
@@ -238,7 +238,7 @@ class TestOops:
         mname: str = "metal-mill"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -252,7 +252,7 @@ class TestOops:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -279,7 +279,7 @@ class TestOops:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_oops_released_without_user(self, tmp_path: Path) -> None:
+    async def test_oops_released_without_user(self, tmp_path: Path) -> None:
         """Test nothing different happens when oops button is released."""
         # boilerplate for test
         app: Quart
@@ -297,7 +297,7 @@ class TestOops:
         m.state.last_update = 1689477200.0
         m.state.uptime = 12.3
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -311,7 +311,7 @@ class TestOops:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -338,7 +338,7 @@ class TestOops:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_oops_with_user(self, tmp_path: Path) -> None:
+    async def test_oops_with_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with a user logged in (and relay on)."""
         # boilerplate for test
         app: Quart
@@ -358,7 +358,7 @@ class TestOops:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPKenneth"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -372,7 +372,7 @@ class TestOops:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -400,7 +400,7 @@ class TestOops:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_oops_released_with_user(self, tmp_path: Path) -> None:
+    async def test_oops_released_with_user(self, tmp_path: Path) -> None:
         """Test nothing different happens when oops button is released."""
         # boilerplate for test
         app: Quart
@@ -421,7 +421,7 @@ class TestOops:
         m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
         m.state.is_oopsed = True
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -435,7 +435,7 @@ class TestOops:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -463,7 +463,7 @@ class TestOops:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_oops_unknown_user(self, tmp_path: Path) -> None:
+    async def test_oops_unknown_user(self, tmp_path: Path) -> None:
         """Test oops button pressed with an unknown user logged in."""
         # boilerplate for test
         app: Quart
@@ -483,7 +483,7 @@ class TestOops:
         m.state.status_led_brightness = 0.0
         m.state.display_text = MachineState.DEFAULT_DISPLAY_TEXT
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -497,7 +497,7 @@ class TestOops:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -530,7 +530,7 @@ class TestOops:
 class TestLockOut:
     """Tests for locking-out and unlocking a machine."""
 
-    def test_lockout_no_user(self, tmp_path: Path) -> None:
+    async def test_lockout_no_user(self, tmp_path: Path) -> None:
         """Test locking out a machine with no user logged in."""
         # boilerplate for test
         app: Quart
@@ -543,7 +543,7 @@ class TestLockOut:
         m.state.last_checkin = 1689477248.0
         m.lockout()
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -557,7 +557,7 @@ class TestLockOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -584,7 +584,7 @@ class TestLockOut:
         assert ms.status_led_rgb == (1.0, 0.5, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_lockout_with_user(self, tmp_path: Path) -> None:
+    async def test_lockout_with_user(self, tmp_path: Path) -> None:
         """Test locking out a machine with a user logged in."""
         # boilerplate for test
         app: Quart
@@ -605,7 +605,7 @@ class TestLockOut:
         m.state.display_text = "Welcome,\nPKenneth"
         m.lockout()
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -619,7 +619,7 @@ class TestLockOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -647,7 +647,7 @@ class TestLockOut:
         assert ms.status_led_rgb == (1.0, 0.5, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_unlock(self, tmp_path: Path) -> None:
+    async def test_unlock(self, tmp_path: Path) -> None:
         """Test unlocking a machine."""
         # boilerplate for test
         app: Quart
@@ -666,7 +666,7 @@ class TestLockOut:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.unlock()
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -680,7 +680,7 @@ class TestLockOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -712,7 +712,7 @@ class TestLockOut:
 class TestReboot:
     """Test when the machine reboots."""
 
-    def test_reboot_with_user(self, tmp_path: Path) -> None:
+    async def test_reboot_with_user(self, tmp_path: Path) -> None:
         """Test reboot with a user logged in (and relay on)."""
         # boilerplate for test
         app: Quart
@@ -732,7 +732,7 @@ class TestReboot:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPKenneth"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -746,7 +746,7 @@ class TestReboot:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -782,7 +782,7 @@ class TestRfidNormalState:
     i.e. not oopsed, locked out, or set to unauthorized_warn_only.
     """
 
-    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -792,7 +792,7 @@ class TestRfidNormalState:
         mname: str = "metal-mill"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -806,7 +806,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": True,
             "display": "Welcome,\nPAshley",
             "oops_led": False,
@@ -834,7 +834,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (0.0, 1.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -847,7 +847,7 @@ class TestRfidNormalState:
         m.state.last_update = 1689477200.0
         m.state.last_checkin = 1689477200.0
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -861,7 +861,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": True,
             "display": "Welcome,\nPKenneth",
             "oops_led": False,
@@ -889,7 +889,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (0.0, 1.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -909,7 +909,7 @@ class TestRfidNormalState:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPKenneth"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -923,7 +923,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -951,7 +951,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -964,7 +964,7 @@ class TestRfidNormalState:
         m.state.last_update = 1689477200.0
         m.state.last_checkin = 1689477200.0
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -978,7 +978,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": "Unauthorized",
             "oops_led": False,
@@ -1006,7 +1006,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (1.0, 0.5, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1026,7 +1026,7 @@ class TestRfidNormalState:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Unauthorized"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1040,7 +1040,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -1068,7 +1068,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1081,7 +1081,7 @@ class TestRfidNormalState:
         m.state.last_update = 1689477200.0
         m.state.last_checkin = 1689477200.0
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1095,7 +1095,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": "Unknown RFID",
             "oops_led": False,
@@ -1123,7 +1123,7 @@ class TestRfidNormalState:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1143,7 +1143,7 @@ class TestRfidNormalState:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Unknown RFID"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1157,7 +1157,7 @@ class TestRfidNormalState:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -1190,7 +1190,7 @@ class TestRfidNormalState:
 class TestRfidUnauthorizedWarnOnly:
     """Tests for RFID value changed on unauthorized_warn_only machine."""
 
-    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1200,7 +1200,7 @@ class TestRfidUnauthorizedWarnOnly:
         mname: str = "permissive-lathe"
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1214,7 +1214,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": True,
             "display": "Welcome,\nPAshley",
             "oops_led": False,
@@ -1242,7 +1242,7 @@ class TestRfidUnauthorizedWarnOnly:
         assert ms.status_led_rgb == (0.0, 1.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1262,7 +1262,7 @@ class TestRfidUnauthorizedWarnOnly:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPAshley"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1276,7 +1276,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -1304,7 +1304,7 @@ class TestRfidUnauthorizedWarnOnly:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -1317,7 +1317,7 @@ class TestRfidUnauthorizedWarnOnly:
         m.state.last_update = 1689477200.0
         m.state.last_checkin = 1689477200.0
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1331,7 +1331,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": True,
             "display": "Welcome,\nPKenneth",
             "oops_led": False,
@@ -1359,7 +1359,7 @@ class TestRfidUnauthorizedWarnOnly:
         assert ms.status_led_rgb == (0.0, 1.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1379,7 +1379,7 @@ class TestRfidUnauthorizedWarnOnly:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPKenneth"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1393,7 +1393,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -1421,7 +1421,7 @@ class TestRfidUnauthorizedWarnOnly:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1434,7 +1434,7 @@ class TestRfidUnauthorizedWarnOnly:
         m.state.last_update = 1689477200.0
         m.state.last_checkin = 1689477200.0
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1448,7 +1448,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": "Unknown RFID",
             "oops_led": False,
@@ -1476,7 +1476,7 @@ class TestRfidUnauthorizedWarnOnly:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1496,7 +1496,7 @@ class TestRfidUnauthorizedWarnOnly:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Unknown RFID"
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1510,7 +1510,7 @@ class TestRfidUnauthorizedWarnOnly:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.DEFAULT_DISPLAY_TEXT,
             "oops_led": False,
@@ -1543,7 +1543,7 @@ class TestRfidUnauthorizedWarnOnly:
 class TestRfidOopsed:
     """Tests for RFID value changed when oopsed."""
 
-    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1557,7 +1557,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1571,7 +1571,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1599,7 +1599,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -1616,7 +1616,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1630,7 +1630,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1658,7 +1658,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1679,7 +1679,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1693,7 +1693,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1721,7 +1721,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -1738,7 +1738,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1752,7 +1752,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1780,7 +1780,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1801,7 +1801,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1815,7 +1815,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1843,7 +1843,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1860,7 +1860,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1874,7 +1874,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1902,7 +1902,7 @@ class TestRfidOopsed:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -1923,7 +1923,7 @@ class TestRfidOopsed:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1937,7 +1937,7 @@ class TestRfidOopsed:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.OOPS_DISPLAY_TEXT,
             "oops_led": True,
@@ -1970,7 +1970,7 @@ class TestRfidOopsed:
 class TestRfidLockedOut:
     """Tests for RFID value changed when locked out."""
 
-    def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -1984,7 +1984,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -1998,7 +1998,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2026,7 +2026,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an auth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -2043,7 +2043,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2057,7 +2057,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2085,7 +2085,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_authorized_removed(self, tmp_path: Path) -> None:
         """Test when an authorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -2106,7 +2106,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2120,7 +2120,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2148,7 +2148,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_inserted_zeropad(self, tmp_path: Path) -> None:
         """Test when an unauth RFID card is inserted but < 10 characters."""
         # boilerplate for test
         app: Quart
@@ -2165,7 +2165,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2179,7 +2179,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2207,7 +2207,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unauthorized_removed(self, tmp_path: Path) -> None:
         """Test when an unauthorized RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -2228,7 +2228,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2242,7 +2242,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2270,7 +2270,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_inserted(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is inserted."""
         # boilerplate for test
         app: Quart
@@ -2287,7 +2287,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2301,7 +2301,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2329,7 +2329,7 @@ class TestRfidLockedOut:
         assert ms.relay_desired_state is False
         assert ms.last_update == 1689477248.0
 
-    def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
+    async def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
         """Test when an unknown RFID card is removed."""
         # boilerplate for test
         app: Quart
@@ -2350,7 +2350,7 @@ class TestRfidLockedOut:
         m.state.status_led_rgb = (1.0, 0.0, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/update",
             json={
                 "machine_name": mname,
@@ -2364,7 +2364,7 @@ class TestRfidLockedOut:
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "relay": False,
             "display": MachineState.LOCKOUT_DISPLAY_TEXT,
             "oops_led": False,
@@ -2397,7 +2397,7 @@ class TestRfidLockedOut:
 class TestOopsApi:
     """Tests for oops API."""
 
-    def test_oops_post(self, tmp_path: Path) -> None:
+    async def test_oops_post(self, tmp_path: Path) -> None:
         """Test oops POST."""
         # boilerplate for test
         app: Quart
@@ -2408,12 +2408,12 @@ class TestOopsApi:
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
         assert m.state.is_oopsed is False
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/oops/metal-mill",
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {"success": True}
+        assert await response.json == {"success": True}
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
@@ -2424,7 +2424,7 @@ class TestOopsApi:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_oops_delete(self, tmp_path: Path) -> None:
+    async def test_oops_delete(self, tmp_path: Path) -> None:
         """Test oops POST."""
         # boilerplate for test
         app: Quart
@@ -2436,12 +2436,12 @@ class TestOopsApi:
         m.state.is_oopsed = True
         m.state._save_cache()
         # send request
-        response: TestResponse = client.delete(
+        response: Response = await client.delete(
             "/api/machine/oops/metal-mill",
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {"success": True}
+        assert await response.json == {"success": True}
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
@@ -2452,26 +2452,26 @@ class TestOopsApi:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_oops_post_no_machine(self, tmp_path: Path) -> None:
+    async def test_oops_post_no_machine(self, tmp_path: Path) -> None:
         """Test oops POST with invalid machine name."""
         # boilerplate for test
         app: Quart
         client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/oops/invalid-machine-name",
         )
         # check response
         assert response.status_code == 404
-        assert response.json == {"error": "No such machine: invalid-machine-name"}
+        assert await response.json == {"error": "No such machine: invalid-machine-name"}
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
 class TestLockApi:
     """Tests for lockout API."""
 
-    def test_lockout_post(self, tmp_path: Path) -> None:
+    async def test_lockout_post(self, tmp_path: Path) -> None:
         """Test lockout POST."""
         # boilerplate for test
         app: Quart
@@ -2482,12 +2482,12 @@ class TestLockApi:
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
         assert m.state.is_oopsed is False
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/locked_out/metal-mill",
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {"success": True}
+        assert await response.json == {"success": True}
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
@@ -2498,7 +2498,7 @@ class TestLockApi:
         assert ms.status_led_rgb == (1.0, 0.5, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
 
-    def test_lockout_delete(self, tmp_path: Path) -> None:
+    async def test_lockout_delete(self, tmp_path: Path) -> None:
         """Test locked_out POST."""
         # boilerplate for test
         app: Quart
@@ -2510,12 +2510,12 @@ class TestLockApi:
         m.state.is_oopsed = True
         m.state._save_cache()
         # send request
-        response: TestResponse = client.delete(
+        response: Response = await client.delete(
             "/api/machine/locked_out/metal-mill",
         )
         # check response
         assert response.status_code == 200
-        assert response.json == {"success": True}
+        assert await response.json == {"success": True}
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
             ms: MachineState = MachineState(m)
@@ -2526,16 +2526,16 @@ class TestLockApi:
         assert ms.status_led_rgb == (0.0, 0.0, 0.0)
         assert ms.status_led_brightness == 0.0
 
-    def test_lockout_post_no_machine(self, tmp_path: Path) -> None:
+    async def test_lockout_post_no_machine(self, tmp_path: Path) -> None:
         """Test lockout POST with invalid machine name."""
         # boilerplate for test
         app: Quart
         client: QuartClient
         app, client = app_and_client(tmp_path)
         # send request
-        response: TestResponse = client.post(
+        response: Response = await client.post(
             "/api/machine/locked_out/invalid-machine-name",
         )
         # check response
         assert response.status_code == 404
-        assert response.json == {"error": "No such machine: invalid-machine-name"}
+        assert await response.json == {"error": "No such machine: invalid-machine-name"}

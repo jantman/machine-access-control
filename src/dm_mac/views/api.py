@@ -18,13 +18,13 @@ api: Blueprint = Blueprint("api", __name__, url_prefix="/api")
 
 
 @api.route("/")
-def index() -> str:
+async def index() -> str:
     """Main API index route - placeholder."""
     return "Nothing to see here..."
 
 
 @api.route("/reload-users", methods=["POST"])
-def reload_users() -> Tuple[Response, int]:
+async def reload_users() -> Tuple[Response, int]:
     """Reload users config."""
     added: int
     updated: int

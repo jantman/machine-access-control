@@ -4,10 +4,10 @@ from pathlib import Path
 from textwrap import dedent
 from time import time
 
+from freezegun import freeze_time
 from quart import Quart
 from quart.testing import QuartClient
-from freezegun import freeze_time
-from werkzeug.test import TestResponse
+from quart.wrappers import Response
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
@@ -22,7 +22,7 @@ class TestPrometheus:
     """Tests for API Prometheus view."""
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    def test_metrics_nondefaults(self, tmp_path: Path) -> None:
+    async def test_metrics_nondefaults(self, tmp_path: Path) -> None:
         """Test for API metrics response with non-default state."""
         app: Quart
         client: QuartClient
@@ -59,13 +59,11 @@ class TestPrometheus:
         plathe: Machine = mconf.machines_by_name["permissive-lathe"]
         plathe.state.is_locked_out = True
         plathe.state._save_cache()
-        response: TestResponse = client.get("/metrics")
+        response: Response = await client.get("/metrics")
         assert response.status_code == 200
+        text = await response.get_data(True)
         custom_metrics = (
-            "\n"
-            + response.text[
-                response.text.find("# HELP machine_config_load_timestamp") :
-            ]
+            "\n" + text[text.find("# HELP machine_config_load_timestamp") :]
         )
         expected = dedent(
             """
@@ -212,18 +210,16 @@ class TestPrometheus:
         )
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    def test_metrics_defaults(self, tmp_path: Path) -> None:
+    async def test_metrics_defaults(self, tmp_path: Path) -> None:
         """Test for API metrics response with default state."""
         app: Quart
         client: QuartClient
         app, client = app_and_client(tmp_path)
-        response: TestResponse = client.get("/metrics")
+        response: Response = await client.get("/metrics")
         assert response.status_code == 200
+        text = await response.get_data(True)
         custom_metrics = (
-            "\n"
-            + response.text[
-                response.text.find("# HELP machine_config_load_timestamp") :
-            ]
+            "\n" + text[text.find("# HELP machine_config_load_timestamp") :]
         )
         expected = dedent(
             """
