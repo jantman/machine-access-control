@@ -5,27 +5,27 @@ from pathlib import Path
 from shutil import copy
 from unittest.mock import patch
 
-from flask import Flask
-from flask.testing import FlaskClient
 from freezegun import freeze_time
-from werkzeug.test import TestResponse
+from quart import Quart
+from quart import Response
+from quart.typing import TestClientProtocol
 
 from dm_mac.models.users import UsersConfig
 
-from .flask_test_helpers import app_and_client
+from .quart_test_helpers import app_and_client
 
 
 class TestIndex:
     """Tests for API Index view."""
 
-    def test_index_response(self, tmp_path: Path) -> None:
+    async def test_index_response(self, tmp_path: Path) -> None:
         """Test for API index response."""
-        app: Flask
-        client: FlaskClient
+        app: Quart
+        client: TestClientProtocol
         app, client = app_and_client(tmp_path)
-        response: TestResponse = client.get("/api/")
+        response: Response = await client.get("/api/")
         assert response.status_code == 200
-        assert response.text == "Nothing to see here..."
+        assert await response.get_data(True) == "Nothing to see here..."
         assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
 
@@ -33,21 +33,21 @@ class TestIndex:
 class TestReloadUsers:
     """Tests for reloading users."""
 
-    def test_no_change(self, tmp_path: Path, fixtures_path: str) -> None:
+    async def test_no_change(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test /reload-users with no change."""
         # set things up
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: TestClientProtocol
             app, client = app_and_client(tmp_path)
             users: UsersConfig = app.config["USERS"]
             users.load_time = 123456.0
             before = [x.as_dict for x in users.users]
-            response: TestResponse = client.post("/api/reload-users")
+            response: Response = await client.post("/api/reload-users")
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "updated": 0,
             "removed": 0,
             "added": 0,
@@ -62,42 +62,44 @@ class TestReloadUsers:
         assert users.users_by_fob["0091703745"].account_id == "3"
         assert users.users_by_fob["0014916441"].account_id == "4"
 
-    def test_exception(self, tmp_path: Path, fixtures_path: str) -> None:
+    async def test_exception(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test /reload-users when an exception is raised."""
         # set things up
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: TestClientProtocol
             app, client = app_and_client(tmp_path)
             users: UsersConfig = app.config["USERS"]
             users.load_time = 123456.0
             before = [x.as_dict for x in users.users]
             with open(uconf, "w") as fh:
                 fh.write("\n")
-            response: TestResponse = client.post("/api/reload-users")
+            response: Response = await client.post("/api/reload-users")
         assert response.status_code == 500
-        assert response.json == {"error": "Expecting value: line 2 column 1 (char 1)"}
+        assert await response.json == {
+            "error": "Expecting value: line 2 column 1 (char 1)"
+        }
         users = app.config["USERS"]
         assert users.load_time == 123456.0
         after = [x.as_dict for x in users.users]
         assert before == after
 
-    def test_changed(self, tmp_path: Path, fixtures_path: str) -> None:
+    async def test_changed(self, tmp_path: Path, fixtures_path: str) -> None:
         """Test /reload-users with changes."""
         # set things up
         uconf: str = str(os.path.join(tmp_path, "users.json"))
         copy(os.path.join(fixtures_path, "users.json"), uconf)
         with patch.dict("os.environ", {"USERS_CONFIG": uconf}):
-            app: Flask
-            client: FlaskClient
+            app: Quart
+            client: TestClientProtocol
             app, client = app_and_client(tmp_path)
             app.config["USERS"].load_time = 123456.0
             copy(os.path.join(fixtures_path, "users-changed.json"), uconf)
-            response: TestResponse = client.post("/api/reload-users")
+            response: Response = await client.post("/api/reload-users")
         assert response.status_code == 200
-        assert response.json == {
+        assert await response.json == {
             "updated": 2,
             "removed": 1,
             "added": 1,

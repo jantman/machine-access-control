@@ -8,11 +8,11 @@ from typing import Optional
 from typing import Tuple
 from typing import cast
 
-from flask import Blueprint
-from flask import Response
-from flask import current_app
-from flask import jsonify
-from flask import request
+from quart import Blueprint
+from quart import Response
+from quart import current_app
+from quart import jsonify
+from quart import request
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
@@ -25,7 +25,7 @@ machineapi: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
 
 @machineapi.route("/update", methods=["POST"])
-def update() -> Tuple[Response, int]:
+async def update() -> Tuple[Response, int]:
     """API method to update machine state.
 
     Accepts POSTed JSON containing the following key/value pairs:
@@ -107,7 +107,7 @@ def update() -> Tuple[Response, int]:
            'internal_temperature_c': 53.88888931
        }
     """
-    data: Dict[str, Any] = cast(Dict[str, Any], request.json)  # noqa
+    data: Dict[str, Any] = cast(Dict[str, Any], await request.json)  # noqa
     logger.warning("UPDATE request: %s", data)
     machine_name: str = data.pop("machine_name")
     mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
@@ -126,7 +126,7 @@ def update() -> Tuple[Response, int]:
 
 
 @machineapi.route("/oops/<machine_name>", methods=["POST", "DELETE"])
-def oops(machine_name: str) -> Tuple[Response, int]:
+async def oops(machine_name: str) -> Tuple[Response, int]:
     """API method to set or un-set machine Oops state."""
     method: str = request.method
     logger.warning("%s oops on machine %s", method, machine_name)
@@ -153,7 +153,7 @@ def oops(machine_name: str) -> Tuple[Response, int]:
 
 
 @machineapi.route("/locked_out/<machine_name>", methods=["POST", "DELETE"])
-def locked_out(machine_name: str) -> Tuple[Response, int]:
+async def locked_out(machine_name: str) -> Tuple[Response, int]:
     """API method to set or un-set machine locked out state."""
     method: str = request.method
     logger.warning("%s lock-out on machine %s", method, machine_name)

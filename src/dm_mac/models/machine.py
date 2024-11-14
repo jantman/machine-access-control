@@ -294,7 +294,7 @@ class MachineState:
         """Oops the machine."""
         logging.getLogger("OOPS").warning("Machine %s was Oopsed.", self.machine.name)
         locker = self._lock if do_locking else nullcontext()
-        with locker:  # type: ignore
+        with locker:
             self.is_oopsed = True
             self.relay_desired_state = False
             self.current_user = None
@@ -308,7 +308,7 @@ class MachineState:
             "Machine %s was un-Oopsed.", self.machine.name
         )
         locker = self._lock if do_locking else nullcontext()
-        with locker:  # type: ignore
+        with locker:
             self.is_oopsed = False
             self.relay_desired_state = False
             self.current_user = None

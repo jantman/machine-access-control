@@ -124678,7 +124678,7 @@ M84 X Y E ;Disable all steppers but Z
 M82 ;absolute extrusion mode
 M104 S0
 ;End of Gcode
-;SETTING_3 {"global_quality": "[general]\\nversion = 4\\nname = Dynamic Quality 
+;SETTING_3 {"global_quality": "[general]\\nversion = 4\\nname = Dynamic Quality
 ;SETTING_3 #2\\ndefinition = creality_cr10s\\n\\n[metadata]\\ntype = quality_cha
 ;SETTING_3 nges\\nquality_type = adaptive\\nsetting_version = 23\\n\\n[values]\\
 ;SETTING_3 nadhesion_type = brim\\n\\n", "extruder_quality": ["[general]\\nversi

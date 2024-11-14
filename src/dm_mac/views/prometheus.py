@@ -6,12 +6,12 @@ from typing import Dict
 from typing import Generator
 from typing import Optional
 
-from flask import Response
-from flask import current_app
 from prometheus_client import CollectorRegistry
 from prometheus_client import generate_latest
 from prometheus_client.core import Metric
 from prometheus_client.samples import Sample
+from quart import Response
+from quart import current_app
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
@@ -204,7 +204,7 @@ class PromCustomCollector:
         yield led
 
 
-def prometheus_route() -> Response:
+async def prometheus_route() -> Response:
     """API method to return Prometheus-compatible metrics."""
     registry: CollectorRegistry = CollectorRegistry()
     registry.register(PromCustomCollector())  # type: ignore

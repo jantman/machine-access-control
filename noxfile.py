@@ -194,6 +194,7 @@ def tests(session: Session) -> None:
         "responses",
         "pytest-html",
         "freezegun",
+        "pytest-asyncio",
     )
     try:
         session.run(
@@ -203,6 +204,7 @@ def tests(session: Session) -> None:
             "-m",
             "pytest",
             "--blockage",
+            "--asyncio-mode=auto",
             "--capture=tee-sys",
             "--junitxml=pytest.xml",
             "--html=pytest.html",

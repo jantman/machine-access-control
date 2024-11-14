@@ -1,19 +1,19 @@
-"""Helpers for testing the Flask app."""
+"""Helpers for testing the Quart app."""
 
 import os
 from pathlib import Path
 from typing import Tuple
 from unittest.mock import patch
 
-from flask import Flask
-from flask.testing import FlaskClient
+from quart import Quart
+from quart.typing import TestClientProtocol
 
 from dm_mac import create_app
 
 
 def app_and_client(
     tmp_path: Path, user_conf: str = "users.json", machine_conf: str = "machines.json"
-) -> Tuple[Flask, FlaskClient]:
+) -> Tuple[Quart, TestClientProtocol]:
     """Test App - app instance configured for testing.
 
     Doing this as a pytest fixture is a complete pain in the ass because I want

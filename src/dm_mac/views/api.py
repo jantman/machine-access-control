@@ -4,10 +4,10 @@ from logging import Logger
 from logging import getLogger
 from typing import Tuple
 
-from flask import Blueprint
-from flask import Response
-from flask import current_app
-from flask import jsonify
+from quart import Blueprint
+from quart import Response
+from quart import current_app
+from quart import jsonify
 
 from dm_mac.models.users import UsersConfig
 
@@ -18,13 +18,13 @@ api: Blueprint = Blueprint("api", __name__, url_prefix="/api")
 
 
 @api.route("/")
-def index() -> str:
+async def index() -> str:
     """Main API index route - placeholder."""
     return "Nothing to see here..."
 
 
 @api.route("/reload-users", methods=["POST"])
-def reload_users() -> Tuple[Response, int]:
+async def reload_users() -> Tuple[Response, int]:
     """Reload users config."""
     added: int
     updated: int

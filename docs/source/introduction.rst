@@ -8,7 +8,7 @@ control use of various power tools and equipment in the `Decatur
 Makers <https://decaturmakers.org/>`__ makerspace. It is made up of
 custom ESP32-based hardware (machine control units) controlling power to
 each enabled machine and running ESPHome, and a central access
-control/management/logging server application written in Python/Flask.
+control/management/logging server application written in Python/Quart (an asyncio clone of Flask).
 Like our `“glue” server <https://github.com/decaturmakers/glue>`__ that
 powers the RFID-based door access control to the makerspace, dm-mac uses
 the `Neon CRM <https://www.neoncrm.com/>`__ as its source for user data,
@@ -27,9 +27,9 @@ the ESPHome configuration for the ESP32’s.
 Control Server
 ~~~~~~~~~~~~~~
 
-This is a Python/Flask application that provides authentication and
+This is a Python/Quart application that provides authentication and
 authorization for users via RFID credentials, control of the ESP32-based
-machine control units;, and logging and monitoring as well as basic
+machine control units, and logging and monitoring as well as basic
 management capabilities.
 
 **Why not use the Glue server?** First, because the glue server is

@@ -23,11 +23,12 @@ Changelog = "https://github.com/jantman/machine_access_control/releases"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-flask = "^3.0.3"
 jsonschema = "^4.23.0"
 requests = "^2.32.3"
 filelock = "^3.15.4"
 prometheus-client = "^0.20.0"
+quart = "^0.19.8"
+asyncio = "^3.4.3"
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"
