@@ -1,46 +1,33 @@
 repos:
-  - repo: local
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
     hooks:
       - id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
-        require_serial: true
-      - id: darglint
-        name: darglint
-        entry: darglint
-        language: system
-        types: [python]
-        stages: [manual]
+  -   repo: https://github.com/akaihola/darglint2
+      rev: v1.8.2
+      hooks:
+      - id: darglint2
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
       - id: end-of-file-fixer
-        name: Fix End of Files
-        entry: end-of-file-fixer
-        language: system
-        types: [text]
-        stages: [commit, push, manual]
         exclude: ^hardware/
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
       - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types: [python]
-        require_serial: true
         args: ["--ignore=E203,S301,S403,W503,C901", --darglint-ignore-regex, .*]
-      - id: isort
-        name: isort
-        entry: isort
-        require_serial: true
-        language: system
-        types_or: [cython, pyi, python]
-        args: ["--filter-files"]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.0
+    hooks:
       - id: pyupgrade
-        name: pyupgrade
-        description: Automatically upgrade syntax for newer versions.
-        entry: pyupgrade
-        language: system
-        types: [python]
         args: [--py37-plus]
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+  - repo: local
+    hooks:
       - id: sphinx
         name: sphinx
         entry: "nox --non-interactive --session=docs"
