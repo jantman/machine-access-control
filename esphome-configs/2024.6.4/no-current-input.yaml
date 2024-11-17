@@ -36,6 +36,8 @@ logger:
   level: DEBUG
 
 api:
+  # don't reboot just because ESPHome isn't connected
+  reboot_timeout: 0s
   encryption:
     key: !secret api_encryption_key
 
@@ -109,6 +111,7 @@ http_request:
 i2c:
   sda: GPIO22
   scl: GPIO23
+  frequency: 400kHz
 
 sensor:
   - platform: uptime
