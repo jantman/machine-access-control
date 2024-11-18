@@ -17,6 +17,7 @@ classifiers = [
 
 [tool.poetry.scripts]
 neongetter = "dm_mac.neongetter:main"
+mac-server = "dm_mac:main"
 
 [tool.poetry.urls]
 Changelog = "https://github.com/jantman/machine_access_control/releases"

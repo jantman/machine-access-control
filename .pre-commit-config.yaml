@@ -3,10 +3,6 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-  -   repo: https://github.com/akaihola/darglint2
-      rev: v1.8.2
-      hooks:
-      - id: darglint2
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -16,7 +12,7 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
-        args: ["--ignore=E203,S301,S403,W503,C901", --darglint-ignore-regex, .*]
+        args: ["--ignore=E203,S301,S403,W503,C901"]
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.19.0
     hooks:

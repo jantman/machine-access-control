@@ -1,6 +1,9 @@
 """Decatur Makers Machine Access Control."""
 
+import argparse
+import asyncio
 import logging
+import sys
 from time import time
 
 from quart import Quart
@@ -61,3 +64,23 @@ def create_app() -> Quart:
     app.register_blueprint(api)
     app.add_url_rule("/metrics", view_func=prometheus_route)
     return app
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Run Machine Access Control (MAC) server")
+    p.add_argument(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        default=False,
+        help="Debug mode",
+    )
+    args = p.parse_args(sys.argv[1:])
+    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+    app: Quart = create_app()
+    app.run(loop=loop, debug=args.debug, host="0.0.0.0")
+
+
+if __name__ == "__main__":
+    main()
