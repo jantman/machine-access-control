@@ -30,7 +30,9 @@ filelock = "^3.15.4"
 prometheus-client = "^0.20.0"
 quart = "^0.19.8"
 asyncio = "^3.4.3"
-slack-bolt = "^1.21.2"
+slack-bolt = {git = "https://github.com/jantman/bolt-python.git", rev = "v1.21.2-loop"}
+aiohttp = "^3.11.4"
+slack-sdk = {git = "https://github.com/jantman/python-slack-sdk.git", rev = "v3.33.4-loop"}
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"
