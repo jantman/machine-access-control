@@ -13,9 +13,37 @@ from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
-from dm_mac.views.prometheus import CONTENT_TYPE_LATEST
+from dm_mac.views.prometheus import CONTENT_TYPE_LATEST, LabeledGaugeMetricFamily
 
 from .quart_test_helpers import app_and_client
+
+
+class TestLabeledGaugeMetricFamily:
+
+    def test_no_value_no_labels(self):
+        g = LabeledGaugeMetricFamily('name', 'doc')
+        assert g.name == 'name'
+        assert g.documentation == 'doc'
+        assert g._labels == {}
+        assert len(g.samples) == 0
+
+    def test_with_labels(self):
+        g = LabeledGaugeMetricFamily(
+            'name', 'doc', labels={'foo': 'bar'}
+        )
+        assert g.name == 'name'
+        assert g.documentation == 'doc'
+        assert g._labels == {'foo': 'bar'}
+        assert len(g.samples) == 0
+
+    def test_with_value(self):
+        g = LabeledGaugeMetricFamily(
+            'name', 'doc', value=1.23
+        )
+        assert g.name == 'name'
+        assert g.documentation == 'doc'
+        assert g._labels == {}
+        assert len(g.samples) == 1
 
 
 class TestPrometheus:

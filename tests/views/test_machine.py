@@ -2466,6 +2466,24 @@ class TestOopsApi:
         assert response.status_code == 404
         assert await response.json == {"error": "No such machine: invalid-machine-name"}
 
+    async def test_oops_exception(self, tmp_path: Path) -> None:
+        """Test oops POST."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        assert m.state.is_oopsed is False
+        m.oops = RuntimeError()
+        # send request
+        response: Response = await client.post(
+            "/api/machine/oops/metal-mill",
+        )
+        # check response
+        assert response.status_code == 500
+
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
 class TestLockApi:
@@ -2539,3 +2557,21 @@ class TestLockApi:
         # check response
         assert response.status_code == 404
         assert await response.json == {"error": "No such machine: invalid-machine-name"}
+
+    async def test_lockout_post_exception(self, tmp_path: Path) -> None:
+        """Test lockout POST that raises an exception."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        # set up state
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        assert m.state.is_oopsed is False
+        m.lockout = RuntimeError()
+        # send request
+        response: Response = await client.post(
+            "/api/machine/locked_out/metal-mill",
+        )
+        # check response
+        assert response.status_code == 500

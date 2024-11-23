@@ -24,6 +24,7 @@ To set up the Slack integration:
 4. On the next screen, ``Installed App Settings``, copy the ``Bot User OAuth Token`` and set this as the ``SLACK_BOT_TOKEN`` environment variable for the MAC server.
 5. Go back to the main settings for your app and navigate to ``Socket Mode`` under ``Settings`` on the left menu; toggle on ``Enable Socket Mode``. For ``Token Name``, enter ``socket-mode-token`` and click ``Generate``. Copy the generated token and set it as the ``SLACK_APP_TOKEN`` environment variable for the MAC server **TBD is this needed? document on config page.**
 6. Go back to the main settings for your app and navigate to ``Basic Information`` under ``Settings`` on the left menu; in the ``App Credentials`` pane click ``Show`` in the ``Signing Secret`` box and then copy that value; set it as the ``SLACK_SIGNING_SECRET`` environment variable for the MAC server.
+7. Go back to the main settings for your app and navigate to ``Event Subscriptions`` under ``Features`` on the left menu; click the toggle in the upper left of the panel to Enable Events; under ``Subscribe to bot events`` add a subscription for ``app_mention``.
 
 .. _slack.configuration:
 
