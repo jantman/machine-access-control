@@ -1,10 +1,11 @@
 """Decatur Makers Machine Access Control."""
 
 import argparse
-from asyncio import AbstractEventLoop, get_event_loop
 import logging
 import os
 import sys
+from asyncio import AbstractEventLoop
+from asyncio import get_event_loop
 from time import time
 
 from quart import Quart
@@ -103,7 +104,8 @@ def main() -> None:
         set_log_info(logger)
     loop: AbstractEventLoop = get_event_loop()
     app = create_app()
-    if "SLACK_APP_TOKEN" in os.environ:
+    token: str = os.environ.get("SLACK_APP_TOKEN", "").strip()
+    if token:
         slack: SlackHandler = SlackHandler(app)
         app.config.update({"SLACK_HANDLER": slack})
         handler = AsyncSocketModeHandler(

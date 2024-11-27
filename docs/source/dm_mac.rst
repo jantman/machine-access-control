@@ -24,4 +24,5 @@ Submodules
 
    dm_mac.cli_utils
    dm_mac.neongetter
+   dm_mac.slack_handler
    dm_mac.utils

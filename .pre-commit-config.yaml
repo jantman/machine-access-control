@@ -54,6 +54,7 @@ repos:
         language: system
         files: "^(src/|tests/).*$"
         types: [python]
+        pass_filenames: false
         # run for every possible stage other than "manual", to prevent
         # a duplicate run in GitHub Actions, which also fails because
         # of a shallow git clone

@@ -18,21 +18,9 @@ class SlackHandler:
             token=os.environ["SLACK_BOT_TOKEN"],
             signing_secret=os.environ["SLACK_SIGNING_SECRET"],
         )
-        self.app.event("app_mention")(self.event_test)
-        self.app.command("/hello-bolt-python")(self.command)
+        self.app.event("app_mention")(self.app_mention)
         logger.debug("SlackHandler initialized.")
 
-    async def UNUSEDcheck_auth(self):
-        authtest = await self.app.client.auth_test()
-        logger.info(
-            "Created Slack AsyncApp; name=%s; authtest=%s", self.app.name, authtest
-        )
-
-    async def event_test(self, body, say):
+    async def app_mention(self, body, say):
         logger.info(body)
         await say("What's up?")
-
-    # or app.command(re.compile(r"/hello-.+"))(test_command)
-    async def command(self, ack, body):
-        user_id = body["user_id"]
-        await ack(f"Hi <@{user_id}>!")
