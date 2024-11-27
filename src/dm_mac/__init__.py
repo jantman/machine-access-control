@@ -1,7 +1,7 @@
 """Decatur Makers Machine Access Control."""
 
 import argparse
-import asyncio
+from asyncio import AbstractEventLoop, get_event_loop
 import logging
 import os
 import sys
@@ -101,7 +101,7 @@ def main() -> None:
         set_log_debug(logger)
     else:
         set_log_info(logger)
-    loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+    loop: AbstractEventLoop = get_event_loop()
     app = create_app()
     if "SLACK_APP_TOKEN" in os.environ:
         slack: SlackHandler = SlackHandler(app)
