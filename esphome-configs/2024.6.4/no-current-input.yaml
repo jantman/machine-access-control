@@ -1,7 +1,7 @@
 # This config expects the following hardware:
 #
 # - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO23
-# - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO25
+# - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO18
 # - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
 # - oops button LED connected directly to GPIO5
 # - output relay on GPIO33
@@ -138,7 +138,7 @@ sensor:
 
 binary_sensor:
   - platform: gpio
-    pin: GPIO25
+    pin: GPIO18
     name: "Card Present"
     id: card_present
     on_release:
