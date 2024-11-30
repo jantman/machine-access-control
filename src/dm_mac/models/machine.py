@@ -17,6 +17,7 @@ from typing import Tuple
 from typing import cast
 
 from filelock import FileLock
+from humanize import naturaldelta
 from jsonschema import validate
 from quart import current_app
 
@@ -301,6 +302,12 @@ class MachineState:
         self.display_text = self.DEFAULT_DISPLAY_TEXT
         self.status_led_rgb = (0.0, 0.0, 0.0)
         self.status_led_brightness = 0.0
+        # log to Slack, if enabled
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.admin_log(f"Machine {self.machine.name} has rebooted.")
 
     def lockout(self) -> None:
         """Lock-out the machine."""
@@ -415,7 +422,7 @@ class MachineState:
         # locking handled in update()
         self.oops(do_locking=False)
         # log to Slack, if enabled
-        slack = current_app.config.get("SLACK_HANDLER")
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not slack:
             # Slack integration is not enabled
             return
@@ -434,6 +441,13 @@ class MachineState:
             self.current_user.full_name if self.current_user else self.rfid_value,
             time() - cast(float, self.rfid_present_since),
         )
+        log_str: str = (
+            f"RFID logout on {self.machine.name} by " + self.current_user.full_name
+            if self.current_user
+            else "unknown"
+            + "; session duration "
+            + naturaldelta(time() - cast(float, self.rfid_present_since))
+        )
         # locking handled in update()
         self.rfid_value = None
         self.rfid_present_since = None
@@ -443,6 +457,12 @@ class MachineState:
             self.display_text = self.DEFAULT_DISPLAY_TEXT
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0.0
+        # log to Slack, if enabled
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.admin_log(log_str)
 
     def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
         """Handle change in the RFID value."""
@@ -450,6 +470,7 @@ class MachineState:
         self.rfid_present_since = time()
         self.rfid_value = rfid_value
         user: Optional[User] = users.users_by_fob.get(rfid_value)
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not user:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt on %s by unknown fob %s",
@@ -457,10 +478,19 @@ class MachineState:
                 rfid_value,
             )
             if self.is_oopsed or self.is_locked_out:
+                if slack:
+                    slack.admin_log(
+                        f"RFID login attempt on {self.machine.name} "
+                        "by unknown fob when oopsed or locked out."
+                    )
                 return
             self.display_text = "Unknown RFID"
             self.status_led_rgb = (1.0, 0.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by unknown fob"
+                )
             return
         # ok, we have a known user
         logname = f"{user.full_name} ({rfid_value})"
@@ -471,6 +501,11 @@ class MachineState:
                 logname,
             )
             # don't change anything
+            if slack:
+                slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by {logname} "
+                    "when oopsed."
+                )
             return
         if self.is_locked_out:
             logging.getLogger("AUTH").warning(
@@ -479,6 +514,11 @@ class MachineState:
                 logname,
             )
             # don't change anything
+            if slack:
+                slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by {logname} "
+                    "when machine locked-out."
+                )
             return
         if self._user_is_authorized(user):
             logging.getLogger("AUTH").info(
@@ -492,6 +532,11 @@ class MachineState:
             self.display_text = f"Welcome,\n{user.preferred_name}"
             self.status_led_rgb = (0.0, 1.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                slack.admin_log(
+                    f"RFID login on {self.machine.name} by authorized user "
+                    f"{user.full_name}"
+                )
         else:
             logging.getLogger("AUTH").info(
                 "User %s (%s) UNAUTHORIZED for %s",
@@ -503,6 +548,11 @@ class MachineState:
             self.display_text = "Unauthorized"
             self.status_led_rgb = (1.0, 0.5, 0.0)  # orange
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                slack.admin_log(
+                    f"rejected RFID login on {self.machine.name} by "
+                    f"UNAUTHORIZED user {user.full_name}"
+                )
 
     def _user_is_authorized(self, user: User) -> bool:
         """Return whether user is authorized for this machine."""

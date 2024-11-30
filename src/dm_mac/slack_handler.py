@@ -294,3 +294,9 @@ class SlackHandler:
             channel=self.oops_channel_id,
             text=f"Machine {machine.name} is locked-out for maintenance.",
         )
+
+    async def admin_log(self, message: str) -> None:
+        """Log a string to the admin channel only."""
+        await self.app.client.chat_postMessage(
+            channel=self.control_channel_id, text=message
+        )
