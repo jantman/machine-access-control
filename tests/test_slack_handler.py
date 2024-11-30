@@ -81,8 +81,8 @@ class TestSlackHandler:
     def setup_method(self, _) -> None:
         """Setup for each method in the class."""
         self.quart_app = Mock(spec_set=Quart)
-        self.slack_app = Mock(spec_set=AsyncApp)
-        self.slack_client = Mock()
+        self.slack_app = AsyncMock(spec_set=AsyncApp)
+        self.slack_client = AsyncMock()
         type(self.slack_app).client = self.slack_client
 
         async def users_info(user=None):
@@ -376,7 +376,15 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == []
-        assert self.slack_client.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="Machine metal-mill oopsed via Slack by unknown user.",
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine metal-mill has been Oops'ed!"
+            ),
+        ]
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
 
@@ -452,7 +460,15 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == []
-        assert self.slack_client.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin", text="Machine metal-mill locked-out via Slack."
+            ),
+            call.chat_postMessage(
+                channel="Coops",
+                text="Machine metal-mill is locked-out for maintenance.",
+            ),
+        ]
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_locked_out is True
 
@@ -528,7 +544,14 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == []
-        assert self.slack_client.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin", text="Machine metal-mill un-oopsed via Slack."
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine metal-mill oops has been cleared."
+            ),
+        ]
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
         assert mconf.machines_by_name["metal-mill"].state.is_locked_out is False
@@ -553,7 +576,16 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == []
-        assert self.slack_client.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="Machine metal-mill locked-out cleared via Slack.",
+            ),
+            call.chat_postMessage(
+                channel="Coops",
+                text="Machine metal-mill is no longer locked-out for " "maintenance.",
+            ),
+        ]
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
         assert mconf.machines_by_name["metal-mill"].state.is_locked_out is False

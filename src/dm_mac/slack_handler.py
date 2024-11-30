@@ -210,7 +210,7 @@ class SlackHandler:
         if mach.state.is_oopsed:
             await say(f"Machine {mname} is already oopsed.")
             return
-        mach.oops(slack=self)
+        await mach.oops(slack=self)
 
     async def lock(self, msg: Message, say: AsyncSay) -> None:
         """Set lock status on a machine."""
@@ -226,7 +226,7 @@ class SlackHandler:
         if mach.state.is_locked_out:
             await say(f"Machine {mname} is already locked-out.")
             return
-        mach.lockout(slack=self)
+        await mach.lockout(slack=self)
 
     async def clear(self, msg: Message, say: AsyncSay) -> None:
         """Clear oops and lock status on a machine."""
@@ -241,10 +241,10 @@ class SlackHandler:
             return
         acted = False
         if mach.state.is_oopsed:
-            mach.unoops(slack=self)
+            await mach.unoops(slack=self)
             acted = True
         if mach.state.is_locked_out:
-            mach.unlock(slack=self)
+            await mach.unlock(slack=self)
             acted = True
         if not acted:
             await say(f"Machine {mname} is not oopsed or locked-out.")

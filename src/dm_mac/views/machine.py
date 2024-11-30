@@ -118,7 +118,7 @@ async def update() -> Tuple[Response, int]:
     if data.get("rfid_value") == "":
         data["rfid_value"] = None
     try:
-        resp = machine.update(users, **data)
+        resp = await machine.update(users, **data)
         return jsonify(resp), 200
     except Exception as ex:
         logger.error("Error in machine update %s: %s", data, ex, exc_info=True)
@@ -136,9 +136,9 @@ async def oops(machine_name: str) -> Tuple[Response, int]:
         return jsonify({"error": f"No such machine: {machine_name}"}), 404
     try:
         if method == "DELETE":
-            machine.unoops()
+            await machine.unoops()
         else:
-            machine.oops()
+            await machine.oops()
         machine.state._save_cache()
         return jsonify({"success": True}), 200
     except Exception as ex:
@@ -163,9 +163,9 @@ async def locked_out(machine_name: str) -> Tuple[Response, int]:
         return jsonify({"error": f"No such machine: {machine_name}"}), 404
     try:
         if method == "DELETE":
-            machine.unlock()
+            await machine.unlock()
         else:
-            machine.lockout()
+            await machine.lockout()
         machine.state._save_cache()
         return jsonify({"success": True}), 200
     except Exception as ex:

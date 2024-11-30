@@ -542,7 +542,7 @@ class TestLockOut:
         m.state.last_update = 1689477248.0
         m.state.last_checkin = 1689477248.0
         with patch("dm_mac.models.machine.current_app", app):
-            m.lockout()
+            await m.lockout()
         # send request
         response: Response = await client.post(
             "/api/machine/update",
@@ -605,7 +605,7 @@ class TestLockOut:
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         m.state.display_text = "Welcome,\nPKenneth"
         with patch("dm_mac.models.machine.current_app", app):
-            m.lockout()
+            await m.lockout()
         # send request
         response: Response = await client.post(
             "/api/machine/update",
@@ -667,7 +667,7 @@ class TestLockOut:
         m.state.status_led_rgb = (1.0, 0.5, 0.0)
         m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
         with patch("dm_mac.models.machine.current_app", app):
-            m.unlock()
+            await m.unlock()
         # send request
         response: Response = await client.post(
             "/api/machine/update",
