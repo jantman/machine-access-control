@@ -108,7 +108,7 @@ async def update() -> Tuple[Response, int]:
        }
     """
     data: Dict[str, Any] = cast(Dict[str, Any], await request.json)  # noqa
-    logger.warning("UPDATE request: %s", data)
+    logger.info("UPDATE request: %s", data)
     machine_name: str = data.pop("machine_name")
     mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
     machine: Optional[Machine] = mconf.machines_by_name.get(machine_name)

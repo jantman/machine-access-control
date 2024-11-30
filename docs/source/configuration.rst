@@ -56,6 +56,12 @@ Environment Variables
    * - ``SLACK_SIGNING_SECRET``
      - no
      - If using the Slack integration, the Signing Secret for your installation of the app.
+   * - ``SLACK_CONTROL_CHANNEL_ID``
+     - no
+     - If using the Slack integration, the Channel ID of of the private channel for admins to control MAC.
+   * - ``SLACK_OOPS_CHANNEL_ID``
+     - no
+     - If using the Slack integration, the Channel ID of of the public channel where Oops and maintenance notices will be posted, and where machine status can be checked.
 
 .. _configuration.machine-state-dir:
 

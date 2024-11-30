@@ -8,6 +8,7 @@ from logging import Logger
 from logging import getLogger
 from threading import Lock
 from time import time
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import List
@@ -17,10 +18,15 @@ from typing import cast
 
 from filelock import FileLock
 from jsonschema import validate
+from quart import current_app
 
 from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    from dm_mac.slack_handler import SlackHandler
 
 
 logger: Logger = getLogger(__name__)
@@ -80,21 +86,53 @@ class Machine:
         """Pass directly to self.state and return result."""
         return self.state.update(users, **kwargs)
 
-    def lockout(self) -> None:
+    def lockout(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.lockout()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.log_lock(self, source)
 
-    def unlock(self) -> None:
+    def unlock(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.unlock()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.log_unlock(self, source)
 
-    def oops(self) -> None:
+    def oops(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.oops()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.log_oops(self, source)
 
-    def unoops(self) -> None:
+    def unoops(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.unoops()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        slack.log_unoops(self, source)
 
     @property
     def as_dict(self) -> Dict[str, Any]:
@@ -365,15 +403,28 @@ class MachineState:
     def _handle_oops(self, users: UsersConfig) -> None:
         """Handle oops button press."""
         ustr: str = ""
+        uname: Optional[str] = None
         if self.rfid_value:
             ustr = " RFID card is present but unknown."
             if user := users.users_by_fob.get(self.rfid_value):
                 ustr = f" Current user is: {user.full_name}."
+                uname = user.full_name
         logging.getLogger("OOPS").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
         # locking handled in update()
         self.oops(do_locking=False)
+        # log to Slack, if enabled
+        slack = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        src = "Oops button"
+        if self.rfid_value:
+            src += " with RFID present"
+        else:
+            src += " without RFID present"
+        slack.log_oops(self.machine, src, user_name=uname)
 
     def _handle_rfid_remove(self) -> None:
         """Handle RFID card removed."""
