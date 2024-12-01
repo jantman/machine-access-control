@@ -47,11 +47,11 @@ class TestMain:
         assert mocks["create_app"].mock_calls == [
             call(),
             call().config.update({"SLACK_HANDLER": mocks["SlackHandler"].return_value}),
-            call().run(loop=loop, debug=False, host="0.0.0.0"),
+            call().run(loop=loop, debug=False, host="0.0.0.0", port=5000),
         ]
         assert app.mock_calls == [
             call.config.update({"SLACK_HANDLER": mocks["SlackHandler"].return_value}),
-            call.run(loop=loop, debug=False, host="0.0.0.0"),
+            call.run(loop=loop, debug=False, host="0.0.0.0", port=5000),
         ]
         assert mocks["SlackHandler"].mock_calls == [call(app)]
         assert mocks["AsyncSocketModeHandler"].mock_calls == [
@@ -62,12 +62,8 @@ class TestMain:
             call.set_exception_handler(asyncio_exception_handler),
             call.create_task(handler.start_async()),
         ]
-        assert app.mock_calls == [
-            call.config.update({"SLACK_HANDLER": mocks["SlackHandler"].return_value}),
-            call.run(loop=loop, debug=False, host="0.0.0.0"),
-        ]
 
-    @patch("sys.argv", ["mac-server", "-v"])
+    @patch("sys.argv", ["mac-server", "-v", "--port=123"])
     @patch.dict("os.environ", {"SLACK_APP_TOKEN": ""})
     def test_without_slack(self):
         mocks: List[MagicMock]
@@ -95,12 +91,13 @@ class TestMain:
         assert mocks["set_log_info"].mock_calls == []
         assert mocks["create_app"].mock_calls == [
             call(),
-            call().run(loop=loop, debug=False, host="0.0.0.0"),
+            call().run(loop=loop, debug=False, host="0.0.0.0", port=123),
         ]
-        assert app.mock_calls == [call.run(loop=loop, debug=False, host="0.0.0.0")]
+        assert app.mock_calls == [
+            call.run(loop=loop, debug=False, host="0.0.0.0", port=123)
+        ]
         assert mocks["SlackHandler"].mock_calls == []
         assert mocks["AsyncSocketModeHandler"].mock_calls == []
         assert loop.mock_calls == [
             call.set_exception_handler(asyncio_exception_handler),
         ]
-        assert app.mock_calls == [call.run(loop=loop, debug=False, host="0.0.0.0")]

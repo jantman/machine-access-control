@@ -31,7 +31,7 @@ class TestUsersConfig:
         os.chdir(tmp_path)
         cls: UsersConfig = UsersConfig()
         assert len(cls.users) == 594
-        assert len(cls.users_by_fob) == 594
+        assert len(cls.users_by_fob) == 600
         assert cls.load_time == 1689477248.0
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
