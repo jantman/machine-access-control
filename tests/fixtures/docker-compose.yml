@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  mac:
+    image: mac
+    restart: always
+    volumes:
+      - ./users.json:/users.json
+      - ./machines.json:/machines.json
+      - ./machine_state:/machine_state
+    environment:
+      - SLACK_CONTROL_CHANNEL_ID=Cxxxxx
+      - SLACK_OOPS_CHANNEL_ID=Cxxxxx
+    ports:
+      - 5000:80

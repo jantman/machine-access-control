@@ -235,6 +235,7 @@ fabric.properties
 pytest.xml
 pytest.html
 venv
-machine_state/
-machines.json
-users.json
+/machine_state/
+/machines.json
+/users.json
+/docker-compose.yml
