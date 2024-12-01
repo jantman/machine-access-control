@@ -58,7 +58,7 @@ responses:
       Orientation","status":"ACTIVE","groupId":"3","displayType":"Checkbox","dataType":null,"constituentReadOnly":false,"component":"Account","optionValues":[{"id":"56","name":"Training
       Complete","status":null,"code":"","visibleOnPublicForms":false,"visibleOnConstituentForms":false}],"isEventSpecificField":null,"eventId":null,"attendeeQuestion":null,"constituentName":null,"publicName":null,"constituentRequired":null,"publicRequired":null,"constituentVisible":null,"publicVisible":null},{"id":"142","name":"Woodshop
       Power Tools","status":"ACTIVE","groupId":"3","displayType":"Checkbox","dataType":null,"constituentReadOnly":false,"component":"Account","optionValues":[{"id":"62","name":"Training
-      Complete","status":null,"code":"","visibleOnPublicForms":true,"visibleOnConstituentForms":true}],"isEventSpecificField":null,"eventId":null,"attendeeQuestion":null,"constituentName":null,"publicName":null,"constituentRequired":null,"publicRequired":null,"constituentVisible":null,"publicVisible":null}]'
+      Complete","status":null,"code":"","visibleOnPublicForms":true,"visibleOnConstituentForms":true}],"isEventSpecificField":null,"eventId":null,"attendeeQuestion":null,"constituentName":null,"publicName":null,"constituentRequired":null,"publicRequired":null,"constituentVisible":null,"publicVisible":null},{"id":"979","name":"FobCSV","status":"ACTIVE","groupId":"5","displayType":"OneLineText","dataType":"Name","constituentReadOnly":true,"component":"Account","optionValues":null,"isEventSpecificField":null,"eventId":null,"attendeeQuestion":null,"constituentName":null,"publicName":null,"constituentRequired":null,"publicRequired":null,"constituentVisible":null,"publicVisible":null}]'
     content_type: text/plain
     headers:
       Cache-Control: no-cache, no-store, max-age=0, must-revalidate
@@ -80,7 +80,7 @@ responses:
       "sortDirection": null, "totalPages": 3, "totalResults": 594}, "searchResults":
       [{"Woodshop Power Tools": null, "Account ID": "1", "Wood Lathe": null, "OxyAcetylene
       Welder": null, "Woodshop Orientation": null, "Full Name (F)": "Kenneth Bradford",
-      "Fob10Digit": "0047531501", "First Name": "Kenneth", "MiG Welder/Plasma Cutter":
+      "Fob10Digit": "0047531501", "FobCSV": "2155918768", "First Name": "Kenneth", "MiG Welder/Plasma Cutter":
       null, "Membership Expiration Date": "2024-09-16", "Dimensioning Tools": null,
       "Preferred Name": "PKenneth", "Metal Lathe": null, "Glowforge": null, "CNC Router":
       null, "Woodshop 201": null, "Bronte": null, "Metal Mill": null, "Woodshop 101":
@@ -1562,7 +1562,7 @@ responses:
       "Woodshop 101": null, "Email 1": "churchmichael@example.com", "TiG Welder":
       null, "Prusa 3D Printer": null}, {"Woodshop Power Tools": null, "Account ID":
       "202", "Wood Lathe": null, "OxyAcetylene Welder": null, "Woodshop Orientation":
-      "Training Complete", "Full Name (F)": "Cheryl Cummings", "Fob10Digit": "4647187596",
+      "Training Complete", "Full Name (F)": "Cheryl Cummings", "Fob10Digit": "4647187596", "FobCSV": "6801230722,4928257158,7649834357",
       "First Name": "Cheryl", "MiG Welder/Plasma Cutter": null, "Membership Expiration
       Date": "2024-09-16", "Dimensioning Tools": "Training Complete", "Preferred Name":
       "PCheryl", "Metal Lathe": null, "Glowforge": null, "CNC Router": null, "Woodshop
@@ -4436,7 +4436,7 @@ responses:
       1": "gbrown@example.net", "TiG Welder": null, "Prusa 3D Printer": null}, {"Woodshop
       Power Tools": null, "Account ID": "594", "Wood Lathe": null, "OxyAcetylene Welder":
       null, "Woodshop Orientation": null, "Full Name (F)": "Douglas Davis", "Fob10Digit":
-      "4460369520", "First Name": "Douglas", "MiG Welder/Plasma Cutter": null, "Membership
+      "4460369520", "FobCSV": "3958122959,2182183675", "First Name": "Douglas", "MiG Welder/Plasma Cutter": null, "Membership
       Expiration Date": "2025-06-19", "Dimensioning Tools": null, "Preferred Name":
       "PDouglas", "Metal Lathe": null, "Glowforge": null, "CNC Router": null, "Woodshop
       201": null, "Bronte": null, "Metal Mill": null, "Woodshop 101": null, "Email

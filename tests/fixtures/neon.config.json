@@ -5,6 +5,6 @@
   "email_field": "Email 1",
   "expiration_field": "Membership Expiration Date",
   "account_id_field": "Account ID",
-  "fob_fields": ["Fob10Digit"],
+  "fob_fields": ["Fob10Digit", "FobCSV"],
   "authorized_field_value": "Training Complete"
 }

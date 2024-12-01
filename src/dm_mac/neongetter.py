@@ -67,7 +67,10 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             "type": "array",
             "items": {"type": "string"},
             "minItems": 1,
-            "description": "List of Neon field names containing RFID " "fob codes.",
+            "description": "List of Neon field names containing RFID "
+            "fob codes. The value of these fields can be either "
+            "a single string fob code, or a CSV list of multiple"
+            " fob codes.",
         },
         "authorized_field_value": {
             "type": "string",
@@ -307,11 +310,7 @@ class NeonUserUpdater:
         dupes: List[str] = []
         for user in rawdata:
             tmp: Dict[str, Any] = {
-                "fob_codes": [
-                    user.get(x)
-                    for x in self._config["fob_fields"]
-                    if user.get(x) is not None
-                ],
+                "fob_codes": [],
                 "account_id": user[self._config["account_id_field"]],  # type: ignore
                 "email": user[self._config["email_field"]],  # type: ignore
                 "full_name": user[self._config["full_name_field"]],  # type: ignore
@@ -324,6 +323,9 @@ class NeonUserUpdater:
                     if user[x] == self._config["authorized_field_value"]
                 ],
             }
+            for x in self._config["fob_fields"]:
+                if tmpfobs := user.get(x):
+                    tmp["fob_codes"].extend(tmpfobs.split(","))
             if not tmp["expiration_ymd"]:
                 logger.info(
                     "Found user with no expiration date; account_id=%s name=%s",
