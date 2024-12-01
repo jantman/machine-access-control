@@ -34,3 +34,27 @@ def load_json_config(env_var: str, default_path: str) -> Any:
         "Loaded config of type %s with length %d", type(config).__name__, len(config)
     )
     return config
+
+
+def set_log_info(lgr: logging.Logger):
+    """set logger level to INFO"""
+    set_log_level_format(
+        lgr, logging.INFO, "%(asctime)s %(levelname)s:%(name)s:%(message)s"
+    )
+
+
+def set_log_debug(lgr: logging.Logger):
+    """set logger level to DEBUG, and debug-level output format"""
+    set_log_level_format(
+        lgr,
+        logging.DEBUG,
+        "%(asctime)s [%(levelname)s %(filename)s:%(lineno)s - "
+        "%(name)s.%(funcName)s() ] %(message)s",
+    )
+
+
+def set_log_level_format(lgr: logging.Logger, level: int, fmt: str):
+    """Set logger level and format."""
+    formatter = logging.Formatter(fmt=fmt)
+    lgr.handlers[0].setFormatter(formatter)
+    lgr.setLevel(level)

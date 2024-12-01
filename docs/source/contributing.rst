@@ -56,7 +56,7 @@ Running Locally
 
 .. code:: console
 
-   $ flask --app dm_mac run
+   $ mac-server --debug
 
 The app will now be available at http://127.0.0.1:5000
 

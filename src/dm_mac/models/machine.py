@@ -8,6 +8,7 @@ from logging import Logger
 from logging import getLogger
 from threading import Lock
 from time import time
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import List
@@ -16,11 +17,17 @@ from typing import Tuple
 from typing import cast
 
 from filelock import FileLock
+from humanize import naturaldelta
 from jsonschema import validate
+from quart import current_app
 
 from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
+
+
+if TYPE_CHECKING:  # pragma: no cover
+    from dm_mac.slack_handler import SlackHandler
 
 
 logger: Logger = getLogger(__name__)
@@ -74,27 +81,59 @@ class Machine:
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
 
-    def update(
+    async def update(
         self, users: UsersConfig, **kwargs: Any
     ) -> Dict[str, str | bool | float | List[float]]:
         """Pass directly to self.state and return result."""
-        return self.state.update(users, **kwargs)
+        return await self.state.update(users, **kwargs)
 
-    def lockout(self) -> None:
+    async def lockout(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.lockout()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.log_lock(self, source)
 
-    def unlock(self) -> None:
+    async def unlock(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.unlock()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.log_unlock(self, source)
 
-    def oops(self) -> None:
+    async def oops(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.oops()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.log_oops(self, source)
 
-    def unoops(self) -> None:
+    async def unoops(self, slack: Optional["SlackHandler"] = None) -> None:
         """Pass directly to self.state."""
         self.state.unoops()
+        source = "Slack"
+        if not slack:
+            slack = current_app.config.get("SLACK_HANDLER")
+            source = "API"
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.log_unoops(self, source)
 
     @property
     def as_dict(self) -> Dict[str, Any]:
@@ -248,7 +287,7 @@ class MachineState:
                         setattr(self, k, v)
         logger.debug("State loaded.")
 
-    def _handle_reboot(self) -> None:
+    async def _handle_reboot(self) -> None:
         """Handle when the ESP32 (MCU) has rebooted since last checkin.
 
         This logs out the current user if logged in and turns off the relay if
@@ -263,6 +302,12 @@ class MachineState:
         self.display_text = self.DEFAULT_DISPLAY_TEXT
         self.status_led_rgb = (0.0, 0.0, 0.0)
         self.status_led_brightness = 0.0
+        # log to Slack, if enabled
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.admin_log(f"Machine {self.machine.name} has rebooted.")
 
     def lockout(self) -> None:
         """Lock-out the machine."""
@@ -316,7 +361,7 @@ class MachineState:
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0
 
-    def update(
+    async def update(
         self,
         users: UsersConfig,
         oops: bool = False,
@@ -341,7 +386,7 @@ class MachineState:
                         uptime,
                         self.uptime,
                     )
-                    self._handle_reboot()
+                    await self._handle_reboot()
                 self.uptime = uptime
             if wifi_signal_db is not None:
                 self.wifi_signal_db = wifi_signal_db
@@ -351,37 +396,56 @@ class MachineState:
                 self.internal_temperature_c = internal_temperature_c
             self.last_checkin = time()
             if oops:
-                self._handle_oops(users)
+                await self._handle_oops(users)
                 self.last_update = time()
             if rfid_value != self.rfid_value:
                 if rfid_value is None:
-                    self._handle_rfid_remove()
+                    await self._handle_rfid_remove()
                 else:
-                    self._handle_rfid_insert(users, rfid_value)
+                    await self._handle_rfid_insert(users, rfid_value)
                 self.last_update = time()
         self._save_cache()
         return self.machine_response
 
-    def _handle_oops(self, users: UsersConfig) -> None:
+    async def _handle_oops(self, users: UsersConfig) -> None:
         """Handle oops button press."""
         ustr: str = ""
+        uname: Optional[str] = None
         if self.rfid_value:
             ustr = " RFID card is present but unknown."
             if user := users.users_by_fob.get(self.rfid_value):
                 ustr = f" Current user is: {user.full_name}."
+                uname = user.full_name
         logging.getLogger("OOPS").warning(
             "Machine %s was Oopsed.%s", self.machine.name, ustr
         )
         # locking handled in update()
         self.oops(do_locking=False)
+        # log to Slack, if enabled
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        src = "Oops button"
+        if self.rfid_value:
+            src += " with RFID present"
+        else:
+            src += " without RFID present"
+        await slack.log_oops(self.machine, src, user_name=uname)
 
-    def _handle_rfid_remove(self) -> None:
+    async def _handle_rfid_remove(self) -> None:
         """Handle RFID card removed."""
         logging.getLogger("AUTH").info(
             "RFID logout on %s by %s; session duration %d seconds",
             self.machine.name,
             self.current_user.full_name if self.current_user else self.rfid_value,
             time() - cast(float, self.rfid_present_since),
+        )
+        log_str: str = (
+            f"RFID logout on {self.machine.name} by "
+            + (self.current_user.full_name if self.current_user else "unknown")
+            + "; session duration "
+            + naturaldelta(time() - cast(float, self.rfid_present_since))
         )
         # locking handled in update()
         self.rfid_value = None
@@ -392,13 +456,20 @@ class MachineState:
             self.display_text = self.DEFAULT_DISPLAY_TEXT
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0.0
+        # log to Slack, if enabled
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if not slack:
+            # Slack integration is not enabled
+            return
+        await slack.admin_log(log_str)
 
-    def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
+    async def _handle_rfid_insert(self, users: UsersConfig, rfid_value: str) -> None:
         """Handle change in the RFID value."""
         # locking handled in update()
         self.rfid_present_since = time()
         self.rfid_value = rfid_value
         user: Optional[User] = users.users_by_fob.get(rfid_value)
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not user:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt on %s by unknown fob %s",
@@ -406,10 +477,19 @@ class MachineState:
                 rfid_value,
             )
             if self.is_oopsed or self.is_locked_out:
+                if slack:
+                    await slack.admin_log(
+                        f"RFID login attempt on {self.machine.name} "
+                        "by unknown fob when oopsed or locked out."
+                    )
                 return
             self.display_text = "Unknown RFID"
             self.status_led_rgb = (1.0, 0.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                await slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by unknown fob"
+                )
             return
         # ok, we have a known user
         logname = f"{user.full_name} ({rfid_value})"
@@ -420,6 +500,11 @@ class MachineState:
                 logname,
             )
             # don't change anything
+            if slack:
+                await slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by "
+                    f"{user.full_name} when oopsed."
+                )
             return
         if self.is_locked_out:
             logging.getLogger("AUTH").warning(
@@ -428,8 +513,13 @@ class MachineState:
                 logname,
             )
             # don't change anything
+            if slack:
+                await slack.admin_log(
+                    f"RFID login attempt on {self.machine.name} by "
+                    f"{user.full_name} when machine locked-out."
+                )
             return
-        if self._user_is_authorized(user):
+        if await self._user_is_authorized(user, slack=slack):
             logging.getLogger("AUTH").info(
                 "User %s (%s) authorized for %s; session start",
                 user.full_name,
@@ -441,6 +531,11 @@ class MachineState:
             self.display_text = f"Welcome,\n{user.preferred_name}"
             self.status_led_rgb = (0.0, 1.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                await slack.admin_log(
+                    f"RFID login on {self.machine.name} by authorized user "
+                    f"{user.full_name}"
+                )
         else:
             logging.getLogger("AUTH").info(
                 "User %s (%s) UNAUTHORIZED for %s",
@@ -452,8 +547,15 @@ class MachineState:
             self.display_text = "Unauthorized"
             self.status_led_rgb = (1.0, 0.5, 0.0)  # orange
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                await slack.admin_log(
+                    f"rejected RFID login on {self.machine.name} by "
+                    f"UNAUTHORIZED user {user.full_name}"
+                )
 
-    def _user_is_authorized(self, user: User) -> bool:
+    async def _user_is_authorized(
+        self, user: User, slack: Optional["SlackHandler"] = None
+    ) -> bool:
         """Return whether user is authorized for this machine."""
         for auth in self.machine.authorizations_or:
             if auth in user.authorizations:
@@ -473,6 +575,13 @@ class MachineState:
                 user.account_id,
                 self.machine.name,
             )
+            if slack:
+                await slack.admin_log(
+                    f"WARNING - Authorizing user {user.full_name} for "
+                    f"{self.machine.name} based on unauthorized_warn_only "
+                    "setting for machine. User is NOT authorized for this "
+                    "machine."
+                )
             return True
         return False
 

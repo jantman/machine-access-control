@@ -37,7 +37,7 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 .. image:: ../../hardware/v1_mcu/Hardware_v1.png
    :alt: Wiring diagram of system
 
-* RFID Reader
+* RFID Reader - Note that if using the same model that I did, you must add a solder blob on ``S2`` for Wiegand output.
 
   * ``CST`` to ``GPIO25``
   * ``Gnd`` to ground
@@ -63,9 +63,9 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 
 * Neopixel
 
-  * ``5v`` to ``5v``
-  * ``Gnd`` to ``Gnd``
-  * ``D1`` to Level Converter ``HV4`` to ``GPIO27``
+  * ``5v`` to ``5v`` (often red)
+  * ``Gnd`` to ``Gnd`` (often blue)
+  * ``D1`` to Level Converter ``HV4`` to ``GPIO27`` (often white)
 
 * LCD Display
 
@@ -74,7 +74,7 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
   * ``SDA`` to Level Converter ``HV2`` to ``GPIO22``
   * ``SCL`` to Level Converter ``HV3`` to ``GPIO23``
 
-* Optoisolated Relay
+* Optoisolated Relay - Output is N.O.
 
   * ``Gnd`` to ``Gnd``
   * ``In`` to ``GPIO33``
@@ -82,14 +82,14 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 
 * GX16-8 (8 pin) connector for power, control, and additional inputs. The MCU should have the female socket which has visible pins in it, and the wire going to it should have the male plug which has a bakelite housing that accepts those pins. Note that GX16-8 connectors have an alignment notch, a ring of 7 contacts, and one central contact. Contacts are numbered 1-7 clockwise from the alignment notch with 8 in the center.
 
-  * ``1`` to +5VDC power in
-  * ``2`` to power supply ground
-  * ``3`` to relay input / common
-  * ``4`` to relay output Normally Open
-  * ``5`` to ESP32 ``GPIO12`` for tamper switch (not yet implemented in software)
-  * ``6`` to ESP32 ``GPIO14`` for future use
-  * ``7`` reserved for future ammeter / current clamp use (not implemented in V1)
-  * ``8`` reserved for future ammeter / current clamp use (not implemented in V1)
+  * ``1`` to +5VDC power in (red)
+  * ``2`` to power supply ground (black)
+  * ``3`` to relay input / common (green)
+  * ``4`` to relay output Normally Open (green or brown)
+  * ``5`` to ESP32 ``GPIO12`` for tamper switch (not yet implemented in software) (blue)
+  * ``6`` to ESP32 ``GPIO14`` for future use (white)
+  * ``7`` reserved for future ammeter / current clamp use (not implemented in V1) (yellow)
+  * ``8`` reserved for future ammeter / current clamp use (not implemented in V1) (yellow or orange)
 
 .. _hardware.v1.enclosure:
 

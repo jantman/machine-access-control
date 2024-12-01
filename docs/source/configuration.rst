@@ -3,7 +3,7 @@
 Configuration
 =============
 
-TBD.
+Configuration of the machine-access-control (MAC) server is accomplished by some JSON configuration files and optional environment variables, as detailed below.
 
 .. _configuration.users-json:
 
@@ -26,6 +26,42 @@ Machines are configured via a ``machines.json`` file in the current directory, o
 The schema of this file is as follows:
 
 .. jsonschema:: dm_mac.models.machine.CONFIG_SCHEMA
+
+.. _configuration.env-vars:
+
+Environment Variables
+---------------------
+
+.. list-table:: Environment Variables
+   :header-rows: 1
+
+   * - Variable
+     - Required?
+     - Description
+   * - ``USERS_CONFIG``
+     - no
+     - path to users configuration file; default ``./users.json``
+   * - ``MACHINES_CONFIG``
+     - no
+     - path to machines configuration file; default ``./machines.json``
+   * - ``MACHINE_STATE_DIR``
+     - no
+     - path to machine state directory; default ``./machine_state``
+   * - ``SLACK_BOT_TOKEN``
+     - no
+     - If using the Slack integration, the Bot User OAuth Token for your installation of the app.
+   * - ``SLACK_APP_TOKEN``
+     - no
+     - If using the Slack integration, the Socket OAuth Token for your installation of the app.
+   * - ``SLACK_SIGNING_SECRET``
+     - no
+     - If using the Slack integration, the Signing Secret for your installation of the app.
+   * - ``SLACK_CONTROL_CHANNEL_ID``
+     - no
+     - If using the Slack integration, the Channel ID of of the private channel for admins to control MAC.
+   * - ``SLACK_OOPS_CHANNEL_ID``
+     - no
+     - If using the Slack integration, the Channel ID of of the public channel where Oops and maintenance notices will be posted, and where machine status can be checked.
 
 .. _configuration.machine-state-dir:
 

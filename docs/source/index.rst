@@ -10,6 +10,7 @@
    Introduction <introduction>
    Installation <installation>
    Configuration <configuration>
+   Slack Integration <slack>
    Hardware <hardware>
    Administration <admin>
    Contributing and Development <contributing>
