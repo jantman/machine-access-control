@@ -239,3 +239,4 @@ venv
 /machines.json
 /users.json
 /docker-compose.yml
+/neon.config.json
