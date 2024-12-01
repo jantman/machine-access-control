@@ -66,6 +66,14 @@ api.register_blueprint(machineapi)
 app: Quart
 
 
+def asyncio_exception_handler(_, context):
+    # get details of the exception
+    exception = context["exception"]
+    message = context["message"]
+    # log exception
+    logger.error(f"Task failed, msg={message}, exception={exception}")
+
+
 def create_app() -> Quart:
     """Factory to create the app."""
     app: Quart = Quart("dm_mac")
@@ -103,6 +111,7 @@ def main() -> None:
     else:
         set_log_info(logger)
     loop: AbstractEventLoop = get_event_loop()
+    loop.set_exception_handler(asyncio_exception_handler)
     app = create_app()
     token: str = os.environ.get("SLACK_APP_TOKEN", "").strip()
     if token:

@@ -4,7 +4,16 @@ from unittest.mock import MagicMock
 from unittest.mock import call
 from unittest.mock import patch
 
+from dm_mac import asyncio_exception_handler
 from dm_mac import main
+
+
+def test_exception_handler():
+    with patch("dm_mac.logger") as m_logger:
+        asyncio_exception_handler(None, {"exception": "exc", "message": "msg"})
+        assert m_logger.mock_calls == [
+            call.error("Task failed, msg=msg, exception=exc")
+        ]
 
 
 class TestMain:
@@ -49,7 +58,10 @@ class TestMain:
             call(slack_app, "app-token", loop=loop),
             call().start_async(),
         ]
-        assert loop.mock_calls == [call.create_task(handler.start_async())]
+        assert loop.mock_calls == [
+            call.set_exception_handler(asyncio_exception_handler),
+            call.create_task(handler.start_async()),
+        ]
         assert app.mock_calls == [
             call.config.update({"SLACK_HANDLER": mocks["SlackHandler"].return_value}),
             call.run(loop=loop, debug=False, host="0.0.0.0"),
@@ -88,5 +100,7 @@ class TestMain:
         assert app.mock_calls == [call.run(loop=loop, debug=False, host="0.0.0.0")]
         assert mocks["SlackHandler"].mock_calls == []
         assert mocks["AsyncSocketModeHandler"].mock_calls == []
-        assert loop.mock_calls == []
+        assert loop.mock_calls == [
+            call.set_exception_handler(asyncio_exception_handler),
+        ]
         assert app.mock_calls == [call.run(loop=loop, debug=False, host="0.0.0.0")]

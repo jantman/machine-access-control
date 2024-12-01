@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from asyncio import create_task
 from textwrap import dedent
 from typing import Any
 from typing import Dict
@@ -250,53 +251,107 @@ class SlackHandler:
             await say(f"Machine {mname} is not oopsed or locked-out.")
 
     async def log_unoops(self, machine: Machine, source: str) -> None:
-        """Log when a machine is un-oopsed."""
-        await self.app.client.chat_postMessage(
-            channel=self.control_channel_id,
-            text=f"Machine {machine.name} un-oopsed via {source}.",
+        """
+        Log when a machine is un-oopsed.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        Otherwise, updates to the relay/LCD/LED would be delayed by at least the
+        timeout trying to post to Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id,
+                text=f"Machine {machine.name} un-oopsed via {source}.",
+            )
         )
-        await self.app.client.chat_postMessage(
-            channel=self.oops_channel_id,
-            text=f"Machine {machine.name} oops has been cleared.",
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.oops_channel_id,
+                text=f"Machine {machine.name} oops has been cleared.",
+            )
         )
 
     async def log_oops(
         self, machine: Machine, source: str, user_name: Optional[str] = "unknown user"
     ) -> None:
-        """Log when a machine is oopsed."""
-        await self.app.client.chat_postMessage(
-            channel=self.control_channel_id,
-            text=f"Machine {machine.name} oopsed via {source} by {user_name}.",
+        """
+        Log when a machine is oopsed.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        Otherwise, updates to the relay/LCD/LED would be delayed by at least the
+        timeout trying to post to Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id,
+                text=f"Machine {machine.name} oopsed via {source} by {user_name}.",
+            )
         )
-        await self.app.client.chat_postMessage(
-            channel=self.oops_channel_id,
-            text=f"Machine {machine.name} has been Oops'ed!",
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.oops_channel_id,
+                text=f"Machine {machine.name} has been Oops'ed!",
+            )
         )
 
     async def log_unlock(self, machine: Machine, source: str) -> None:
-        """Log when a machine is un-locked."""
-        await self.app.client.chat_postMessage(
-            channel=self.control_channel_id,
-            text=f"Machine {machine.name} locked-out cleared via {source}.",
+        """
+        Log when a machine is un-locked.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        Otherwise, updates to the relay/LCD/LED would be delayed by at least the
+        timeout trying to post to Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id,
+                text=f"Machine {machine.name} locked-out cleared via {source}.",
+            )
         )
-        await self.app.client.chat_postMessage(
-            channel=self.oops_channel_id,
-            text=f"Machine {machine.name} is no longer locked-out for " f"maintenance.",
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.oops_channel_id,
+                text=f"Machine {machine.name} is no longer locked-out for "
+                f"maintenance.",
+            )
         )
 
     async def log_lock(self, machine: Machine, source: str) -> None:
-        """Log when a machine is locked."""
-        await self.app.client.chat_postMessage(
-            channel=self.control_channel_id,
-            text=f"Machine {machine.name} locked-out via {source}.",
+        """
+        Log when a machine is locked.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        Otherwise, updates to the relay/LCD/LED would be delayed by at least the
+        timeout trying to post to Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id,
+                text=f"Machine {machine.name} locked-out via {source}.",
+            )
         )
-        await self.app.client.chat_postMessage(
-            channel=self.oops_channel_id,
-            text=f"Machine {machine.name} is locked-out for maintenance.",
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.oops_channel_id,
+                text=f"Machine {machine.name} is locked-out for maintenance.",
+            )
         )
 
     async def admin_log(self, message: str) -> None:
-        """Log a string to the admin channel only."""
-        await self.app.client.chat_postMessage(
-            channel=self.control_channel_id, text=message
+        """
+        Log a string to the admin channel only.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        Otherwise, updates to the relay/LCD/LED would be delayed by at least the
+        timeout trying to post to Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id, text=message
+            )
         )
