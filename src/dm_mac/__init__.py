@@ -105,6 +105,15 @@ def main() -> None:
         default=False,
         help="verbose output",
     )
+    p.add_argument(
+        "-P",
+        "--port",
+        dest="port",
+        action="store",
+        type=int,
+        default=5000,
+        help="Port number to listen on (default 5000)",
+    )
     args = p.parse_args(sys.argv[1:])
     if args.verbose:
         set_log_debug(logger)
@@ -121,7 +130,7 @@ def main() -> None:
             slack.app, os.environ["SLACK_APP_TOKEN"], loop=loop
         )
         loop.create_task(handler.start_async())
-    app.run(loop=loop, debug=args.debug, host="0.0.0.0")
+    app.run(loop=loop, debug=args.debug, host="0.0.0.0", port=args.port)
 
 
 if __name__ == "__main__":  # pragma: no cover

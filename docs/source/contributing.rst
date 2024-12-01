@@ -134,3 +134,8 @@ command:
 It is recommended to open an issue before starting work on anything.
 This will allow a chance to talk it over with the owners and validate
 your approach.
+
+Release Process
+---------------
+
+Use ``poetry version`` to increment the version number, commit push and merge that. Tag the repo and push the tag. `GitHub Actions <https://github.com/jantman/machine-access-control/actions>`__ will run a Docker build, push to GHCR (GitHub Container Registry), build to PyPI, and create a release on the repo.

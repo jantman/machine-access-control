@@ -1,0 +1,12 @@
+.git
+venv/
+resume_token.pkl
+coverage.xml
+.env
+.coverage
+htmlcov/
+machine_state/
+hardware/
+docs/
+dist/
+.nox/
