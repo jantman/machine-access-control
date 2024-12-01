@@ -665,6 +665,21 @@ class TestSlackHandler:
         assert self.slack_client.mock_calls == []
         assert self.slack_app.mock_calls == []
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_admin_log(self, tmp_path) -> None:
+        """Admin log method."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        await self.cls.admin_log("some message")
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="some message",
+            ),
+        ]
+        assert self.slack_app.mock_calls == []
+
 
 def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:
     fpath: str = os.path.abspath(

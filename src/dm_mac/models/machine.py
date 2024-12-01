@@ -519,7 +519,7 @@ class MachineState:
                     f"{user.full_name} when machine locked-out."
                 )
             return
-        if self._user_is_authorized(user):
+        if await self._user_is_authorized(user, slack=slack):
             logging.getLogger("AUTH").info(
                 "User %s (%s) authorized for %s; session start",
                 user.full_name,
@@ -553,7 +553,9 @@ class MachineState:
                     f"UNAUTHORIZED user {user.full_name}"
                 )
 
-    def _user_is_authorized(self, user: User) -> bool:
+    async def _user_is_authorized(
+        self, user: User, slack: Optional["SlackHandler"] = None
+    ) -> bool:
         """Return whether user is authorized for this machine."""
         for auth in self.machine.authorizations_or:
             if auth in user.authorizations:
@@ -573,6 +575,13 @@ class MachineState:
                 user.account_id,
                 self.machine.name,
             )
+            if slack:
+                await slack.admin_log(
+                    f"WARNING - Authorizing user {user.full_name} for "
+                    f"{self.machine.name} based on unauthorized_warn_only "
+                    "setting for machine. User is NOT authorized for this "
+                    "machine."
+                )
             return True
         return False
 
