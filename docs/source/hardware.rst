@@ -39,7 +39,7 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 
 * RFID Reader - Note that if using the same model that I did, you must add a solder blob on ``S2`` for Wiegand output.
 
-  * ``CST`` to ``GPIO25``
+  * ``CST`` to ``GPIO18``
   * ``Gnd`` to ground
   * ``TX/D0`` to ``GPIO16``
   * ``RX/D1`` to ``GPIO4``
