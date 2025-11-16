@@ -70,6 +70,7 @@ class TestMachinesConfig:
             "name": "metal-mill",
             "authorizations_or": ["Metal Mill"],
             "unauthorized_warn_only": False,
+            "always_enabled": False,
         }
         assert cls.load_time == 1689477248.0
 
@@ -117,6 +118,7 @@ class TestMachine:
             "name": "mName",
             "authorizations_or": ["Foo", "Bar"],
             "unauthorized_warn_only": False,
+            "always_enabled": False,
         }
 
     def test_unauth_warn(self) -> None:
@@ -136,4 +138,5 @@ class TestMachine:
             "name": "mName",
             "authorizations_or": ["Foo", "Bar"],
             "unauthorized_warn_only": True,
+            "always_enabled": False,
         }

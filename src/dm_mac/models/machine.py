@@ -53,6 +53,13 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "but log and display a warning if the "
                     "operator is not authorized.",
                 },
+                "always_enabled": {
+                    "type": "boolean",
+                    "description": "If set, machine is always enabled and "
+                    "does not require RFID authentication. "
+                    "Displays 'Always On' and relay is always "
+                    "on unless Oopsed or Locked.",
+                },
             },
             "additionalProperties": False,
             "description": "Unique machine name, alphanumeric _ and - only.",
@@ -69,6 +76,7 @@ class Machine:
         name: str,
         authorizations_or: List[str],
         unauthorized_warn_only: bool = False,
+        always_enabled: bool = False,
     ):
         """Initialize a new MachineState instance."""
         #: The name of the machine
@@ -78,6 +86,8 @@ class Machine:
         #: Whether to allow anyone to operate machine regardless of
         #: authorization, just logging/displaying a warning if unauthorized
         self.unauthorized_warn_only: bool = unauthorized_warn_only
+        #: Whether machine is always enabled without RFID authentication
+        self.always_enabled: bool = always_enabled
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
 
@@ -142,6 +152,7 @@ class Machine:
             "name": self.name,
             "authorizations_or": self.authorizations_or,
             "unauthorized_warn_only": self.unauthorized_warn_only,
+            "always_enabled": self.always_enabled,
         }
 
 

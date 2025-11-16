@@ -158,8 +158,13 @@ Add comprehensive test coverage in `tests/views/test_machine.py`:
 
 ## Implementation Status
 
-**Status:** Planning complete, awaiting approval to begin implementation
+**Status:** In progress - implementing Milestone 2
 
-**Current Milestone:** None (planning phase)
+**Current Milestone:** Milestone 2: State Logic Updates
 
-**Completed Milestones:** None
+**Completed Milestones:**
+- **Milestone 1: Configuration and Model Updates** (Completed)
+  - Added `always_enabled` boolean to CONFIG_SCHEMA
+  - Added `always_enabled` attribute to Machine class
+  - Updated `as_dict` property to include `always_enabled`
+  - All existing tests passing
