@@ -107,8 +107,7 @@ class TestAlwaysEnabledMachine:
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
         }
 
-        # Un-oops the machine by posting oops=false
-        # Machine should return to always-on state
+        # Release oops button (oops=false) - machine stays oopsed
         response = await client.post(
             "/api/machine/update",
             json={
@@ -123,7 +122,35 @@ class TestAlwaysEnabledMachine:
         )
         assert response.status_code == 200
         json_response = await response.json
-        # After un-oops, always-enabled machine should return to always-on state
+        # Machine stays oopsed when button is released
+        assert json_response == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+
+        # Un-oops via API endpoint
+        response = await client.delete(f"/api/machine/oops/{mname}")
+        assert response.status_code == 200
+
+        # Now machine should return to always-on state
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 15.9,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        json_response = await response.json
+        # After un-oops, always-enabled machine returns to always-on state
         assert json_response == {
             "relay": True,
             "display": MachineState.ALWAYS_ON_DISPLAY_TEXT,
