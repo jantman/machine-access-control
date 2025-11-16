@@ -223,6 +223,10 @@ class TestPrometheus:
         machine_status_led{led_attribute="green",machine_name="restrictive-lathe"} 0.0
         machine_status_led{led_attribute="blue",machine_name="restrictive-lathe"} 0.0
         machine_status_led{led_attribute="brightness",machine_name="restrictive-lathe"} 0.0
+        machine_status_led{led_attribute="red",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="green",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="blue",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="brightness",machine_name="always-on-machine"} 0.0
         machine_status_led{led_attribute="red",machine_name="esp32test"} 0.0
         machine_status_led{led_attribute="green",machine_name="esp32test"} 0.0
         machine_status_led{led_attribute="blue",machine_name="esp32test"} 0.0
@@ -379,6 +383,10 @@ class TestPrometheus:
         machine_status_led{led_attribute="green",machine_name="restrictive-lathe"} 0.0
         machine_status_led{led_attribute="blue",machine_name="restrictive-lathe"} 0.0
         machine_status_led{led_attribute="brightness",machine_name="restrictive-lathe"} 0.0
+        machine_status_led{led_attribute="red",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="green",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="blue",machine_name="always-on-machine"} 0.0
+        machine_status_led{led_attribute="brightness",machine_name="always-on-machine"} 0.0
         machine_status_led{led_attribute="red",machine_name="esp32test"} 0.0
         machine_status_led{led_attribute="green",machine_name="esp32test"} 0.0
         machine_status_led{led_attribute="blue",machine_name="esp32test"} 0.0

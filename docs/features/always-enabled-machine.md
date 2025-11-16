@@ -158,9 +158,9 @@ Add comprehensive test coverage in `tests/views/test_machine.py`:
 
 ## Implementation Status
 
-**Status:** In progress - implementing Milestone 3
+**Status:** In progress - finalizing Milestone 3 test fixtures
 
-**Current Milestone:** Milestone 3: Unit Tests
+**Current Milestone:** Milestone 3: Unit Tests (nearly complete)
 
 **Completed Milestones:**
 - **Milestone 1: Configuration and Model Updates** (Completed)
@@ -175,3 +175,9 @@ Add comprehensive test coverage in `tests/views/test_machine.py`:
   - Always-enabled machines skip RFID processing and show "Always On"
   - Updated `unoops()` to restore always-on state for always-enabled machines
   - All existing tests passing
+
+- **Milestone 3: Unit Tests** (In Progress - 5/5 tests written, fixing test fixtures)
+  - Created 5 comprehensive tests for always-enabled functionality
+  - Added always-on-machine to test fixtures
+  - Fixed test expectations for machine count changes
+  - Remaining: Fix Prometheus test fixtures to include always-on-machine metrics
