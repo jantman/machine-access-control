@@ -303,18 +303,25 @@ class MachineState:
     async def _handle_reboot(self) -> None:
         """Handle when the ESP32 (MCU) has rebooted since last checkin.
 
-        This logs out the current user if logged in and turns off the relay if
-        turned on.
+        This logs out the current user if logged in and resets the machine state.
+        For always-enabled machines, restores the always-on state.
         """
         logging.getLogger("AUTH").warning(
             "Machine %s rebooted; resetting relay and RFID state", self.machine.name
         )
         # locking handled in update()
-        self.relay_desired_state = False
         self.current_user = None
-        self.display_text = self.DEFAULT_DISPLAY_TEXT
-        self.status_led_rgb = (0.0, 0.0, 0.0)
-        self.status_led_brightness = 0.0
+        # Restore always-enabled state if applicable
+        if self.machine.always_enabled:
+            self.relay_desired_state = True
+            self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 1.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+        else:
+            self.relay_desired_state = False
+            self.display_text = self.DEFAULT_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 0.0, 0.0)
+            self.status_led_brightness = 0.0
         # log to Slack, if enabled
         slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not slack:
@@ -342,11 +349,18 @@ class MachineState:
         )
         with self._lock:
             self.is_locked_out = False
-            self.relay_desired_state = False
             self.current_user = None
-            self.display_text = self.DEFAULT_DISPLAY_TEXT
-            self.status_led_rgb = (0.0, 0.0, 0.0)
-            self.status_led_brightness = 0.0
+            # Restore always-enabled state if applicable
+            if self.machine.always_enabled:
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            else:
+                self.relay_desired_state = False
+                self.display_text = self.DEFAULT_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 0.0, 0.0)
+                self.status_led_brightness = 0.0
 
     def oops(self, do_locking: bool = True) -> None:
         """Oops the machine."""
@@ -428,6 +442,7 @@ class MachineState:
                 self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
                 self.status_led_rgb = (0.0, 1.0, 0.0)
                 self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+                self.last_update = time()
                 # Don't process RFID changes for always-enabled machines
             elif rfid_value != self.rfid_value:
                 if rfid_value is None:

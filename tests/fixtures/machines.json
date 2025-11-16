@@ -19,7 +19,7 @@
     "unauthorized_warn_only": true
   },
   "always-on-machine": {
-    "authorizations_or": ["This list is ignored"],
+    "authorizations_or": ["Not used for authentication"],
     "always_enabled": true
   }
 }

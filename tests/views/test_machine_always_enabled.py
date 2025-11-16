@@ -274,3 +274,92 @@ class TestAlwaysEnabledMachine:
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
         }
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_always_enabled_unlock(self, tmp_path: Path) -> None:
+        """Test always-enabled machine restores always-on state after unlock."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        mname: str = "always-on-machine"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+
+        # Lock out the machine
+        await client.post(f"/api/machine/locked_out/{mname}")
+        assert m.state.is_locked_out is True
+
+        # Unlock the machine
+        response: Response = await client.delete(f"/api/machine/locked_out/{mname}")
+        assert response.status_code == 200
+
+        # Machine should return to always-on state
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 12.3,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        json_response = await response.json
+        assert json_response == {
+            "relay": True,
+            "display": MachineState.ALWAYS_ON_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_always_enabled_reboot(self, tmp_path: Path) -> None:
+        """Test always-enabled machine restores always-on state after reboot."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        mname: str = "always-on-machine"
+
+        # First update to establish baseline
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 100.0,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+
+        # Simulate reboot by sending lower uptime
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 1.0,  # Lower uptime = reboot
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        json_response = await response.json
+        # After reboot, always-enabled machine should be back to always-on state
+        assert json_response == {
+            "relay": True,
+            "display": MachineState.ALWAYS_ON_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
