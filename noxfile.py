@@ -245,9 +245,11 @@ def typeguard(session: Session) -> None:
         "pygments",
         "responses",
         "freezegun",
+        "pytest-asyncio",
     )
     session.run(
         "pytest",
+        "--asyncio-mode=auto",
         f"--typeguard-packages={package}",
         *session.posargs,
         env=TEST_ENV,
