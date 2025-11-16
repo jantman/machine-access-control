@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install nox nox-poetry poetry
+          python3 -m pip install nox nox-poetry poetry poetry-plugin-export
       - name: Build Sphinx
         shell: bash
         env:
