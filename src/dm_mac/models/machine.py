@@ -198,6 +198,8 @@ class MachineState:
 
     LOCKOUT_DISPLAY_TEXT: str = "Down for\nmaintenance"
 
+    ALWAYS_ON_DISPLAY_TEXT: str = "Always On"
+
     STATUS_LED_BRIGHTNESS: float = 0.5
 
     def __init__(self, machine: Machine, load_state: bool = True):
@@ -366,11 +368,18 @@ class MachineState:
         locker = self._lock if do_locking else nullcontext()
         with locker:
             self.is_oopsed = False
-            self.relay_desired_state = False
             self.current_user = None
-            self.display_text = self.DEFAULT_DISPLAY_TEXT
-            self.status_led_rgb = (0.0, 0.0, 0.0)
-            self.status_led_brightness = 0
+            # Restore always-enabled state if applicable
+            if self.machine.always_enabled:
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            else:
+                self.relay_desired_state = False
+                self.display_text = self.DEFAULT_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 0.0, 0.0)
+                self.status_led_brightness = 0
 
     async def update(
         self,
@@ -409,7 +418,18 @@ class MachineState:
             if oops:
                 await self._handle_oops(users)
                 self.last_update = time()
-            if rfid_value != self.rfid_value:
+            # Handle always-enabled machines - ignore RFID, always on unless Oopsed/Locked
+            if (
+                self.machine.always_enabled
+                and not self.is_oopsed
+                and not self.is_locked_out
+            ):
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+                # Don't process RFID changes for always-enabled machines
+            elif rfid_value != self.rfid_value:
                 if rfid_value is None:
                     await self._handle_rfid_remove()
                 else:

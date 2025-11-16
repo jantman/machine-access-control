@@ -158,13 +158,20 @@ Add comprehensive test coverage in `tests/views/test_machine.py`:
 
 ## Implementation Status
 
-**Status:** In progress - implementing Milestone 2
+**Status:** In progress - implementing Milestone 3
 
-**Current Milestone:** Milestone 2: State Logic Updates
+**Current Milestone:** Milestone 3: Unit Tests
 
 **Completed Milestones:**
 - **Milestone 1: Configuration and Model Updates** (Completed)
   - Added `always_enabled` boolean to CONFIG_SCHEMA
   - Added `always_enabled` attribute to Machine class
   - Updated `as_dict` property to include `always_enabled`
+  - All existing tests passing
+
+- **Milestone 2: State Logic Updates** (Completed)
+  - Added `ALWAYS_ON_DISPLAY_TEXT` constant to MachineState
+  - Updated `MachineState.update()` to handle always-enabled machines
+  - Always-enabled machines skip RFID processing and show "Always On"
+  - Updated `unoops()` to restore always-on state for always-enabled machines
   - All existing tests passing
