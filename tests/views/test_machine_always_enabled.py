@@ -161,12 +161,13 @@ class TestAlwaysEnabledMachine:
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     async def test_always_enabled_ignores_rfid_insert(self, tmp_path: Path) -> None:
-        """Test always-enabled machine ignores RFID card insertion."""
+        """Test always-enabled machine tracks RFID but maintains always-on state."""
         # boilerplate for test
         app: Quart
         client: TestClientProtocol
         app, client = app_and_client(tmp_path)
         mname: str = "always-on-machine"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
 
         # Insert an RFID card (authorized user)
         response: Response = await client.post(
@@ -174,7 +175,7 @@ class TestAlwaysEnabledMachine:
             json={
                 "machine_name": mname,
                 "oops": False,
-                "rfid_value": "1234567890",  # This is user 1 from users.json
+                "rfid_value": "8114346998",  # Ashley Williams from users.json
                 "uptime": 12.3,
                 "wifi_signal_db": -54,
                 "wifi_signal_percent": 92,
@@ -191,15 +192,21 @@ class TestAlwaysEnabledMachine:
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
         }
+        # Verify RFID value is tracked for auditing
+        assert m.state.rfid_value == "8114346998"
+        assert m.state.current_user is not None
+        assert m.state.current_user.full_name == "Ashley Williams"
+        assert m.state.rfid_present_since == 1689477248.0
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     async def test_always_enabled_ignores_rfid_remove(self, tmp_path: Path) -> None:
-        """Test always-enabled machine ignores RFID card removal."""
+        """Test always-enabled machine tracks RFID removal but maintains always-on state."""
         # boilerplate for test
         app: Quart
         client: TestClientProtocol
         app, client = app_and_client(tmp_path)
         mname: str = "always-on-machine"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
 
         # Insert an RFID card first
         response: Response = await client.post(
@@ -207,7 +214,7 @@ class TestAlwaysEnabledMachine:
             json={
                 "machine_name": mname,
                 "oops": False,
-                "rfid_value": "1234567890",
+                "rfid_value": "8114346998",  # Ashley Williams
                 "uptime": 12.3,
                 "wifi_signal_db": -54,
                 "wifi_signal_percent": 92,
@@ -217,6 +224,9 @@ class TestAlwaysEnabledMachine:
         assert response.status_code == 200
         json_response = await response.json
         assert json_response["relay"] is True
+        # Verify RFID was tracked
+        assert m.state.rfid_value == "8114346998"
+        assert m.state.current_user is not None
 
         # Remove the RFID card
         response = await client.post(
@@ -241,6 +251,10 @@ class TestAlwaysEnabledMachine:
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
         }
+        # Verify RFID removal was tracked
+        assert m.state.rfid_value is None
+        assert m.state.current_user is None
+        assert m.state.rfid_present_since is None
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     async def test_always_enabled_first_contact(self, tmp_path: Path) -> None:

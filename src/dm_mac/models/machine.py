@@ -432,7 +432,7 @@ class MachineState:
             if oops:
                 await self._handle_oops(users)
                 self.last_update = time()
-            # Handle always-enabled machines - ignore RFID, always on unless Oopsed/Locked
+            # Handle always-enabled machines - track RFID but maintain always-on state
             if (
                 self.machine.always_enabled
                 and not self.is_oopsed
@@ -443,7 +443,9 @@ class MachineState:
                 self.status_led_rgb = (0.0, 1.0, 0.0)
                 self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
                 self.last_update = time()
-                # Don't process RFID changes for always-enabled machines
+                # Track RFID changes for logging/auditing purposes
+                if rfid_value != self.rfid_value:
+                    await self._handle_rfid_tracking_always_enabled(users, rfid_value)
             elif rfid_value != self.rfid_value:
                 if rfid_value is None:
                     await self._handle_rfid_remove()
@@ -598,6 +600,52 @@ class MachineState:
                     f"rejected RFID login on {self.machine.name} by "
                     f"UNAUTHORIZED user {user.full_name}"
                 )
+
+    async def _handle_rfid_tracking_always_enabled(
+        self, users: UsersConfig, rfid_value: Optional[str]
+    ) -> None:
+        """Track RFID changes for always-enabled machines without changing state.
+
+        This method logs RFID insertions and removals for auditing purposes while
+        maintaining the always-on state of the machine.
+        """
+        # locking handled in update()
+        if rfid_value is None:
+            # RFID removed
+            logging.getLogger("AUTH").info(
+                "RFID removed on always-enabled machine %s (was %s); session duration %d seconds",
+                self.machine.name,
+                self.current_user.full_name if self.current_user else self.rfid_value,
+                (
+                    time() - cast(float, self.rfid_present_since)
+                    if self.rfid_present_since
+                    else 0
+                ),
+            )
+            self.rfid_value = None
+            self.rfid_present_since = None
+            self.current_user = None
+            # State remains always-on (relay/display/LED not changed)
+        else:
+            # RFID inserted
+            self.rfid_present_since = time()
+            self.rfid_value = rfid_value
+            user: Optional[User] = users.users_by_fob.get(rfid_value)
+            if user:
+                self.current_user = user
+                logging.getLogger("AUTH").info(
+                    "RFID inserted on always-enabled machine %s by %s (%s)",
+                    self.machine.name,
+                    user.full_name,
+                    rfid_value,
+                )
+            else:
+                logging.getLogger("AUTH").warning(
+                    "RFID inserted on always-enabled machine %s by unknown fob %s",
+                    self.machine.name,
+                    rfid_value,
+                )
+            # State remains always-on (relay/display/LED not changed)
 
     async def _user_is_authorized(
         self, user: User, slack: Optional["SlackHandler"] = None
