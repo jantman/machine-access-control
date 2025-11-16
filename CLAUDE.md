@@ -177,3 +177,7 @@ Optional for MAC server:
 - The server uses asyncio event loop with custom exception handler
 - Slack integration uses Socket Mode (bidirectional WebSocket)
 - Machines can be configured with `unauthorized_warn_only: true` for training/soft-enforcement mode
+
+## Feature Development
+
+We have a special process for developing features. When asked to begin work on a feature, you MUST read and understand all of `docs/features/README.md` which outlines our feature development process. Once you have read and understood that document, ask the user which of the `docs/features/*.md` Features they want to begin work on; once one is chosen, begin work on the feature development process.
