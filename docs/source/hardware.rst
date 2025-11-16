@@ -130,6 +130,9 @@ This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </
 .. image:: ../../hardware/v1_mcu/Hardware_v1.png
    :alt: Wiring diagram of system
 
+.. image:: ../../hardware/v1_mcu/m12-8pinout.png
+   :alt: M12 8-pin A-code connector pinout
+
 * RFID Reader - Note that if using the same model that I did, you must add a solder blob on ``S2`` for Wiegand output.
 
   * ``CST`` to ``GPIO18``
