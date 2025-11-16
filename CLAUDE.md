@@ -98,6 +98,9 @@ poetry run neongetter
 
 **Configuration System**:
 - Machines: `machines.json` (schema in `models/machine.py::CONFIG_SCHEMA`)
+  - `authorizations_or`: List of authorizations, any one sufficient to operate
+  - `unauthorized_warn_only`: (optional) Allow operation but log warning for unauthorized users
+  - `always_enabled`: (optional) Machine always enabled without RFID authentication, displays "Always On"
 - Users: `users.json` (schema in `models/users.py::CONFIG_SCHEMA`)
 - Machine names must match ESPHome configs and can only contain `[a-z0-9_-]`
 
