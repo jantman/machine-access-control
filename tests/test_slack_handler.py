@@ -263,6 +263,7 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         expected = (
+            "always-on-machine: Idle \n"
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; last update a minute ago;"
             " uptime 2 minutes)\n"
@@ -323,6 +324,7 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         expected = (
+            "always-on-machine: Idle \n"
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; "
             "last update a minute ago; uptime 2 minutes)\n"

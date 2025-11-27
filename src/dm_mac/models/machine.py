@@ -53,6 +53,13 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "but log and display a warning if the "
                     "operator is not authorized.",
                 },
+                "always_enabled": {
+                    "type": "boolean",
+                    "description": "If set, machine is always enabled and "
+                    "does not require RFID authentication. "
+                    "Displays 'Always On' and relay is always "
+                    "on unless Oopsed or Locked.",
+                },
             },
             "additionalProperties": False,
             "description": "Unique machine name, alphanumeric _ and - only.",
@@ -69,6 +76,7 @@ class Machine:
         name: str,
         authorizations_or: List[str],
         unauthorized_warn_only: bool = False,
+        always_enabled: bool = False,
     ):
         """Initialize a new MachineState instance."""
         #: The name of the machine
@@ -78,6 +86,8 @@ class Machine:
         #: Whether to allow anyone to operate machine regardless of
         #: authorization, just logging/displaying a warning if unauthorized
         self.unauthorized_warn_only: bool = unauthorized_warn_only
+        #: Whether machine is always enabled without RFID authentication
+        self.always_enabled: bool = always_enabled
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
 
@@ -142,6 +152,7 @@ class Machine:
             "name": self.name,
             "authorizations_or": self.authorizations_or,
             "unauthorized_warn_only": self.unauthorized_warn_only,
+            "always_enabled": self.always_enabled,
         }
 
 
@@ -186,6 +197,8 @@ class MachineState:
     OOPS_DISPLAY_TEXT: str = "Oops!! Please\ncheck/post Slack"
 
     LOCKOUT_DISPLAY_TEXT: str = "Down for\nmaintenance"
+
+    ALWAYS_ON_DISPLAY_TEXT: str = "Always On"
 
     STATUS_LED_BRIGHTNESS: float = 0.5
 
@@ -290,18 +303,25 @@ class MachineState:
     async def _handle_reboot(self) -> None:
         """Handle when the ESP32 (MCU) has rebooted since last checkin.
 
-        This logs out the current user if logged in and turns off the relay if
-        turned on.
+        This logs out the current user if logged in and resets the machine state.
+        For always-enabled machines, restores the always-on state.
         """
         logging.getLogger("AUTH").warning(
             "Machine %s rebooted; resetting relay and RFID state", self.machine.name
         )
         # locking handled in update()
-        self.relay_desired_state = False
         self.current_user = None
-        self.display_text = self.DEFAULT_DISPLAY_TEXT
-        self.status_led_rgb = (0.0, 0.0, 0.0)
-        self.status_led_brightness = 0.0
+        # Restore always-enabled state if applicable
+        if self.machine.always_enabled:
+            self.relay_desired_state = True
+            self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 1.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+        else:
+            self.relay_desired_state = False
+            self.display_text = self.DEFAULT_DISPLAY_TEXT
+            self.status_led_rgb = (0.0, 0.0, 0.0)
+            self.status_led_brightness = 0.0
         # log to Slack, if enabled
         slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not slack:
@@ -329,11 +349,18 @@ class MachineState:
         )
         with self._lock:
             self.is_locked_out = False
-            self.relay_desired_state = False
             self.current_user = None
-            self.display_text = self.DEFAULT_DISPLAY_TEXT
-            self.status_led_rgb = (0.0, 0.0, 0.0)
-            self.status_led_brightness = 0.0
+            # Restore always-enabled state if applicable
+            if self.machine.always_enabled:
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            else:
+                self.relay_desired_state = False
+                self.display_text = self.DEFAULT_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 0.0, 0.0)
+                self.status_led_brightness = 0.0
 
     def oops(self, do_locking: bool = True) -> None:
         """Oops the machine."""
@@ -355,11 +382,18 @@ class MachineState:
         locker = self._lock if do_locking else nullcontext()
         with locker:
             self.is_oopsed = False
-            self.relay_desired_state = False
             self.current_user = None
-            self.display_text = self.DEFAULT_DISPLAY_TEXT
-            self.status_led_rgb = (0.0, 0.0, 0.0)
-            self.status_led_brightness = 0
+            # Restore always-enabled state if applicable
+            if self.machine.always_enabled:
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            else:
+                self.relay_desired_state = False
+                self.display_text = self.DEFAULT_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 0.0, 0.0)
+                self.status_led_brightness = 0
 
     async def update(
         self,
@@ -398,7 +432,21 @@ class MachineState:
             if oops:
                 await self._handle_oops(users)
                 self.last_update = time()
-            if rfid_value != self.rfid_value:
+            # Handle always-enabled machines - track RFID but maintain always-on state
+            if (
+                self.machine.always_enabled
+                and not self.is_oopsed
+                and not self.is_locked_out
+            ):
+                self.relay_desired_state = True
+                self.display_text = self.ALWAYS_ON_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 1.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+                self.last_update = time()
+                # Track RFID changes for logging/auditing purposes
+                if rfid_value != self.rfid_value:
+                    await self._handle_rfid_tracking_always_enabled(users, rfid_value)
+            elif rfid_value != self.rfid_value:
                 if rfid_value is None:
                     await self._handle_rfid_remove()
                 else:
@@ -552,6 +600,52 @@ class MachineState:
                     f"rejected RFID login on {self.machine.name} by "
                     f"UNAUTHORIZED user {user.full_name}"
                 )
+
+    async def _handle_rfid_tracking_always_enabled(
+        self, users: UsersConfig, rfid_value: Optional[str]
+    ) -> None:
+        """Track RFID changes for always-enabled machines without changing state.
+
+        This method logs RFID insertions and removals for auditing purposes while
+        maintaining the always-on state of the machine.
+        """
+        # locking handled in update()
+        if rfid_value is None:
+            # RFID removed
+            logging.getLogger("AUTH").info(
+                "RFID removed on always-enabled machine %s (was %s); session duration %d seconds",
+                self.machine.name,
+                self.current_user.full_name if self.current_user else self.rfid_value,
+                (
+                    time() - cast(float, self.rfid_present_since)
+                    if self.rfid_present_since
+                    else 0
+                ),
+            )
+            self.rfid_value = None
+            self.rfid_present_since = None
+            self.current_user = None
+            # State remains always-on (relay/display/LED not changed)
+        else:
+            # RFID inserted
+            self.rfid_present_since = time()
+            self.rfid_value = rfid_value
+            user: Optional[User] = users.users_by_fob.get(rfid_value)
+            if user:
+                self.current_user = user
+                logging.getLogger("AUTH").info(
+                    "RFID inserted on always-enabled machine %s by %s (%s)",
+                    self.machine.name,
+                    user.full_name,
+                    rfid_value,
+                )
+            else:
+                logging.getLogger("AUTH").warning(
+                    "RFID inserted on always-enabled machine %s by unknown fob %s",
+                    self.machine.name,
+                    rfid_value,
+                )
+            # State remains always-on (relay/display/LED not changed)
 
     async def _user_is_authorized(
         self, user: User, slack: Optional["SlackHandler"] = None

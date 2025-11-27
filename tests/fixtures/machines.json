@@ -17,5 +17,9 @@
   "esp32test": {
     "authorizations_or": ["Metal Lathe"],
     "unauthorized_warn_only": true
+  },
+  "always-on-machine": {
+    "authorizations_or": ["Not used for authentication"],
+    "always_enabled": true
   }
 }
