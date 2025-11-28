@@ -1,0 +1,255 @@
+# ESPHome Hardware Test Configuration
+#
+# This is a standalone configuration for testing the machine access control hardware
+# without any network connectivity. All testing is done locally on the device.
+#
+# Hardware components tested:
+# - PCF8574 16x2 I2C character LCD (SDA: GPIO22, SCL: GPIO23)
+# - Wiegand RFID reader (D0: GPIO16, D1: GPIO4, Card Present: GPIO18)
+# - Oops button (GPIO32 with internal pullup)
+# - Oops button LED (GPIO5)
+# - Output relay (GPIO33)
+# - WS2812 NeoPixel status LED (GPIO27)
+
+substitutions:
+  device_name: "hardware-test"
+
+esphome:
+  name: ${device_name}
+  friendly_name: Hardware Test
+  on_boot:
+    # Priority 600: Get MAC address early
+    - priority: 600
+      then:
+        - lambda: |-
+            std::string mac_pretty = get_mac_address_pretty();
+            // Remove colons to fit on 16-char display
+            id(mac_address) = "";
+            for (char c : mac_pretty) {
+              if (c != ':') id(mac_address) += c;
+            }
+            ESP_LOGI("BOOT", "WiFi MAC Address: %s", mac_pretty.c_str());
+
+    # Priority -100: Initialize display and LED after everything is ready
+    - priority: -100
+      then:
+        - delay: 1s
+        - lambda: |-
+            id(display_content) = (std::string)"Up 00:00:00\n" + id(mac_address);
+            ESP_LOGI("BOOT", "Hardware test initialized");
+        # Set status LED to blue (idle/ready)
+        - light.turn_on:
+            id: status_led
+            brightness: 100%
+            red: 0%
+            green: 0%
+            blue: 100%
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging via USB serial only
+logger:
+  level: DEBUG
+
+# NO WiFi, NO API, NO OTA - completely standalone operation
+
+globals:
+  - id: display_content
+    type: std::string
+    restore_value: false
+    max_restore_data_length: 34
+    initial_value: '"Hardware Test\nStarting..."'
+  - id: rfid_tag
+    type: std::string
+    restore_value: false
+    max_restore_data_length: 34
+    initial_value: '""'
+  - id: oops_led_state
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: card_present_flag
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+  - id: mac_address
+    type: std::string
+    restore_value: false
+    initial_value: '""'
+
+i2c:
+  sda: GPIO22
+  scl: GPIO23
+  frequency: 400kHz
+
+sensor:
+  - platform: uptime
+    name: Uptime
+    id: uptime_sensor
+    update_interval: 1s
+  - platform: internal_temperature
+    name: "Internal Temperature"
+    id: internal_temperature_c
+    update_interval: 15s
+
+binary_sensor:
+  # Card present sensor
+  - platform: gpio
+    pin: GPIO18
+    name: "Card Present"
+    id: card_present
+    on_press:
+      then:
+        - lambda: |-
+            ESP_LOGI("CARD", "Card inserted");
+            id(card_present_flag) = true;
+    on_release:
+      then:
+        - lambda: |-
+            ESP_LOGI("CARD", "Card removed");
+            id(card_present_flag) = false;
+            id(rfid_tag) = "";
+            id(display_content) = "Card Removed";
+        - output.turn_off: relay_output
+        # Yellow flash for card removal
+        - light.turn_on:
+            id: status_led
+            brightness: 100%
+            red: 100%
+            green: 100%
+            blue: 0%
+        - delay: 500ms
+        # Return to blue (idle)
+        - light.turn_on:
+            id: status_led
+            brightness: 100%
+            red: 0%
+            green: 0%
+            blue: 100%
+        - delay: 1500ms
+
+  # Oops button
+  - platform: gpio
+    pin:
+      number: GPIO32
+      mode:
+        input: true
+        pullup: true
+    name: "Oops Button"
+    id: oops_button
+    filters:
+      - delayed_on: 10ms
+    on_press:
+      then:
+        - lambda: |-
+            ESP_LOGI("OOPS", "Oops button pressed - toggling LED");
+            id(oops_led_state) = !id(oops_led_state);
+            if (id(oops_led_state)) {
+              id(oops_led).turn_on();
+              id(display_content) = "OOPS! LED: ON";
+            } else {
+              id(oops_led).turn_off();
+              id(display_content) = "OOPS! LED:OFF";
+            }
+        # Red status LED while button pressed
+        - light.turn_on:
+            id: status_led
+            brightness: 100%
+            red: 100%
+            green: 0%
+            blue: 0%
+    on_release:
+      then:
+        # Return to appropriate color based on card state
+        - if:
+            condition:
+              lambda: 'return id(card_present_flag);'
+            then:
+              # Green if card present
+              - light.turn_on:
+                  id: status_led
+                  brightness: 100%
+                  red: 0%
+                  green: 100%
+                  blue: 0%
+            else:
+              # Blue if idle
+              - light.turn_on:
+                  id: status_led
+                  brightness: 100%
+                  red: 0%
+                  green: 0%
+                  blue: 100%
+
+button:
+  - platform: restart
+    name: "Reboot ESP"
+
+output:
+  - platform: gpio
+    pin: GPIO33
+    id: relay_output
+  - platform: gpio
+    pin: GPIO5
+    id: oops_led
+
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: RGB
+    pin: GPIO27
+    num_leds: 1
+    chipset: ws2812
+    name: "Status LED"
+    id: status_led
+    restore_mode: ALWAYS_OFF
+
+wiegand:
+  - id: keypad
+    d0: GPIO16
+    d1: GPIO4
+    on_tag:
+      - lambda: |-
+          ESP_LOGI("TAG", "Received RFID tag: %s", x.c_str());
+          id(rfid_tag) = x.c_str();
+          id(display_content) = (std::string)"RFID:\n" + x;
+      # Turn relay ON when card scanned
+      - output.turn_on: relay_output
+      # Green status LED for card present
+      - light.turn_on:
+          id: status_led
+          brightness: 100%
+          red: 0%
+          green: 100%
+          blue: 0%
+
+display:
+  - platform: lcd_pcf8574
+    dimensions: 16x2
+    address: 0x27
+    id: my_display
+    update_interval: 500ms
+    lambda: |-
+      it.print(id(display_content));
+
+# Update idle display with uptime and MAC address
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          // Only update display when idle (no card present and no recent events)
+          if (!id(card_present_flag) && id(rfid_tag).empty() &&
+              id(display_content) != "Card Removed" &&
+              id(display_content).find("OOPS") == std::string::npos) {
+            // Show uptime on line 1, MAC on line 2
+            int seconds = (int)id(uptime_sensor).state;
+            int hours = seconds / 3600;
+            int minutes = (seconds % 3600) / 60;
+            int secs = seconds % 60;
+            char buf[34];
+            snprintf(buf, sizeof(buf), "Up %02d:%02d:%02d\n%s",
+                     hours, minutes, secs, id(mac_address).c_str());
+            id(display_content) = buf;
+          }

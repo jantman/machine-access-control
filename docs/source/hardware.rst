@@ -125,7 +125,7 @@ The following table lists the components required for the Version 1 MCU hardware
 Wiring
 ++++++
 
-This is intended to work with `esphome-configs/2024.6.4/no-current-input.yaml </esphome-configs/2024.6.4/no-current-input.yaml>`__.
+This is intended to work with `https://github.com/jantman/machine-access-control/blob/main/esphome-configs/2024.6.4/no-current-input.yaml </https://github.com/jantman/machine-access-control/blob/main/esphome-configs/2024.6.4/no-current-input.yaml>`__. Note that a standalone (non-networked) ESPHome configuration for verifying the operation of all hardware, along with instructions for using it, can be found in `https://github.com/jantman/machine-access-control/tree/main/esphome-configs/2025.11.2 <https://github.com/jantman/machine-access-control/tree/main/esphome-configs/2025.11.2>`__.
 
 .. image:: ../../hardware/v1_mcu/Hardware_v1.png
    :alt: Wiring diagram of system
@@ -199,7 +199,7 @@ There is an example enclosure for the unit, 3D printed with a few laser cut part
 ESPHome Configurations
 ----------------------
 
-Example ESPHome configurations for various ESPHome versions and various hardware combinations can be found in the `esphome-configs/ directory of the git repo <https://github.com/jantman/machine-access-control/tree/main/esphome-configs>`__ broken down by ESPHome version.
+Example ESPHome configurations for various ESPHome versions and various hardware combinations can be found in the `esphome-configs/ directory of the git repo <https://github.com/jantman/machine-access-control/tree/main/esphome-configs>`__ broken down by ESPHome version. New installations should always use the newest supported ESPHome version, as bug fixes and features are not backported to earlier versions of these configs.
 
 All of the example ESPHome configurations begin with a ``substitutions`` key, which contains a ``machine_name`` substitution. This must be set to the same name as used in the :ref:`configuration.machines-json` config file. If desired, you can override the ``esphome`` ``name`` and ``friendly_name`` values (though this is not recommended).
 

@@ -1,0 +1,376 @@
+# This config expects the following hardware:
+#
+# - pcf8574 16x2 I2C character LCD connected with SDA on GPIO22 and SCL on GPIO23
+# - wiegand RFID reader connected with d0 on GPIO16, d1 on GPIO4, and card present on GPIO18
+# - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
+# - oops button LED connected directly to GPIO5
+# - output relay on GPIO33
+# - neopixel (clockless / 1-wire) output on GPIO27
+#
+# And the following secrets in ESPHome's secrets.yaml:
+#
+# - ota_password - password for OTA updates
+# - wifi_ssid
+# - wifi_password
+# - domain_name
+# - mac_url - the full URL to the /api/machine/update endpoint of the machine-access-control server
+#
+# And the following substitutions:
+#
+# - machine_name - the machine name as configured in MAC and also the ESPHome device name; note these MUST match
+#
+substitutions:
+  machine_name: "esp32test"
+
+esphome:
+  name: ${machine_name}
+  friendly_name: ${machine_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  level: DEBUG
+
+api:
+  # don't reboot just because ESPHome isn't connected
+  reboot_timeout: 0s
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+  platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: !secret domain_name
+  reboot_timeout: "1min"
+  on_connect:
+    then:
+      - http_request.post:
+          url: !secret mac_url
+          request_headers:
+            Content-Type: application/json
+          json: |-
+            root["machine_name"] = App.get_name().c_str();
+            root["oops"] = id(oops_button).state;
+            root["rfid_value"] = id(rfid_tag);
+            root["uptime"] = id(uptime_sensor).state;
+            root["wifi_signal_db"] = id(wifi_signal_db).state;
+            root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+            root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
+
+globals:
+  - id: display_content
+    type: std::string
+    restore_value: False
+    max_restore_data_length: 34
+    initial_value: '"Connecting to\nWiFi"'
+  - id: rfid_tag
+    type: std::string
+    restore_value: False
+    max_restore_data_length: 34
+    initial_value: '""'
+
+http_request:
+
+i2c:
+  sda: GPIO22
+  scl: GPIO23
+  frequency: 400kHz
+
+sensor:
+  - platform: uptime
+    name: Uptime
+    id: uptime_sensor
+    update_interval: 5s
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 15s
+    entity_category: "diagnostic"
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    id: wifi_signal_percent
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+  - platform: internal_temperature
+    name: "esp32_internal_temperature"
+    id: internal_temperature_c
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO18
+    name: "Card Present"
+    id: card_present
+    on_release:
+      then:
+        - lambda: ESP_LOGI("TAG", "RFID tag removed");
+        - lambda: |-
+            id(rfid_tag) = "";
+            id(display_content) = "Please insert\naccess card";
+            id(my_display).print("Please insert\naccess card");
+        - http_request.post:
+            url: !secret mac_url
+            request_headers:
+              Content-Type: application/json
+            json: |-
+              root["machine_name"] = App.get_name().c_str();
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
+            capture_response: true
+            on_response:
+              then:
+                - lambda: |-
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                        if ( root["relay"]) {
+                          ESP_LOGI("RELAY", "Turn relay on");
+                          id(relay_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY", "Turn relay off");
+                          id(relay_output).turn_off();
+                        }
+                        std::string dcontent = root["display"];
+                        id(display_content) = dcontent;
+                        id(my_display).print(dcontent);
+                        if ( root["oops_led"]) {
+                          ESP_LOGI("OOPS", "Turn oops LED on");
+                          id(oops_led).turn_on();
+                        } else {
+                          ESP_LOGI("OOPS", "Turn oops LED off");
+                          id(oops_led).turn_off();
+                        }
+                        auto call = id(status_led).turn_on();
+                        float brightness = root["status_led_brightness"];
+                        call.set_brightness(brightness);
+                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                        call.perform();
+                        return true;
+                    });
+
+  - platform: gpio
+    pin:
+      number: GPIO32
+      mode:
+        input: True
+        pullup: True
+    name: "oops"
+    id: oops_button
+    filters:
+      - delayed_on: 10ms
+    on_press:
+      then:
+        - lambda: ESP_LOGI("OOPS", "Oops button pressed");
+        - lambda: |-
+            id(display_content) = "OOPS!";
+            id(my_display).print("OOPS!");
+        - http_request.post:
+            url: !secret mac_url
+            request_headers:
+              Content-Type: application/json
+            json: |-
+              root["machine_name"] = App.get_name().c_str();
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
+            capture_response: true
+            on_response:
+              then:
+                - lambda: |-
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                        if ( root["relay"]) {
+                          ESP_LOGI("RELAY", "Turn relay on");
+                          id(relay_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY", "Turn relay off");
+                          id(relay_output).turn_off();
+                        }
+                        std::string dcontent = root["display"];
+                        id(display_content) = dcontent;
+                        id(my_display).print(dcontent);
+                        if ( root["oops_led"]) {
+                          ESP_LOGI("OOPS", "Turn oops LED on");
+                          id(oops_led).turn_on();
+                        } else {
+                          ESP_LOGI("OOPS", "Turn oops LED off");
+                          id(oops_led).turn_off();
+                        }
+                        auto call = id(status_led).turn_on();
+                        float brightness = root["status_led_brightness"];
+                        call.set_brightness(brightness);
+                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                        call.perform();
+                        return true;
+                    });
+
+button:
+  - platform: restart
+    name: "Reboot ESP"
+
+output:
+  - platform: gpio
+    pin: GPIO33
+    id: relay_output
+  - platform: gpio
+    pin: GPIO5
+    id: oops_led
+
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: RGB
+    pin: GPIO27
+    num_leds: 1
+    chipset: ws2812
+    name: "StatusLED"
+    id: status_led
+
+wiegand:
+  - id: keypad
+    d0: GPIO16
+    d1: GPIO4
+    on_tag:
+      - lambda: ESP_LOGI("TAG", "received tag %s", x.c_str());
+      - lambda: |-
+            id(rfid_tag) = x.c_str();
+            id(display_content) = ((std::string) "TAG RX: " + x).c_str();
+            id(my_display).print(((std::string) "TAG RX: " + x).c_str());
+      - http_request.post:
+          url: !secret mac_url
+          request_headers:
+            Content-Type: application/json
+          json: |-
+              root["machine_name"] = App.get_name().c_str();
+              root["oops"] = id(oops_button).state;
+              root["rfid_value"] = id(rfid_tag);
+              root["uptime"] = id(uptime_sensor).state;
+              root["wifi_signal_db"] = id(wifi_signal_db).state;
+              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+              root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
+
+display:
+  - platform: lcd_pcf8574
+    dimensions: 16x2
+    address: 0x27
+    id: my_display
+    lambda: |-
+      it.print(id(display_content));
+
+interval:
+  - interval: 10s
+    startup_delay: 30s
+    then:
+      - http_request.post:
+          url: !secret mac_url
+          request_headers:
+            Content-Type: application/json
+          json: |-
+            root["machine_name"] = App.get_name().c_str();
+            root["oops"] = id(oops_button).state;
+            root["rfid_value"] = id(rfid_tag);
+            root["uptime"] = id(uptime_sensor).state;
+            root["wifi_signal_db"] = id(wifi_signal_db).state;
+            root["wifi_signal_percent"] = id(wifi_signal_percent).state;
+            root["internal_temperature_c"] = id(internal_temperature_c).state;
+          capture_response: true
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) -> bool {
+                      if ( root["relay"]) {
+                        ESP_LOGI("RELAY", "Turn relay on");
+                        id(relay_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY", "Turn relay off");
+                        id(relay_output).turn_off();
+                      }
+                      std::string dcontent = root["display"];
+                      id(display_content) = dcontent;
+                      id(my_display).print(dcontent);
+                      if ( root["oops_led"]) {
+                        ESP_LOGI("OOPS", "Turn oops LED on");
+                        id(oops_led).turn_on();
+                      } else {
+                        ESP_LOGI("OOPS", "Turn oops LED off");
+                        id(oops_led).turn_off();
+                      }
+                      auto call = id(status_led).turn_on();
+                      float brightness = root["status_led_brightness"];
+                      call.set_brightness(brightness);
+                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                      call.perform();
+                      return true;
+                  });
