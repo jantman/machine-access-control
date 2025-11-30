@@ -8,7 +8,9 @@ Administration
 Monitoring
 ----------
 
-The control server exposes a `Prometheus <https://prometheus.io/>`__-compatible metrics server endpoint at ``/metrics``. These metrics can be used to monitor
+The control server exposes a `Prometheus <https://prometheus.io/>`__-compatible metrics server endpoint at ``/metrics``. These metrics can be used to monitor the system's health, machine status, and usage patterns.
+
+A pre-built :ref:`Grafana dashboard <admin.grafana_dashboard>` is provided for visualizing these metrics.
 
 An example response from the metrics endpoint is:
 
@@ -185,3 +187,71 @@ An example response from the metrics endpoint is:
     machine_status_led{led_attribute="green",machine_name="esp32test"} 0.0
     machine_status_led{led_attribute="blue",machine_name="esp32test"} 0.0
     machine_status_led{led_attribute="brightness",machine_name="esp32test"} 0.0
+
+.. _admin.grafana_dashboard:
+
+Grafana Dashboard
+-----------------
+
+A pre-built Grafana dashboard is provided to visualize the metrics exposed by the Prometheus endpoint. The dashboard provides comprehensive monitoring and visualization of the machine access control system.
+
+Dashboard Features
+~~~~~~~~~~~~~~~~~~
+
+The Grafana dashboard includes the following visualizations:
+
+**System Status**
+
+* Server uptime tracking
+* User and RFID fob counts with historical trends
+* Machine connectivity monitoring (5-minute check-in status)
+* Machine lockout status overview
+
+**Machine Usage Overview**
+
+* Real-time relay state visualization (which machines are powered on)
+* RFID presence indicators
+* Oops button status monitoring
+* Machine relay state timeline
+
+**Machine Health & Connectivity**
+
+* WiFi signal strength monitoring (both percentage and dB)
+* ESP32 internal temperature tracking
+* Machine controller uptime
+
+**Usage Analytics**
+
+* Current session duration tracking
+* 24-hour usage distribution by machine
+* Known user presence indicators
+
+**Machine Details**
+
+* Per-machine drill-down view with detailed metrics
+* Selectable via dashboard variable dropdown
+
+Importing the Dashboard
+~~~~~~~~~~~~~~~~~~~~~~~
+
+To import the dashboard into Grafana:
+
+1. In Grafana, navigate to **Dashboards** → **Import**
+2. Click **Upload JSON file** and select the dashboard JSON file
+3. Select your Prometheus datasource when prompted
+4. Click **Import**
+
+The dashboard is configured with:
+
+* 5-second auto-refresh rate (adjustable)
+* 24-hour default time range
+* Machine selector variable for detailed views
+
+Dashboard JSON
+~~~~~~~~~~~~~~
+
+The complete Grafana dashboard JSON is available below:
+
+.. literalinclude:: grafana-dashboard.json
+   :language: json
+   :linenos:
