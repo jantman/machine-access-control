@@ -134,52 +134,35 @@ class PromCustomCollector:
         )
         m: Machine
         for m in mconf.machines:
-            relay_state.add_metric(
-                {"machine_name": m.name}, 1 if m.state.relay_desired_state else 0
-            )
-            oops_state.add_metric(
-                {"machine_name": m.name}, 1 if m.state.is_oopsed else 0
-            )
-            lockout_state.add_metric(
-                {"machine_name": m.name}, 1 if m.state.is_locked_out else 0
-            )
-            unauth_state.add_metric(
-                {"machine_name": m.name}, 1 if m.unauthorized_warn_only else 0
-            )
-            m_checkin.add_metric({"machine_name": m.name}, m.state.last_checkin or 0)
-            m_update.add_metric({"machine_name": m.name}, m.state.last_update or 0)
-            m_rfid_present.add_metric(
-                {"machine_name": m.name}, 1 if m.state.rfid_value else 0
-            )
-            m_rfid_present_since.add_metric(
-                {"machine_name": m.name}, m.state.rfid_present_since or 0
-            )
-            current_amps.add_metric({"machine_name": m.name}, m.state.current_amps)
-            m_user.add_metric(
-                {"machine_name": m.name}, 1 if m.state.current_user else 0
-            )
-            uptime.add_metric({"machine_name": m.name}, m.state.uptime)
-            wifi_db.add_metric({"machine_name": m.name}, m.state.wifi_signal_db or 0)
-            wifi_percent.add_metric(
-                {"machine_name": m.name}, m.state.wifi_signal_percent or 0
-            )
-            temp_c.add_metric(
-                {"machine_name": m.name}, m.state.internal_temperature_c or 0
-            )
+            labels = {"machine_name": m.name, "display_name": m.display_name}
+            relay_state.add_metric(labels, 1 if m.state.relay_desired_state else 0)
+            oops_state.add_metric(labels, 1 if m.state.is_oopsed else 0)
+            lockout_state.add_metric(labels, 1 if m.state.is_locked_out else 0)
+            unauth_state.add_metric(labels, 1 if m.unauthorized_warn_only else 0)
+            m_checkin.add_metric(labels, m.state.last_checkin or 0)
+            m_update.add_metric(labels, m.state.last_update or 0)
+            m_rfid_present.add_metric(labels, 1 if m.state.rfid_value else 0)
+            m_rfid_present_since.add_metric(labels, m.state.rfid_present_since or 0)
+            current_amps.add_metric(labels, m.state.current_amps)
+            m_user.add_metric(labels, 1 if m.state.current_user else 0)
+            uptime.add_metric(labels, m.state.uptime)
+            wifi_db.add_metric(labels, m.state.wifi_signal_db or 0)
+            wifi_percent.add_metric(labels, m.state.wifi_signal_percent or 0)
+            temp_c.add_metric(labels, m.state.internal_temperature_c or 0)
             led.add_metric(
-                {"machine_name": m.name, "led_attribute": "red"},
+                {**labels, "led_attribute": "red"},
                 m.state.status_led_rgb[0],
             )
             led.add_metric(
-                {"machine_name": m.name, "led_attribute": "green"},
+                {**labels, "led_attribute": "green"},
                 m.state.status_led_rgb[1],
             )
             led.add_metric(
-                {"machine_name": m.name, "led_attribute": "blue"},
+                {**labels, "led_attribute": "blue"},
                 m.state.status_led_rgb[2],
             )
             led.add_metric(
-                {"machine_name": m.name, "led_attribute": "brightness"},
+                {**labels, "led_attribute": "brightness"},
                 m.state.status_led_brightness,
             )
         yield mconf_load

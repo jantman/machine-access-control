@@ -265,7 +265,7 @@
       "targets": [
         {
           "expr": "machine_last_checkin_timestamp > (time() - 300)",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -340,7 +340,7 @@
       "targets": [
         {
           "expr": "machine_lockout_state",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -428,7 +428,7 @@
       "targets": [
         {
           "expr": "machine_relay_state",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -503,7 +503,7 @@
       "targets": [
         {
           "expr": "machine_rfid_present",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -582,7 +582,7 @@
       "targets": [
         {
           "expr": "machine_oops_state == 0",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -670,7 +670,7 @@
       "targets": [
         {
           "expr": "machine_relay_state",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -771,7 +771,7 @@
       "targets": [
         {
           "expr": "time() - machine_last_checkin_timestamp",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -877,7 +877,7 @@
       "targets": [
         {
           "expr": "machine_wifi_signal_percent",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -970,7 +970,7 @@
       "targets": [
         {
           "expr": "machine_esp_temperature_c",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1059,7 +1059,7 @@
       "targets": [
         {
           "expr": "machine_uptime_seconds",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1148,7 +1148,7 @@
       "targets": [
         {
           "expr": "machine_wifi_signal_db",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1221,7 +1221,7 @@
       "targets": [
         {
           "expr": "(time() - machine_rfid_present_since_timestamp) * on() (machine_rfid_present > 0)",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1275,7 +1275,7 @@
       "targets": [
         {
           "expr": "sum(increase(machine_relay_state[24h])) by (machine_name)",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1346,7 +1346,7 @@
       "targets": [
         {
           "expr": "machine_known_user",
-          "legendFormat": "{{machine_name}}",
+          "legendFormat": "{{display_name}}",
           "refId": "A"
         }
       ],
@@ -1787,14 +1787,14 @@
         "options": [],
         "query": "prometheus",
         "refresh": 1,
-        "regex": "/machine_name=\"([^\"]+)\"/",
+        "regex": "/display_name=\"([^\"]+)\"/",
         "skipUrlSync": false,
         "type": "query",
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(machine_relay_state, machine_name)"
+        "definition": "label_values(machine_relay_state, display_name)"
       },
       {
         "current": {},

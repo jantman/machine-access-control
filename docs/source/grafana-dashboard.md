@@ -31,9 +31,10 @@ The dashboard provides real-time monitoring and historical visualization of:
 ### Template Variables
 
 - **`$machine`**: Machine selector variable
-  - Query: `label_values(machine_relay_state, machine_name)`
+  - Query: `label_values(machine_relay_state, display_name)`
   - Used in the "Machine Details" section for per-machine drill-down
   - Auto-populated from Prometheus labels
+  - Uses `display_name` (machine alias if set, otherwise machine name)
 
 ## Dashboard Sections
 
@@ -194,21 +195,21 @@ This section uses the `$machine` template variable to show detailed stats for a 
 | `fob_count` | Gauge | Total configured RFID fobs | None |
 | `machine_config_load_timestamp` | Gauge | When machine config was loaded | None |
 | `user_config_load_timestamp` | Gauge | When user config was loaded | None |
-| `machine_relay_state` | Gauge | Machine relay on (1) or off (0) | machine_name |
-| `machine_oops_state` | Gauge | Oops button pressed (1) or not (0) | machine_name |
-| `machine_lockout_state` | Gauge | Machine locked out (1) or not (0) | machine_name |
-| `machine_unauth_warn_only_state` | Gauge | Warn-only mode enabled (1) or not (0) | machine_name |
-| `machine_last_checkin_timestamp` | Gauge | Last check-in time (Unix timestamp) | machine_name |
-| `machine_last_update_timestamp` | Gauge | Last state update time (Unix timestamp) | machine_name |
-| `machine_rfid_present` | Gauge | RFID fob present (1) or not (0) | machine_name |
-| `machine_rfid_present_since_timestamp` | Gauge | When RFID was inserted (Unix timestamp) | machine_name |
-| `machine_current_amps` | Gauge | Current amperage draw (if applicable) | machine_name |
-| `machine_known_user` | Gauge | Known user RFID present (1) or not (0) | machine_name |
-| `machine_uptime_seconds` | Gauge | Machine controller uptime in seconds | machine_name |
-| `machine_wifi_signal_db` | Gauge | WiFi signal strength in dB | machine_name |
-| `machine_wifi_signal_percent` | Gauge | WiFi signal strength as percentage | machine_name |
-| `machine_esp_temperature_c` | Gauge | ESP32 internal temperature (°C) | machine_name |
-| `machine_status_led` | Gauge | LED RGB values and brightness | machine_name, led_attribute |
+| `machine_relay_state` | Gauge | Machine relay on (1) or off (0) | display_name, machine_name |
+| `machine_oops_state` | Gauge | Oops button pressed (1) or not (0) | display_name, machine_name |
+| `machine_lockout_state` | Gauge | Machine locked out (1) or not (0) | display_name, machine_name |
+| `machine_unauth_warn_only_state` | Gauge | Warn-only mode enabled (1) or not (0) | display_name, machine_name |
+| `machine_last_checkin_timestamp` | Gauge | Last check-in time (Unix timestamp) | display_name, machine_name |
+| `machine_last_update_timestamp` | Gauge | Last state update time (Unix timestamp) | display_name, machine_name |
+| `machine_rfid_present` | Gauge | RFID fob present (1) or not (0) | display_name, machine_name |
+| `machine_rfid_present_since_timestamp` | Gauge | When RFID was inserted (Unix timestamp) | display_name, machine_name |
+| `machine_current_amps` | Gauge | Current amperage draw (if applicable) | display_name, machine_name |
+| `machine_known_user` | Gauge | Known user RFID present (1) or not (0) | display_name, machine_name |
+| `machine_uptime_seconds` | Gauge | Machine controller uptime in seconds | display_name, machine_name |
+| `machine_wifi_signal_db` | Gauge | WiFi signal strength in dB | display_name, machine_name |
+| `machine_wifi_signal_percent` | Gauge | WiFi signal strength as percentage | display_name, machine_name |
+| `machine_esp_temperature_c` | Gauge | ESP32 internal temperature (°C) | display_name, machine_name |
+| `machine_status_led` | Gauge | LED RGB values and brightness | display_name, led_attribute, machine_name |
 
 ### Calculated Metrics
 
