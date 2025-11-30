@@ -106,7 +106,7 @@ class NeonUserUpdater:
         self._sess: Session = Session()
         self._sess.mount("https://", HTTPAdapter(max_retries=3))
         self._sess.auth = (self._orgid, self._token)
-        self._sess.headers.update({"NEON-API-VERSION": "2.8"})
+        self._sess.headers.update({"NEON-API-VERSION": "2.11"})
         logger.debug(
             "Will authenticate to Neon API using Username (organization ID) "
             "%s and password (token) of length %d: %s...",

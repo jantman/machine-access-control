@@ -104,10 +104,10 @@ class TestDumpFields:
         captured = capsys.readouterr()
         assert resp[0].call_count == 1
         assert resp[0].calls[0].request.headers["Authorization"] == NOX_AUTH
-        assert resp[0].calls[0].request.headers["NEON-API-VERSION"] == "2.8"
+        assert resp[0].calls[0].request.headers["NEON-API-VERSION"] == "2.11"
         assert resp[1].call_count == 1
         assert resp[1].calls[0].request.headers["Authorization"] == NOX_AUTH
-        assert resp[1].calls[0].request.headers["NEON-API-VERSION"] == "2.8"
+        assert resp[1].calls[0].request.headers["NEON-API-VERSION"] == "2.11"
         # get the responses from the fixture data
         std: Any = json.loads(cast(str, resp[0].body))
         custom: Any = json.loads(cast(str, resp[1].body))
