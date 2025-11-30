@@ -171,11 +171,13 @@ class SlackHandler:
 
     async def machine_status(self, say: AsyncSay) -> None:
         """Respond with machine status."""
+        server_uptime: str = naturaldelta(time.time() - self.quart.config["START_TIME"])
         uconf: UsersConfig = self.quart.config["USERS"]
         users_config_age: str = naturaldelta(time.time() - uconf.file_mtime)
         num_users: int = len(uconf.users)
         num_fobs: int = len(uconf.users_by_fob)
         resp: str = (
+            f"Server uptime: {server_uptime}\n"
             f"Users config: {users_config_age} old, {num_users} users, {num_fobs} fobs\n\n"
         )
         mconf: MachinesConfig = self.quart.config["MACHINES"]
