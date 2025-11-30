@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "machine_access_control"
-version = "0.5.0"
+version = "0.6.0"
 description = "Decatur Makers Machine Access Control package"
 authors = ["Jason Antman <jason@jasonantman.com>"]
 license = "MIT"
