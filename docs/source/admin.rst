@@ -58,6 +58,9 @@ An example response from the metrics endpoint is:
     # HELP user_config_load_timestamp The timestamp when the users config was loaded
     # TYPE user_config_load_timestamp gauge
     user_config_load_timestamp 1.689477248e+09
+    # HELP user_config_file_mtime The modification time of the users config file
+    # TYPE user_config_file_mtime gauge
+    user_config_file_mtime 1.689477248e+09
     # HELP app_start_timestamp The timestamp when the server app started
     # TYPE app_start_timestamp gauge
     app_start_timestamp 1.689477248e+09

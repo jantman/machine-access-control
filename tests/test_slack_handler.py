@@ -263,6 +263,7 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         expected = (
+            "Users config: a moment old, 4 users, 4 fobs\n\n"
             "always-on-machine: Idle \n"
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; last update a minute ago;"
@@ -324,6 +325,7 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         expected = (
+            "Users config: a moment old, 4 users, 4 fobs\n\n"
             "always-on-machine: Idle \n"
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; "
@@ -727,8 +729,11 @@ def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:
             "MACHINE_STATE_DIR": str(os.path.join(fixture_dir, "machine_state")),
         },
     ):
+        uconf = UsersConfig()
+        # Set file_mtime to frozen time for consistent test output
+        uconf.file_mtime = 1689477248.0
         type(test_class.quart_app).config = {
             "MACHINES": MachinesConfig(),
-            "USERS": UsersConfig(),
+            "USERS": uconf,
             "SLACK_HANDLER": test_class.cls,
         }

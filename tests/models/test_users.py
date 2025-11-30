@@ -27,12 +27,16 @@ class TestUsersConfig:
         conf_path: str = os.path.join(
             fixtures_path, "test_neongetter", "users-happy.json"
         )
-        shutil.copy(conf_path, os.path.join(tmp_path, "users.json"))
+        upath: str = os.path.join(tmp_path, "users.json")
+        shutil.copy(conf_path, upath)
         os.chdir(tmp_path)
         cls: UsersConfig = UsersConfig()
         assert len(cls.users) == 594
         assert len(cls.users_by_fob) == 600
         assert cls.load_time == 1689477248.0
+        # Check that file_mtime is set to the actual file's mtime
+        assert isinstance(cls.file_mtime, float)
+        assert cls.file_mtime == os.path.getmtime(upath)
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     def test_config_path(self, fixtures_path: str, tmp_path: Path) -> None:
@@ -82,6 +86,50 @@ class TestUsersConfig:
             assert isinstance(cls.users[x], User)
             assert cls.users[x].as_dict == conf[x]
         assert cls.load_time == 1689477248.0
+        # Check that file_mtime is set to the actual file's mtime
+        assert isinstance(cls.file_mtime, float)
+        assert cls.file_mtime == os.path.getmtime(cpath)
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    def test_reload_updates_file_mtime(self, tmp_path: Path) -> None:
+        """Test that reload() updates file_mtime."""
+        conf: List[Dict[str, Any]] = [
+            {
+                "account_id": "410",
+                "authorizations": ["Dimensioning Tools"],
+                "email": "user@example.com",
+                "expiration_ymd": "2024-08-27",
+                "fob_codes": ["0725858614"],
+                "full_name": "Test User",
+                "first_name": "Test",
+                "preferred_name": "PTest",
+            }
+        ]
+        cpath: str = str(os.path.join(tmp_path, "users.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"USERS_CONFIG": cpath}):
+            cls: UsersConfig = UsersConfig()
+            assert cls.load_time == 1689477248.0
+            initial_mtime = cls.file_mtime
+            assert isinstance(initial_mtime, float)
+            assert initial_mtime == os.path.getmtime(cpath)
+            # Simulate time passing and file being modified
+            import time
+
+            time.sleep(0.1)
+            # Touch the file to update its mtime
+            Path(cpath).touch()
+            new_mtime = os.path.getmtime(cpath)
+            assert new_mtime > initial_mtime
+            # Reload the config
+            removed, updated, added = cls.reload()
+            assert removed == 0
+            assert updated == 0
+            assert added == 0
+            # Check that file_mtime was updated
+            assert cls.file_mtime == new_mtime
+            assert cls.file_mtime > initial_mtime
 
     def test_invalid_config(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test using default config file path."""

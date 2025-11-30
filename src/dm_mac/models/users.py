@@ -1,6 +1,7 @@
 """Models for users and tools for loading users config."""
 
 import logging
+import os
 from time import time
 from typing import Any
 from typing import Dict
@@ -127,6 +128,13 @@ class UsersConfig:
             for fob in user.fob_codes:
                 self.users_by_fob[fob] = user
         self.load_time: float = time()
+        self.file_mtime: float = os.path.getmtime(self._get_config_path())
+
+    def _get_config_path(self) -> str:
+        """Get the path to the users config file."""
+        if "USERS_CONFIG" in os.environ:
+            return os.environ["USERS_CONFIG"]
+        return "users.json"
 
     def _load_and_validate_config(self) -> List[Dict[str, Any]]:
         """Load and validate the config file."""
@@ -211,4 +219,5 @@ class UsersConfig:
                 added += 1
         logger.info("Done reloading users config.")
         self.load_time = time()
+        self.file_mtime = os.path.getmtime(self._get_config_path())
         return removed, updated, added

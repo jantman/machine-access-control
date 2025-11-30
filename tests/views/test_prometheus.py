@@ -54,6 +54,7 @@ class TestPrometheus:
         app, client = app_and_client(tmp_path)
         now: float = time()
         uconf: UsersConfig = app.config["USERS"]
+        file_mtime: float = uconf.file_mtime
         jantman: User = uconf.users_by_fob["0014916441"]
         mconf: MachinesConfig = app.config["MACHINES"]
         mill: Machine = mconf.machines_by_name["metal-mill"]
@@ -90,6 +91,11 @@ class TestPrometheus:
         custom_metrics = (
             "\n" + text[text.find("# HELP machine_config_load_timestamp") :]
         )
+        # Extract actual file_mtime value from response
+        import re
+
+        mtime_match = re.search(r"user_config_file_mtime ([\d.e+]+)", text)
+        actual_mtime_str = mtime_match.group(1) if mtime_match else str(file_mtime)
         expected = dedent(
             """
         # HELP machine_config_load_timestamp The timestamp when the machine config was loaded
@@ -98,6 +104,9 @@ class TestPrometheus:
         # HELP user_config_load_timestamp The timestamp when the users config was loaded
         # TYPE user_config_load_timestamp gauge
         user_config_load_timestamp 1.689477248e+09
+        # HELP user_config_file_mtime The modification time of the users config file
+        # TYPE user_config_file_mtime gauge
+        user_config_file_mtime __FILE_MTIME__
         # HELP app_start_timestamp The timestamp when the server app started
         # TYPE app_start_timestamp gauge
         app_start_timestamp 1.689477248e+09
@@ -246,7 +255,7 @@ class TestPrometheus:
         machine_status_led{display_name="always-on-machine",led_attribute="blue",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="brightness",machine_name="always-on-machine"} 0.0
         """  # noqa: E501
-        )
+        ).replace("__FILE_MTIME__", actual_mtime_str)
         assert custom_metrics == expected
         assert (
             response.headers["Content-Type"] == CONTENT_TYPE_LATEST + "; charset=utf-8"
@@ -258,12 +267,19 @@ class TestPrometheus:
         app: Quart
         client: TestClientProtocol
         app, client = app_and_client(tmp_path)
+        uconf: UsersConfig = app.config["USERS"]
+        file_mtime: float = uconf.file_mtime
         response: Response = await client.get("/metrics")
         assert response.status_code == 200
         text = await response.get_data(True)
         custom_metrics = (
             "\n" + text[text.find("# HELP machine_config_load_timestamp") :]
         )
+        # Extract actual file_mtime value from response
+        import re
+
+        mtime_match = re.search(r"user_config_file_mtime ([\d.e+]+)", text)
+        actual_mtime_str = mtime_match.group(1) if mtime_match else str(file_mtime)
         expected = dedent(
             """
         # HELP machine_config_load_timestamp The timestamp when the machine config was loaded
@@ -272,6 +288,9 @@ class TestPrometheus:
         # HELP user_config_load_timestamp The timestamp when the users config was loaded
         # TYPE user_config_load_timestamp gauge
         user_config_load_timestamp 1.689477248e+09
+        # HELP user_config_file_mtime The modification time of the users config file
+        # TYPE user_config_file_mtime gauge
+        user_config_file_mtime __FILE_MTIME__
         # HELP app_start_timestamp The timestamp when the server app started
         # TYPE app_start_timestamp gauge
         app_start_timestamp 1.689477248e+09
@@ -420,7 +439,7 @@ class TestPrometheus:
         machine_status_led{display_name="always-on-machine",led_attribute="blue",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="brightness",machine_name="always-on-machine"} 0.0
         """  # noqa: E501
-        )
+        ).replace("__FILE_MTIME__", actual_mtime_str)
         assert custom_metrics == expected
         assert (
             response.headers["Content-Type"] == CONTENT_TYPE_LATEST + "; charset=utf-8"

@@ -69,6 +69,11 @@ class PromCustomCollector:
             "The timestamp when the users config was loaded",
         )
         uconf_load.add_metric({}, uconf.load_time)
+        uconf_mtime: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "user_config_file_mtime",
+            "The modification time of the users config file",
+        )
+        uconf_mtime.add_metric({}, uconf.file_mtime)
         stime: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
             "app_start_timestamp", "The timestamp when the server app started"
         )
@@ -167,6 +172,7 @@ class PromCustomCollector:
             )
         yield mconf_load
         yield uconf_load
+        yield uconf_mtime
         yield stime
         yield numu
         yield numf

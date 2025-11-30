@@ -16,6 +16,7 @@ from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
+from dm_mac.models.users import UsersConfig
 
 
 logger: logging.Logger = logging.getLogger(__name__)
@@ -170,7 +171,13 @@ class SlackHandler:
 
     async def machine_status(self, say: AsyncSay) -> None:
         """Respond with machine status."""
-        resp: str = ""
+        uconf: UsersConfig = self.quart.config["USERS"]
+        users_config_age: str = naturaldelta(time.time() - uconf.file_mtime)
+        num_users: int = len(uconf.users)
+        num_fobs: int = len(uconf.users_by_fob)
+        resp: str = (
+            f"Users config: {users_config_age} old, {num_users} users, {num_fobs} fobs\n\n"
+        )
         mconf: MachinesConfig = self.quart.config["MACHINES"]
         mname: str
         mach: Machine
