@@ -140,6 +140,7 @@ class UsersConfig:
         """Load and validate the config file."""
         config: List[Dict[str, Any]] = cast(
             List[Dict[str, Any]],
+            # if changing, be sure to also update _get_config_path()
             load_json_config("USERS_CONFIG", "users.json"),
         )
         UsersConfig.validate_config(config)
