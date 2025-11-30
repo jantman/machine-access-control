@@ -48,8 +48,10 @@ The slack bot is controlled by mentioning its name (``@your-bot-name``) along wi
 Using an example bot name of ``@machine-access-control``, the supported commands are:
 
 * ``@machine-access-control status`` - List all machines and their current status. This command is the only one that is usable from channels other than the control channel.
-* ``@machine-access-control oops <machine-name>`` - Set Oops'ed status on the machine with name ``machine-name``. This takes effect immediately, even if the machine is currently in use.
-* ``@machine-access-control lock <machine-name>`` - Set maintenance lock-out status on the machine with name ``machine-name``. This takes effect immediately, even if the machine is currently in use.
-* ``@machine-access-control clear <machine-name>`` - Clear all Oops and/or maintenance lock-out states on the machine with name ``machine-name``.
+* ``@machine-access-control oops <machine-name>`` - Set Oops'ed status on the machine with name ``machine-name``. This takes effect immediately, even if the machine is currently in use. You can use either the machine name or its alias (if configured).
+* ``@machine-access-control lock <machine-name>`` - Set maintenance lock-out status on the machine with name ``machine-name``. This takes effect immediately, even if the machine is currently in use. You can use either the machine name or its alias (if configured).
+* ``@machine-access-control clear <machine-name>`` - Clear all Oops and/or maintenance lock-out states on the machine with name ``machine-name``. You can use either the machine name or its alias (if configured).
+
+**Note:** If a machine has an ``alias`` configured in ``machines.json``, the bot's responses will use the alias instead of the machine name for better readability.
 
 In addition, changes to all machines' Oops and maintenance lock-out states will be posted as messages in the ``SLACK_OOPS_CHANNEL_ID`` channel.

@@ -1085,7 +1085,7 @@ class TestRfidChanged:
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
         assert slack.mock_calls == [
             call.admin_log(
-                "RFID login on metal-mill by authorized user Ashley Williams"
+                "RFID login on Metal Mill by authorized user Ashley Williams"
             )
         ]
 
@@ -1391,7 +1391,7 @@ class TestRfidChanged:
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
         assert slack.mock_calls == [
             call.admin_log(
-                "rejected RFID login on metal-mill by UNAUTHORIZED user "
+                "rejected RFID login on Metal Mill by UNAUTHORIZED user "
                 "Kenneth Hunter"
             )
         ]
@@ -1570,7 +1570,7 @@ class TestRfidChanged:
         assert ms.status_led_rgb == (1.0, 0.0, 0.0)
         assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
         assert slack.mock_calls == [
-            call.admin_log("RFID login attempt on metal-mill by unknown fob")
+            call.admin_log("RFID login attempt on Metal Mill by unknown fob")
         ]
 
     async def test_rfid_unknown_removed(self, tmp_path: Path) -> None:
@@ -2246,7 +2246,7 @@ class TestRfidChangedWhenOopsed:
         assert ms.last_update == 1689477248.0
         assert slack.mock_calls == [
             call.admin_log(
-                "RFID login attempt on metal-mill by Ashley Williams " "when oopsed."
+                "RFID login attempt on Metal Mill by Ashley Williams " "when oopsed."
             )
         ]
 
@@ -2615,7 +2615,7 @@ class TestRfidChangedWhenOopsed:
         assert ms.last_update == 1689477248.0
         assert slack.mock_calls == [
             call.admin_log(
-                "RFID login attempt on metal-mill by unknown fob when oopsed "
+                "RFID login attempt on Metal Mill by unknown fob when oopsed "
                 "or locked out."
             )
         ]
@@ -2803,7 +2803,7 @@ class TestRfidChangedWhenLockedOut:
         assert ms.last_update == 1689477248.0
         assert slack.mock_calls == [
             call.admin_log(
-                "RFID login attempt on metal-mill by Ashley Williams "
+                "RFID login attempt on Metal Mill by Ashley Williams "
                 "when machine locked-out."
             )
         ]
