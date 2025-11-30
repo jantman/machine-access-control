@@ -71,6 +71,7 @@ class TestMachinesConfig:
             "authorizations_or": ["Metal Mill"],
             "unauthorized_warn_only": False,
             "always_enabled": False,
+            "alias": None,
         }
         assert cls.load_time == 1689477248.0
 
@@ -119,6 +120,7 @@ class TestMachine:
             "authorizations_or": ["Foo", "Bar"],
             "unauthorized_warn_only": False,
             "always_enabled": False,
+            "alias": None,
         }
 
     def test_unauth_warn(self) -> None:
@@ -139,4 +141,98 @@ class TestMachine:
             "authorizations_or": ["Foo", "Bar"],
             "unauthorized_warn_only": True,
             "always_enabled": False,
+            "alias": None,
         }
+
+    def test_with_alias(self) -> None:
+        """Test machine with alias."""
+        with patch(f"{pbm}.MachineState", autospec=True) as m_state:
+            cls: Machine = Machine(
+                name="mName",
+                authorizations_or=["Foo", "Bar"],
+                alias="My Machine",
+            )
+        assert cls.name == "mName"
+        assert cls.alias == "My Machine"
+        assert cls.display_name == "My Machine"
+        assert cls.authorizations_or == ["Foo", "Bar"]
+        assert m_state.mock_calls == [call(cls)]
+        assert cls.state == m_state.return_value
+        assert cls.as_dict == {
+            "name": "mName",
+            "authorizations_or": ["Foo", "Bar"],
+            "unauthorized_warn_only": False,
+            "always_enabled": False,
+            "alias": "My Machine",
+        }
+
+    def test_display_name_without_alias(self) -> None:
+        """Test display_name property when no alias is set."""
+        with patch(f"{pbm}.MachineState", autospec=True):
+            cls: Machine = Machine(
+                name="mName",
+                authorizations_or=["Foo", "Bar"],
+            )
+        assert cls.display_name == "mName"
+
+    def test_display_name_with_alias(self) -> None:
+        """Test display_name property when alias is set."""
+        with patch(f"{pbm}.MachineState", autospec=True):
+            cls: Machine = Machine(
+                name="mName",
+                authorizations_or=["Foo", "Bar"],
+                alias="My Machine",
+            )
+        assert cls.display_name == "My Machine"
+
+
+class TestMachinesConfigGetMachine:
+    """Tests for MachinesConfig.get_machine method."""
+
+    def test_get_machine_by_name(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test getting a machine by name."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        machine = cls.get_machine("metal-mill")
+        assert machine is not None
+        assert machine.name == "metal-mill"
+        assert machine.alias == "Metal Mill"
+
+    def test_get_machine_by_alias(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test getting a machine by alias."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        machine = cls.get_machine("Metal Mill")
+        assert machine is not None
+        assert machine.name == "metal-mill"
+        assert machine.alias == "Metal Mill"
+
+    def test_get_machine_not_found(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test getting a machine that doesn't exist."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        machine = cls.get_machine("nonexistent")
+        assert machine is None

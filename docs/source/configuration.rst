@@ -23,6 +23,8 @@ machines.json
 
 Machines are configured via a ``machines.json`` file in the current directory, or another file name/path specified in the ``MACHINES_CONFIG`` environment variable. This file lists all of the supported/configured machines and which authorization(s) are required to use them. Note that the names in this file must match the names configured in your ESPHome :ref:`hardware`. Machine names must be unqiue and can only contain alphanumeric characters, underscores, and dashes. No spaces, no dots.
 
+Each machine configuration supports an optional ``alias`` field, which provides a human-friendly name for the machine. When present, the alias will be used in Slack messages and log output instead of the machine name. Both the machine name and alias can be used in incoming Slack commands.
+
 The schema of this file is as follows:
 
 .. jsonschema:: dm_mac.models.machine.CONFIG_SCHEMA

@@ -160,11 +160,11 @@ class SlackHandler:
                 msg.channel_id,
             )
             return None
-        if msg.command[0] == "oops" and len(msg.command) == 2:
+        if msg.command[0] == "oops" and len(msg.command) >= 2:
             return await self.oops(msg, say)
-        elif msg.command[0] == "lock" and len(msg.command) == 2:
+        elif msg.command[0] == "lock" and len(msg.command) >= 2:
             return await self.lock(msg, say)
-        elif msg.command[0] == "clear" and len(msg.command) == 2:
+        elif msg.command[0] == "clear" and len(msg.command) >= 2:
             return await self.clear(msg, say)
         await say(self.HELP_RESPONSE)
 
@@ -175,7 +175,7 @@ class SlackHandler:
         mname: str
         mach: Machine
         for mname, mach in sorted(mconf.machines_by_name.items()):
-            resp += mname + ": "
+            resp += mach.display_name + ": "
             if mach.state.is_oopsed or mach.state.is_locked_out:
                 if mach.state.is_oopsed:
                     resp += "Oopsed "
@@ -199,44 +199,44 @@ class SlackHandler:
 
     async def oops(self, msg: Message, say: AsyncSay) -> None:
         """Set oops status on a machine."""
-        mname: str = msg.command[1]
+        mname: str = " ".join(msg.command[1:])
         mconf: MachinesConfig = self.quart.config["MACHINES"]
-        mach: Optional[Machine] = mconf.machines_by_name.get(mname)
+        mach: Optional[Machine] = mconf.get_machine(mname)
         if not mach:
             await say(
-                f"Invalid machine name '{mname}'. Use status command to "
+                f"Invalid machine name or alias '{mname}'. Use status command to "
                 f"list all machines."
             )
             return
         if mach.state.is_oopsed:
-            await say(f"Machine {mname} is already oopsed.")
+            await say(f"Machine {mach.display_name} is already oopsed.")
             return
         await mach.oops(slack=self)
 
     async def lock(self, msg: Message, say: AsyncSay) -> None:
         """Set lock status on a machine."""
-        mname: str = msg.command[1]
+        mname: str = " ".join(msg.command[1:])
         mconf: MachinesConfig = self.quart.config["MACHINES"]
-        mach: Optional[Machine] = mconf.machines_by_name.get(mname)
+        mach: Optional[Machine] = mconf.get_machine(mname)
         if not mach:
             await say(
-                f"Invalid machine name '{mname}'. Use status command to "
+                f"Invalid machine name or alias '{mname}'. Use status command to "
                 f"list all machines."
             )
             return
         if mach.state.is_locked_out:
-            await say(f"Machine {mname} is already locked-out.")
+            await say(f"Machine {mach.display_name} is already locked-out.")
             return
         await mach.lockout(slack=self)
 
     async def clear(self, msg: Message, say: AsyncSay) -> None:
         """Clear oops and lock status on a machine."""
-        mname: str = msg.command[1]
+        mname: str = " ".join(msg.command[1:])
         mconf: MachinesConfig = self.quart.config["MACHINES"]
-        mach: Optional[Machine] = mconf.machines_by_name.get(mname)
+        mach: Optional[Machine] = mconf.get_machine(mname)
         if not mach:
             await say(
-                f"Invalid machine name '{mname}'. Use status command to "
+                f"Invalid machine name or alias '{mname}'. Use status command to "
                 f"list all machines."
             )
             return
@@ -248,7 +248,7 @@ class SlackHandler:
             await mach.unlock(slack=self)
             acted = True
         if not acted:
-            await say(f"Machine {mname} is not oopsed or locked-out.")
+            await say(f"Machine {mach.display_name} is not oopsed or locked-out.")
 
     async def log_unoops(self, machine: Machine, source: str) -> None:
         """
@@ -262,13 +262,13 @@ class SlackHandler:
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.name} un-oopsed via {source}.",
+                text=f"Machine {machine.display_name} un-oopsed via {source}.",
             )
         )
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.oops_channel_id,
-                text=f"Machine {machine.name} oops has been cleared.",
+                text=f"Machine {machine.display_name} oops has been cleared.",
             )
         )
 
@@ -286,13 +286,13 @@ class SlackHandler:
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.name} oopsed via {source} by {user_name}.",
+                text=f"Machine {machine.display_name} oopsed via {source} by {user_name}.",
             )
         )
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.oops_channel_id,
-                text=f"Machine {machine.name} has been Oops'ed!",
+                text=f"Machine {machine.display_name} has been Oops'ed!",
             )
         )
 
@@ -308,13 +308,13 @@ class SlackHandler:
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.name} locked-out cleared via {source}.",
+                text=f"Machine {machine.display_name} locked-out cleared via {source}.",
             )
         )
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.oops_channel_id,
-                text=f"Machine {machine.name} is no longer locked-out for "
+                text=f"Machine {machine.display_name} is no longer locked-out for "
                 f"maintenance.",
             )
         )
@@ -331,13 +331,13 @@ class SlackHandler:
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.name} locked-out via {source}.",
+                text=f"Machine {machine.display_name} locked-out via {source}.",
             )
         )
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.oops_channel_id,
-                text=f"Machine {machine.name} is locked-out for maintenance.",
+                text=f"Machine {machine.display_name} is locked-out for maintenance.",
             )
         )
 

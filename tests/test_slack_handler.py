@@ -267,7 +267,7 @@ class TestSlackHandler:
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; last update a minute ago;"
             " uptime 2 minutes)\n"
-            "metal-mill: Oopsed (last contact 10 seconds ago; last update a "
+            "Metal Mill: Oopsed (last contact 10 seconds ago; last update a "
             "minute ago; uptime a day)\n"
             "permissive-lathe: Locked out (last contact 6 days ago; "
             "last update 7 days ago; uptime 6 minutes)\n"
@@ -328,7 +328,7 @@ class TestSlackHandler:
             "esp32test: Idle \n"
             "hammer: Idle (last contact a minute ago; "
             "last update a minute ago; uptime 2 minutes)\n"
-            "metal-mill: Oopsed (last contact 10 seconds ago; "
+            "Metal Mill: Oopsed (last contact 10 seconds ago; "
             "last update a minute ago; uptime a day)\n"
             "permissive-lathe: Locked out (last contact 6 days ago; "
             "last update 7 days ago; uptime 6 minutes)\n"
@@ -381,10 +381,10 @@ class TestSlackHandler:
         assert self.slack_client.mock_calls == [
             call.chat_postMessage(
                 channel="Cadmin",
-                text="Machine metal-mill oopsed via Slack by unknown user.",
+                text="Machine Metal Mill oopsed via Slack by unknown user.",
             ),
             call.chat_postMessage(
-                channel="Coops", text="Machine metal-mill has been Oops'ed!"
+                channel="Coops", text="Machine Metal Mill has been Oops'ed!"
             ),
         ]
         assert self.slack_app.mock_calls == []
@@ -409,7 +409,7 @@ class TestSlackHandler:
         )
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
-        assert say.mock_calls == [call("Machine metal-mill is already oopsed.")]
+        assert say.mock_calls == [call("Machine Metal Mill is already oopsed.")]
         assert self.slack_client.mock_calls == []
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
@@ -435,7 +435,7 @@ class TestSlackHandler:
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == [
             call(
-                "Invalid machine name 'invalid-name'. "
+                "Invalid machine name or alias 'invalid-name'. "
                 "Use status command to list all machines."
             )
         ]
@@ -464,11 +464,11 @@ class TestSlackHandler:
         assert say.mock_calls == []
         assert self.slack_client.mock_calls == [
             call.chat_postMessage(
-                channel="Cadmin", text="Machine metal-mill locked-out via Slack."
+                channel="Cadmin", text="Machine Metal Mill locked-out via Slack."
             ),
             call.chat_postMessage(
                 channel="Coops",
-                text="Machine metal-mill is locked-out for maintenance.",
+                text="Machine Metal Mill is locked-out for maintenance.",
             ),
         ]
         assert self.slack_app.mock_calls == []
@@ -493,7 +493,7 @@ class TestSlackHandler:
         )
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
-        assert say.mock_calls == [call("Machine metal-mill is already locked-out.")]
+        assert say.mock_calls == [call("Machine Metal Mill is already locked-out.")]
         assert self.slack_client.mock_calls == []
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_locked_out is True
@@ -519,7 +519,7 @@ class TestSlackHandler:
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == [
             call(
-                "Invalid machine name 'invalid-name'. "
+                "Invalid machine name or alias 'invalid-name'. "
                 "Use status command to list all machines."
             )
         ]
@@ -548,10 +548,10 @@ class TestSlackHandler:
         assert say.mock_calls == []
         assert self.slack_client.mock_calls == [
             call.chat_postMessage(
-                channel="Cadmin", text="Machine metal-mill un-oopsed via Slack."
+                channel="Cadmin", text="Machine Metal Mill un-oopsed via Slack."
             ),
             call.chat_postMessage(
-                channel="Coops", text="Machine metal-mill oops has been cleared."
+                channel="Coops", text="Machine Metal Mill oops has been cleared."
             ),
         ]
         assert self.slack_app.mock_calls == []
@@ -581,11 +581,11 @@ class TestSlackHandler:
         assert self.slack_client.mock_calls == [
             call.chat_postMessage(
                 channel="Cadmin",
-                text="Machine metal-mill locked-out cleared via Slack.",
+                text="Machine Metal Mill locked-out cleared via Slack.",
             ),
             call.chat_postMessage(
                 channel="Coops",
-                text="Machine metal-mill is no longer locked-out for " "maintenance.",
+                text="Machine Metal Mill is no longer locked-out for " "maintenance.",
             ),
         ]
         assert self.slack_app.mock_calls == []
@@ -612,7 +612,7 @@ class TestSlackHandler:
         say = AsyncMock()
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == [
-            call("Machine metal-mill is not oopsed or locked-out.")
+            call("Machine Metal Mill is not oopsed or locked-out.")
         ]
         assert self.slack_client.mock_calls == []
         assert self.slack_app.mock_calls == []
@@ -640,7 +640,7 @@ class TestSlackHandler:
         await self.cls.handle_command(msg, say)
         assert say.mock_calls == [
             call(
-                "Invalid machine name 'invalid-name'. "
+                "Invalid machine name or alias 'invalid-name'. "
                 "Use status command to list all machines."
             )
         ]
@@ -681,6 +681,38 @@ class TestSlackHandler:
             ),
         ]
         assert self.slack_app.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_handle_command_oops_by_alias(self, tmp_path) -> None:
+        """Oops command using machine alias instead of name."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = False
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        msg = Message(
+            text="<@U12345678> oops Metal Mill",
+            user_id="U5678",
+            user_name="User Name",
+            user_handle="displayName",
+            channel_id="Cadmin",
+            channel_name="AdminChannel",
+        )
+        say = AsyncMock()
+        await self.cls.handle_command(msg, say)
+        assert say.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="Machine Metal Mill oopsed via Slack by unknown user.",
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine Metal Mill has been Oops'ed!"
+            ),
+        ]
+        assert self.slack_app.mock_calls == []
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
 
 
 def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:

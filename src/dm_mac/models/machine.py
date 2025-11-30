@@ -60,6 +60,11 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "Displays 'Always On' and relay is always "
                     "on unless Oopsed or Locked.",
                 },
+                "alias": {
+                    "type": "string",
+                    "description": "Optional human-friendly alias for the machine. "
+                    "Used in Slack messages and logs instead of the machine name.",
+                },
             },
             "additionalProperties": False,
             "description": "Unique machine name, alphanumeric _ and - only.",
@@ -77,6 +82,7 @@ class Machine:
         authorizations_or: List[str],
         unauthorized_warn_only: bool = False,
         always_enabled: bool = False,
+        alias: Optional[str] = None,
     ):
         """Initialize a new MachineState instance."""
         #: The name of the machine
@@ -88,6 +94,8 @@ class Machine:
         self.unauthorized_warn_only: bool = unauthorized_warn_only
         #: Whether machine is always enabled without RFID authentication
         self.always_enabled: bool = always_enabled
+        #: Optional human-friendly alias for the machine
+        self.alias: Optional[str] = alias
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
 
@@ -146,6 +154,11 @@ class Machine:
         await slack.log_unoops(self, source)
 
     @property
+    def display_name(self) -> str:
+        """Return the display name for this machine (alias if present, else name)."""
+        return self.alias if self.alias else self.name
+
+    @property
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict representation of this machine."""
         return {
@@ -153,6 +166,7 @@ class Machine:
             "authorizations_or": self.authorizations_or,
             "unauthorized_warn_only": self.unauthorized_warn_only,
             "always_enabled": self.always_enabled,
+            "alias": self.alias,
         }
 
 
@@ -163,6 +177,7 @@ class MachinesConfig:
         """Initialize MachinesConfig."""
         logger.debug("Initializing MachinesConfig")
         self.machines_by_name: Dict[str, Machine] = {}
+        self.machines_by_alias: Dict[str, Machine] = {}
         self.machines: List[Machine] = []
         mdict: Dict[str, Any]
         mname: str
@@ -170,7 +185,15 @@ class MachinesConfig:
             mach: Machine = Machine(name=mname, **mdict)
             self.machines.append(mach)
             self.machines_by_name[mach.name] = mach
+            if mach.alias:
+                self.machines_by_alias[mach.alias] = mach
         self.load_time: float = time()
+
+    def get_machine(self, name_or_alias: str) -> Optional[Machine]:
+        """Get a machine by name or alias."""
+        return self.machines_by_name.get(name_or_alias) or self.machines_by_alias.get(
+            name_or_alias
+        )
 
     def _load_and_validate_config(self) -> Dict[str, Dict[str, Any]]:
         """Load and validate the config file."""
@@ -307,7 +330,8 @@ class MachineState:
         For always-enabled machines, restores the always-on state.
         """
         logging.getLogger("AUTH").warning(
-            "Machine %s rebooted; resetting relay and RFID state", self.machine.name
+            "Machine %s rebooted; resetting relay and RFID state",
+            self.machine.display_name,
         )
         # locking handled in update()
         self.current_user = None
@@ -327,12 +351,12 @@ class MachineState:
         if not slack:
             # Slack integration is not enabled
             return
-        await slack.admin_log(f"Machine {self.machine.name} has rebooted.")
+        await slack.admin_log(f"Machine {self.machine.display_name} has rebooted.")
 
     def lockout(self) -> None:
         """Lock-out the machine."""
         logging.getLogger("OOPS").warning(
-            "Machine %s was locked out for maintenance.", self.machine.name
+            "Machine %s was locked out for maintenance.", self.machine.display_name
         )
         with self._lock:
             self.is_locked_out = True
@@ -345,7 +369,8 @@ class MachineState:
     def unlock(self) -> None:
         """Un-lock-out the machine."""
         logging.getLogger("OOPS").warning(
-            "Machine %s was removed from maintenance lock-out.", self.machine.name
+            "Machine %s was removed from maintenance lock-out.",
+            self.machine.display_name,
         )
         with self._lock:
             self.is_locked_out = False
@@ -364,7 +389,9 @@ class MachineState:
 
     def oops(self, do_locking: bool = True) -> None:
         """Oops the machine."""
-        logging.getLogger("OOPS").warning("Machine %s was Oopsed.", self.machine.name)
+        logging.getLogger("OOPS").warning(
+            "Machine %s was Oopsed.", self.machine.display_name
+        )
         locker = self._lock if do_locking else nullcontext()
         with locker:
             self.is_oopsed = True
@@ -377,7 +404,7 @@ class MachineState:
     def unoops(self, do_locking: bool = True) -> None:
         """Un-oops the machine."""
         logging.getLogger("OOPS").warning(
-            "Machine %s was un-Oopsed.", self.machine.name
+            "Machine %s was un-Oopsed.", self.machine.display_name
         )
         locker = self._lock if do_locking else nullcontext()
         with locker:
@@ -465,7 +492,7 @@ class MachineState:
                 ustr = f" Current user is: {user.full_name}."
                 uname = user.full_name
         logging.getLogger("OOPS").warning(
-            "Machine %s was Oopsed.%s", self.machine.name, ustr
+            "Machine %s was Oopsed.%s", self.machine.display_name, ustr
         )
         # locking handled in update()
         self.oops(do_locking=False)
@@ -485,12 +512,12 @@ class MachineState:
         """Handle RFID card removed."""
         logging.getLogger("AUTH").info(
             "RFID logout on %s by %s; session duration %d seconds",
-            self.machine.name,
+            self.machine.display_name,
             self.current_user.full_name if self.current_user else self.rfid_value,
             time() - cast(float, self.rfid_present_since),
         )
         log_str: str = (
-            f"RFID logout on {self.machine.name} by "
+            f"RFID logout on {self.machine.display_name} by "
             + (self.current_user.full_name if self.current_user else "unknown")
             + "; session duration "
             + naturaldelta(time() - cast(float, self.rfid_present_since))
@@ -521,13 +548,13 @@ class MachineState:
         if not user:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt on %s by unknown fob %s",
-                self.machine.name,
+                self.machine.display_name,
                 rfid_value,
             )
             if self.is_oopsed or self.is_locked_out:
                 if slack:
                     await slack.admin_log(
-                        f"RFID login attempt on {self.machine.name} "
+                        f"RFID login attempt on {self.machine.display_name} "
                         "by unknown fob when oopsed or locked out."
                     )
                 return
@@ -536,7 +563,7 @@ class MachineState:
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
             if slack:
                 await slack.admin_log(
-                    f"RFID login attempt on {self.machine.name} by unknown fob"
+                    f"RFID login attempt on {self.machine.display_name} by unknown fob"
                 )
             return
         # ok, we have a known user
@@ -544,26 +571,26 @@ class MachineState:
         if self.is_oopsed:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt while oopsed on %s by %s",
-                self.machine.name,
+                self.machine.display_name,
                 logname,
             )
             # don't change anything
             if slack:
                 await slack.admin_log(
-                    f"RFID login attempt on {self.machine.name} by "
+                    f"RFID login attempt on {self.machine.display_name} by "
                     f"{user.full_name} when oopsed."
                 )
             return
         if self.is_locked_out:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt while locked out on %s by %s",
-                self.machine.name,
+                self.machine.display_name,
                 logname,
             )
             # don't change anything
             if slack:
                 await slack.admin_log(
-                    f"RFID login attempt on {self.machine.name} by "
+                    f"RFID login attempt on {self.machine.display_name} by "
                     f"{user.full_name} when machine locked-out."
                 )
             return
@@ -572,7 +599,7 @@ class MachineState:
                 "User %s (%s) authorized for %s; session start",
                 user.full_name,
                 user.account_id,
-                self.machine.name,
+                self.machine.display_name,
             )
             self.current_user = user
             self.relay_desired_state = True
@@ -581,7 +608,7 @@ class MachineState:
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
             if slack:
                 await slack.admin_log(
-                    f"RFID login on {self.machine.name} by authorized user "
+                    f"RFID login on {self.machine.display_name} by authorized user "
                     f"{user.full_name}"
                 )
         else:
@@ -589,7 +616,7 @@ class MachineState:
                 "User %s (%s) UNAUTHORIZED for %s",
                 user.full_name,
                 user.account_id,
-                self.machine.name,
+                self.machine.display_name,
             )
             self.relay_desired_state = False
             self.display_text = "Unauthorized"
@@ -597,7 +624,7 @@ class MachineState:
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
             if slack:
                 await slack.admin_log(
-                    f"rejected RFID login on {self.machine.name} by "
+                    f"rejected RFID login on {self.machine.display_name} by "
                     f"UNAUTHORIZED user {user.full_name}"
                 )
 
@@ -614,7 +641,7 @@ class MachineState:
             # RFID removed
             logging.getLogger("AUTH").info(
                 "RFID removed on always-enabled machine %s (was %s); session duration %d seconds",
-                self.machine.name,
+                self.machine.display_name,
                 self.current_user.full_name if self.current_user else self.rfid_value,
                 (
                     time() - cast(float, self.rfid_present_since)
@@ -635,14 +662,14 @@ class MachineState:
                 self.current_user = user
                 logging.getLogger("AUTH").info(
                     "RFID inserted on always-enabled machine %s by %s (%s)",
-                    self.machine.name,
+                    self.machine.display_name,
                     user.full_name,
                     rfid_value,
                 )
             else:
                 logging.getLogger("AUTH").warning(
                     "RFID inserted on always-enabled machine %s by unknown fob %s",
-                    self.machine.name,
+                    self.machine.display_name,
                     rfid_value,
                 )
             # State remains always-on (relay/display/LED not changed)
@@ -657,7 +684,7 @@ class MachineState:
                     "User %s (%s) authorized for %s based on %s",
                     user.full_name,
                     user.account_id,
-                    self.machine.name,
+                    self.machine.display_name,
                     auth,
                 )
                 return True
@@ -667,12 +694,12 @@ class MachineState:
                 "unauthorized_warn_only==True",
                 user.full_name,
                 user.account_id,
-                self.machine.name,
+                self.machine.display_name,
             )
             if slack:
                 await slack.admin_log(
                     f"WARNING - Authorizing user {user.full_name} for "
-                    f"{self.machine.name} based on unauthorized_warn_only "
+                    f"{self.machine.display_name} based on unauthorized_warn_only "
                     "setting for machine. User is NOT authorized for this "
                     "machine."
                 )
