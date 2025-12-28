@@ -77,6 +77,61 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             "description": "Value for name of option indicating that "
             "member is authorized / training complete.",
         },
+        "static_fobs": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "fob_codes": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of RFID fob codes for this user.",
+                    },
+                    "account_id": {
+                        "type": "string",
+                        "description": "Account ID for this user.",
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "Email address for this user.",
+                    },
+                    "full_name": {
+                        "type": "string",
+                        "description": "Full name of this user.",
+                    },
+                    "first_name": {
+                        "type": "string",
+                        "description": "First name of this user.",
+                    },
+                    "preferred_name": {
+                        "type": "string",
+                        "description": "Preferred name of this user.",
+                    },
+                    "expiration_ymd": {
+                        "type": "string",
+                        "description": "Membership expiration date in YYYY-MM-DD format.",
+                    },
+                    "authorizations": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "List of authorizations for this user.",
+                    },
+                },
+                "required": [
+                    "fob_codes",
+                    "account_id",
+                    "email",
+                    "full_name",
+                    "first_name",
+                    "preferred_name",
+                    "expiration_ymd",
+                    "authorizations",
+                ],
+                "additionalProperties": False,
+            },
+            "description": "Optional list of static user entries to be added "
+            "directly to users.json without querying NeonOne API.",
+        },
     },
     "required": [
         "full_name_field",
@@ -174,7 +229,7 @@ class NeonUserUpdater:
         logger.debug("NeonUserConfig is valid")
 
     @staticmethod
-    def example_config() -> Dict[str, Union[str, List[str]]]:
+    def example_config() -> Dict[str, Any]:
         """Return an example configuration."""
         return {
             "full_name_field": "Full Name (F)",
@@ -185,6 +240,18 @@ class NeonUserUpdater:
             "account_id_field": "Account ID",
             "fob_fields": ["Fob10Digit"],
             "authorized_field_value": "Training Complete",
+            "static_fobs": [
+                {
+                    "fob_codes": ["9999999999"],
+                    "account_id": "static-1",
+                    "email": "static@example.com",
+                    "full_name": "Static User",
+                    "first_name": "Static",
+                    "preferred_name": "Static",
+                    "expiration_ymd": "2099-12-31",
+                    "authorizations": ["Woodshop 101", "CNC Router"],
+                }
+            ],
         }
 
     def fields_to_get(self) -> List[Union[str, int, List[str]]]:
@@ -357,8 +424,32 @@ class NeonUserUpdater:
             raise RuntimeError(
                 "ERROR: Duplicate fob fields: " + "; ".join(sorted(dupes))
             )
+        # Add static fobs if present in config
+        if "static_fobs" in self._config:
+            static_users: List[Dict[str, Any]] = cast(
+                List[Dict[str, Any]], self._config["static_fobs"]
+            )
+            logger.info("Processing %d static user entries", len(static_users))
+            for static_user in static_users:
+                # Check for duplicate fob codes
+                for fob_code in static_user["fob_codes"]:
+                    if fob_code in fobs:
+                        dupes.append(
+                            f"fob {fob_code} is present in user "
+                            f"{fobs[fob_code]['full_name']} "
+                            f"({fobs[fob_code]['account_id']}) as well as "
+                            f"static user {static_user['full_name']} "
+                            f"({static_user['account_id']})"
+                        )
+                        continue
+                    fobs[fob_code] = static_user
+                users.append(static_user)
+            if dupes:
+                raise RuntimeError(
+                    "ERROR: Duplicate fob fields: " + "; ".join(sorted(dupes))
+                )
         UsersConfig.validate_config(users)
-        logger.info("Writing users config for %d fobs to %s", len(users), output_path)
+        logger.info("Writing users config for %d users to %s", len(users), output_path)
         with open(output_path, "w") as fh:
             json.dump(users, fh, sort_keys=True, indent=4)
         self._mac_users_reload()
