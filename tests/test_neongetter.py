@@ -361,7 +361,7 @@ class TestRun:
     @responses.activate(registry=OrderedRegistry)
     def test_with_static_fobs(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test happy path with static fobs."""
-        # load recoreded fixture from file
+        # load recorded fixture from file
         responses._add_from_file(
             os.path.join(fixtures_path, "test_neongetter", "run.yaml")
         )
@@ -399,7 +399,7 @@ class TestRun:
     @responses.activate(registry=OrderedRegistry)
     def test_static_fobs_duplicate(self, fixtures_path: str, tmp_path: Path) -> None:
         """Test that duplicate fobs between static and Neon users are detected."""
-        # load recoreded fixture from file
+        # load recorded fixture from file
         responses._add_from_file(
             os.path.join(fixtures_path, "test_neongetter", "run.yaml")
         )
@@ -417,6 +417,33 @@ class TestRun:
         assert "0047531501" in exc.value.args[0]
         assert "static user" in exc.value.args[0].lower()
         assert "Duplicate fob" in exc.value.args[0]
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_static_fobs_internal_duplicate(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test that duplicate fobs within static_fobs list are detected."""
+        # load recorded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run.yaml")
+        )
+        # get config fixture path with internal duplicate static users
+        conf_path: str = os.path.join(
+            fixtures_path, "neon.config-with-static-internal-dupe.json"
+        )
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            with pytest.raises(RuntimeError) as exc:
+                NeonUserUpdater().run(output_path="users.json")
+        # Verify error message mentions the duplicate fob
+        assert "9999999999" in exc.value.args[0]
+        assert "static user" in exc.value.args[0].lower()
+        assert "Duplicate fob" in exc.value.args[0]
+        # Verify it mentions both static users
+        assert "Static User One" in exc.value.args[0]
+        assert "Static User Two" in exc.value.args[0]
 
 
 @patch(pb)

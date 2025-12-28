@@ -85,6 +85,7 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "fob_codes": {
                         "type": "array",
                         "items": {"type": "string"},
+                        "minItems": 1,
                         "description": "List of RFID fob codes for this user.",
                     },
                     "account_id": {
@@ -431,7 +432,8 @@ class NeonUserUpdater:
             )
             logger.info("Processing %d static user entries", len(static_users))
             for static_user in static_users:
-                # Check for duplicate fob codes
+                # Check for duplicate fob codes and track if user has valid fobs
+                valid_fob_count = 0
                 for fob_code in static_user["fob_codes"]:
                     if fob_code in fobs:
                         dupes.append(
@@ -443,7 +445,10 @@ class NeonUserUpdater:
                         )
                         continue
                     fobs[fob_code] = static_user
-                users.append(static_user)
+                    valid_fob_count += 1
+                # Only add the static user if they have at least one valid fob
+                if valid_fob_count > 0:
+                    users.append(static_user)
             if dupes:
                 raise RuntimeError(
                     "ERROR: Duplicate fob fields: " + "; ".join(sorted(dupes))
