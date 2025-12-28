@@ -194,6 +194,54 @@ class TestValidateConfig:
         with pytest.raises(ValidationError):
             NeonUserUpdater.validate_config(config)
 
+    def test_static_fobs_validates(self) -> None:
+        """Ensure config with static_fobs is valid."""
+        config = {
+            "full_name_field": "Full Name (F)",
+            "first_name_field": "First Name",
+            "preferred_name_field": "Preferred Name",
+            "email_field": "Email 1",
+            "expiration_field": "Membership Expiration Date",
+            "account_id_field": "Account ID",
+            "fob_fields": ["Fob10Digit"],
+            "authorized_field_value": "Training Complete",
+            "static_fobs": [
+                {
+                    "fob_codes": ["9999999999"],
+                    "account_id": "static-1",
+                    "email": "static@example.com",
+                    "full_name": "Static User",
+                    "first_name": "Static",
+                    "preferred_name": "Static",
+                    "expiration_ymd": "2099-12-31",
+                    "authorizations": ["Woodshop 101"],
+                }
+            ],
+        }
+        NeonUserUpdater.validate_config(config)
+
+    def test_static_fobs_invalid_raises_exception(self) -> None:
+        """Ensure invalid static_fobs raises an exception."""
+        config = {
+            "full_name_field": "Full Name (F)",
+            "first_name_field": "First Name",
+            "preferred_name_field": "Preferred Name",
+            "email_field": "Email 1",
+            "expiration_field": "Membership Expiration Date",
+            "account_id_field": "Account ID",
+            "fob_fields": ["Fob10Digit"],
+            "authorized_field_value": "Training Complete",
+            "static_fobs": [
+                {
+                    "fob_codes": ["9999999999"],
+                    "account_id": "static-1",
+                    # Missing required fields
+                }
+            ],
+        }
+        with pytest.raises(ValidationError):
+            NeonUserUpdater.validate_config(config)
+
 
 class TestRun:
     """Test the full run() path."""
@@ -309,6 +357,93 @@ class TestRun:
         with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
             with pytest.raises(HTTPError):
                 NeonUserUpdater().run(output_path="users.json")
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_with_static_fobs(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test happy path with static fobs."""
+        # load recorded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run.yaml")
+        )
+        # get config fixture path with static users
+        conf_path: str = os.path.join(fixtures_path, "neon.config-with-static.json")
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            NeonUserUpdater().run(output_path="users.json")
+        with open("users.json") as fh:
+            result: List[Any] = json.load(fh)
+        # Load expected users from happy path
+        with open(
+            os.path.join(fixtures_path, "test_neongetter", "users-happy.json")
+        ) as fh:
+            expected_neon: List[Any] = json.load(fh)
+        # Verify we have both Neon users and static users
+        assert len(result) == len(expected_neon) + 2
+        # Verify static users are present
+        static_users = [u for u in result if u["account_id"].startswith("static-")]
+        assert len(static_users) == 2
+        # Verify first static user
+        static_1 = [u for u in static_users if u["account_id"] == "static-1"][0]
+        assert static_1["fob_codes"] == ["9999999999", "8888888888"]
+        assert static_1["full_name"] == "Static User One"
+        assert static_1["email"] == "static1@example.com"
+        assert static_1["expiration_ymd"] == "2099-12-31"
+        assert set(static_1["authorizations"]) == {"Woodshop 101", "CNC Router"}
+        # Verify second static user
+        static_2 = [u for u in static_users if u["account_id"] == "static-2"][0]
+        assert static_2["fob_codes"] == ["7777777777"]
+        assert static_2["full_name"] == "Static User Two"
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_static_fobs_duplicate(self, fixtures_path: str, tmp_path: Path) -> None:
+        """Test that duplicate fobs between static and Neon users are detected."""
+        # load recorded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run.yaml")
+        )
+        # get config fixture path with duplicate static user
+        conf_path: str = os.path.join(
+            fixtures_path, "neon.config-with-static-dupe.json"
+        )
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            with pytest.raises(RuntimeError) as exc:
+                NeonUserUpdater().run(output_path="users.json")
+        # Verify error message mentions the duplicate fob
+        assert "0047531501" in exc.value.args[0]
+        assert "static user" in exc.value.args[0].lower()
+        assert "Duplicate fob" in exc.value.args[0]
+
+    @responses.activate(registry=OrderedRegistry)
+    def test_static_fobs_internal_duplicate(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test that duplicate fobs within static_fobs list are detected."""
+        # load recorded fixture from file
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neongetter", "run.yaml")
+        )
+        # get config fixture path with internal duplicate static users
+        conf_path: str = os.path.join(
+            fixtures_path, "neon.config-with-static-internal-dupe.json"
+        )
+        # temporary directory to write output to
+        os.chdir(tmp_path)
+        # overwrite noxfile default NEONGETTER_CONFIG
+        with patch.dict(os.environ, {"NEONGETTER_CONFIG": conf_path}):
+            with pytest.raises(RuntimeError) as exc:
+                NeonUserUpdater().run(output_path="users.json")
+        # Verify error message mentions the duplicate fob
+        assert "9999999999" in exc.value.args[0]
+        assert "static user" in exc.value.args[0].lower()
+        assert "Duplicate fob" in exc.value.args[0]
+        # Verify it mentions both static users
+        assert "Static User One" in exc.value.args[0]
+        assert "Static User Two" in exc.value.args[0]
 
 
 @patch(pb)

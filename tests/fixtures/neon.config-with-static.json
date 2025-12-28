@@ -1,0 +1,32 @@
+{
+  "full_name_field": "Full Name (F)",
+  "first_name_field": "First Name",
+  "preferred_name_field": "Preferred Name",
+  "email_field": "Email 1",
+  "expiration_field": "Membership Expiration Date",
+  "account_id_field": "Account ID",
+  "fob_fields": ["Fob10Digit", "FobCSV"],
+  "authorized_field_value": "Training Complete",
+  "static_fobs": [
+    {
+      "fob_codes": ["9999999999", "8888888888"],
+      "account_id": "static-1",
+      "email": "static1@example.com",
+      "full_name": "Static User One",
+      "first_name": "Static",
+      "preferred_name": "Static One",
+      "expiration_ymd": "2099-12-31",
+      "authorizations": ["Woodshop 101", "CNC Router"]
+    },
+    {
+      "fob_codes": ["7777777777"],
+      "account_id": "static-2",
+      "email": "static2@example.com",
+      "full_name": "Static User Two",
+      "first_name": "User",
+      "preferred_name": "Static Two",
+      "expiration_ymd": "2099-06-30",
+      "authorizations": ["Woodshop 201"]
+    }
+  ]
+}

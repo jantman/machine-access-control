@@ -1,0 +1,22 @@
+{
+  "full_name_field": "Full Name (F)",
+  "first_name_field": "First Name",
+  "preferred_name_field": "Preferred Name",
+  "email_field": "Email 1",
+  "expiration_field": "Membership Expiration Date",
+  "account_id_field": "Account ID",
+  "fob_fields": ["Fob10Digit", "FobCSV"],
+  "authorized_field_value": "Training Complete",
+  "static_fobs": [
+    {
+      "fob_codes": ["0047531501"],
+      "account_id": "static-dupe",
+      "email": "dupe@example.com",
+      "full_name": "Duplicate Fob User",
+      "first_name": "Duplicate",
+      "preferred_name": "Dupe",
+      "expiration_ymd": "2099-12-31",
+      "authorizations": ["Woodshop 101"]
+    }
+  ]
+}

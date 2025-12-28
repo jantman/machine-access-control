@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "machine_access_control"
-version = "0.6.0"
+version = "0.7.0"
 description = "Decatur Makers Machine Access Control package"
 authors = ["Jason Antman <jason@jasonantman.com>"]
 license = "MIT"
@@ -26,14 +26,18 @@ Changelog = "https://github.com/jantman/machine_access_control/releases"
 python = "^3.12"
 jsonschema = "^4.23.0"
 requests = "^2.32.4"
-filelock = "^3.16.1"
+filelock = "^3.20.1"
 prometheus-client = "^0.20.0"
-quart = "^0.19.8"
+quart = "^0.20.0"
 asyncio = "^3.4.3"
 slack-bolt = "^1.21.3"
 aiohttp = "^3.12.14"
 slack-sdk = "^3.33.5"
 humanize = "^4.11.0"
+# Security: Explicitly require secure versions of transitive dependencies
+urllib3 = "^2.6.0"
+werkzeug = "^3.1.4"
+marshmallow = "^4.1.2"
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"

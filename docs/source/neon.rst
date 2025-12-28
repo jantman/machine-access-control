@@ -32,6 +32,62 @@ Configuration Schema
 
 .. jsonschema:: dm_mac.neongetter.CONFIG_SCHEMA
 
+.. _neon.config.static_fobs:
+
+Static User Entries
++++++++++++++++++++
+
+The configuration file supports an optional ``static_fobs`` field that allows you to specify user entries that will be added directly to the generated ``users.json`` file without querying the NeonOne API. This is useful for:
+
+* Administrative/emergency access fobs to be used if there are problems with NeonOne
+* Fobs for group events where multiple people may share access
+* Temporary fobs for users who do not already have their own fob
+
+The ``static_fobs`` field is an array of user objects with the following required fields:
+
+* ``fob_codes``: Array of RFID fob codes for this user
+* ``account_id``: Unique account identifier
+* ``email``: Email address
+* ``full_name``: Full name of the user
+* ``first_name``: First name
+* ``preferred_name``: Preferred name
+* ``expiration_ymd``: Membership expiration date in YYYY-MM-DD format
+* ``authorizations``: Array of authorization/training field names
+
+**Example:**
+
+.. code-block:: json
+
+    {
+      "full_name_field": "Full Name (F)",
+      "first_name_field": "First Name",
+      "preferred_name_field": "Preferred Name",
+      "email_field": "Email 1",
+      "expiration_field": "Membership Expiration Date",
+      "account_id_field": "Account ID",
+      "fob_fields": ["Fob10Digit"],
+      "authorized_field_value": "Training Complete",
+      "static_fobs": [
+        {
+          "fob_codes": ["9999999999"],
+          "account_id": "admin-1",
+          "email": "admin@example.com",
+          "full_name": "Admin User",
+          "first_name": "Admin",
+          "preferred_name": "Admin",
+          "expiration_ymd": "2099-12-31",
+          "authorizations": ["Woodshop 101", "CNC Router"]
+        }
+      ]
+    }
+
+**Important Notes:**
+
+* Static users are merged with NeonOne users in the final ``users.json`` file
+* Duplicate fob codes between static users and NeonOne users will cause an error
+* Duplicate fob codes within static users themselves will also cause an error
+* Static users follow the same validation rules as NeonOne users
+
 .. _neon.config.fields:
 
 Authorization and Custom Fields
