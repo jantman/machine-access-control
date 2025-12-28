@@ -39,9 +39,9 @@ Static User Entries
 
 The configuration file supports an optional ``static_fobs`` field that allows you to specify user entries that will be added directly to the generated ``users.json`` file without querying the NeonOne API. This is useful for:
 
-* Adding test or service accounts that don't exist in NeonOne
-* Including special-purpose users (e.g., administrative fobs, emergency access)
-* Maintaining users whose information shouldn't be stored in the CRM
+* Administrative/emergency access fobs to be used if there are problems with NeonOne
+* Fobs for group events where multiple people may share access
+* Temporary fobs for users who do not already have their own fob
 
 The ``static_fobs`` field is an array of user objects with the following required fields:
 
