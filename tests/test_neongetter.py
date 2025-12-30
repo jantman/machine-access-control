@@ -199,6 +199,7 @@ class TestValidateConfig:
         config = {
             "full_name_field": "Full Name (F)",
             "first_name_field": "First Name",
+            "last_name_field": "Last Name",
             "preferred_name_field": "Preferred Name",
             "email_field": "Email 1",
             "expiration_field": "Membership Expiration Date",
@@ -212,6 +213,7 @@ class TestValidateConfig:
                     "email": "static@example.com",
                     "full_name": "Static User",
                     "first_name": "Static",
+                    "last_name": "User",
                     "preferred_name": "Static",
                     "expiration_ymd": "2099-12-31",
                     "authorizations": ["Woodshop 101"],
@@ -225,6 +227,7 @@ class TestValidateConfig:
         config = {
             "full_name_field": "Full Name (F)",
             "first_name_field": "First Name",
+            "last_name_field": "Last Name",
             "preferred_name_field": "Preferred Name",
             "email_field": "Email 1",
             "expiration_field": "Membership Expiration Date",

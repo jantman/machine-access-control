@@ -1,6 +1,7 @@
 {
   "full_name_field": "Full Name (F)",
   "first_name_field": "First Name",
+  "last_name_field": "Last Name",
   "preferred_name_field": "Preferred Name",
   "email_field": "Email 1",
   "expiration_field": "Membership Expiration Date",
@@ -14,6 +15,7 @@
       "email": "static1@example.com",
       "full_name": "Static User One",
       "first_name": "Static",
+      "last_name": "One",
       "preferred_name": "Static One",
       "expiration_ymd": "2099-12-31",
       "authorizations": ["Woodshop 101", "CNC Router"]
@@ -24,6 +26,7 @@
       "email": "static2@example.com",
       "full_name": "Static User Two",
       "first_name": "User",
+      "last_name": "Two",
       "preferred_name": "Static Two",
       "expiration_ymd": "2099-06-30",
       "authorizations": ["Woodshop 201"]

@@ -47,6 +47,10 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             "type": "string",
             "description": "Neon field name containing member first name.",
         },
+        "last_name_field": {
+            "type": "string",
+            "description": "Neon field name containing member last name.",
+        },
         "preferred_name_field": {
             "type": "string",
             "description": "Neon field name containing member preferred name.",
@@ -104,6 +108,10 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                         "type": "string",
                         "description": "First name of this user.",
                     },
+                    "last_name": {
+                        "type": "string",
+                        "description": "Last name of this user.",
+                    },
                     "preferred_name": {
                         "type": "string",
                         "description": "Preferred name of this user.",
@@ -124,6 +132,7 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "email",
                     "full_name",
                     "first_name",
+                    "last_name",
                     "preferred_name",
                     "expiration_ymd",
                     "authorizations",
@@ -137,6 +146,7 @@ CONFIG_SCHEMA: Dict[str, Any] = {
     "required": [
         "full_name_field",
         "first_name_field",
+        "last_name_field",
         "preferred_name_field",
         "email_field",
         "expiration_field",
@@ -235,6 +245,7 @@ class NeonUserUpdater:
         return {
             "full_name_field": "Full Name (F)",
             "first_name_field": "First Name",
+            "last_name_field": "Last Name",
             "preferred_name_field": "Preferred Name",
             "email_field": "Email 1",
             "expiration_field": "Membership Expiration Date",
@@ -248,6 +259,7 @@ class NeonUserUpdater:
                     "email": "static@example.com",
                     "full_name": "Static User",
                     "first_name": "Static",
+                    "last_name": "User",
                     "preferred_name": "Static",
                     "expiration_ymd": "2099-12-31",
                     "authorizations": ["Woodshop 101", "CNC Router"],
@@ -263,6 +275,7 @@ class NeonUserUpdater:
             self._config["expiration_field"],
             self._config["account_id_field"],
             self._config["first_name_field"],
+            self._config["last_name_field"],
             self._config["preferred_name_field"],
         ]
         customs: List[Dict[str, Any]] = self._get_custom_fields_raw()
@@ -377,12 +390,19 @@ class NeonUserUpdater:
         fobs: Dict[str, Dict[str, Any]] = {}
         dupes: List[str] = []
         for user in rawdata:
+            # Handle last_name - if not in response, extract from full_name
+            last_name = user.get(self._config["last_name_field"])  # type: ignore
+            if not last_name:
+                # Fallback: extract from full_name (take last word)
+                full_name_parts = user[self._config["full_name_field"]].split()  # type: ignore
+                last_name = full_name_parts[-1] if full_name_parts else ""
             tmp: Dict[str, Any] = {
                 "fob_codes": [],
                 "account_id": user[self._config["account_id_field"]],  # type: ignore
                 "email": user[self._config["email_field"]],  # type: ignore
                 "full_name": user[self._config["full_name_field"]],  # type: ignore
                 "first_name": user[self._config["first_name_field"]],  # type: ignore
+                "last_name": last_name,
                 "preferred_name": user[self._config["preferred_name_field"]],  # type: ignore
                 "expiration_ymd": user[self._config["expiration_field"]],  # type: ignore
                 "authorizations": [

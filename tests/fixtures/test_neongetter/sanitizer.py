@@ -51,6 +51,9 @@ class NeonSanitizer:
         self.first_name_fields: List[str] = [
             self._neon_config["first_name_field"],
         ]
+        self.last_name_fields: List[str] = [
+            self._neon_config["last_name_field"],
+        ]
         self.preferred_name_fields: List[str] = [
             self._neon_config["preferred_name_field"],
         ]
@@ -89,6 +92,10 @@ class NeonSanitizer:
                 if fname not in item:
                     continue
                 item[fname] = item[self.full_name_fields[0]].split(" ")[0]
+            for fname in self.last_name_fields:
+                if fname not in item:
+                    continue
+                item[fname] = item[self.full_name_fields[0]].split(" ")[-1]
             for fname in self.preferred_name_fields:
                 if fname not in item:
                     continue

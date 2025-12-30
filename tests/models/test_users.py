@@ -50,6 +50,7 @@ class TestUsersConfig:
                 "fob_codes": ["0725858614"],
                 "full_name": "Andrew Schwartz",
                 "first_name": "Andrew",
+                "last_name": "Schwartz",
                 "preferred_name": "PAndrew",
             },
             {
@@ -60,6 +61,7 @@ class TestUsersConfig:
                 "fob_codes": ["0913350505"],
                 "full_name": "Tyler Young Jr.",
                 "first_name": "Tyler",
+                "last_name": "Jr.",
                 "preferred_name": "PTyler",
             },
             {
@@ -70,6 +72,7 @@ class TestUsersConfig:
                 "fob_codes": ["5683773370"],
                 "full_name": "Rachel Richmond",
                 "first_name": "Rachel",
+                "last_name": "Richmond",
                 "preferred_name": "PRachel",
             },
         ]
@@ -102,6 +105,7 @@ class TestUsersConfig:
                 "fob_codes": ["0725858614"],
                 "full_name": "Test User",
                 "first_name": "Test",
+                "last_name": "User",
                 "preferred_name": "PTest",
             }
         ]
@@ -142,6 +146,7 @@ class TestUsersConfig:
                 "fob_codes": ["0725858614"],
                 "full_name": "Andrew Schwartz",
                 "first_name": "Andrew",
+                "last_name": "Schwartz",
                 "preferred_name": "PAndrew",
             },
             {
@@ -152,6 +157,7 @@ class TestUsersConfig:
                 "fob_codes": ["0913350505"],
                 "full_name": "Tyler Young Jr.",
                 "first_name": "Tyler",
+                "last_name": "Jr.",
                 "preferred_name": "PTyler",
             },
             {
@@ -162,6 +168,7 @@ class TestUsersConfig:
                 "fob_codes": ["5683773370"],
                 "full_name": "Rachel Richmond",
                 "first_name": "Rachel",
+                "last_name": "Richmond",
                 "preferred_name": "PRachel",
             },
         ]
@@ -183,6 +190,7 @@ class TestUser:
             account_id="100",
             full_name="John Doe",
             first_name="John",
+            last_name="Doe",
             preferred_name="PJohn",
             email="john@example.com",
             expiration_ymd="2027-09-10",
@@ -193,6 +201,7 @@ class TestUser:
             account_id="333",
             full_name="John Doe",
             first_name="John",
+            last_name="Doe",
             preferred_name="PJohn",
             email="john@example.com",
             expiration_ymd="2027-09-10",
@@ -203,6 +212,7 @@ class TestUser:
             account_id="100",
             full_name="John Doe",
             first_name="John",
+            last_name="Doe",
             preferred_name="PJohn",
             email="john@example.com",
             expiration_ymd="2027-09-10",

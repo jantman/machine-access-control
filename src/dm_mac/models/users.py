@@ -33,6 +33,7 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             },
             "full_name": {"type": "string", "description": "Full name of user."},
             "first_name": {"type": "string", "description": "First name of user."},
+            "last_name": {"type": "string", "description": "Last name of user."},
             "preferred_name": {
                 "type": "string",
                 "description": "Preferred name of user.",
@@ -53,6 +54,7 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             "account_id",
             "full_name",
             "first_name",
+            "last_name",
             "preferred_name",
             "email",
             "expiration_ymd",
@@ -72,6 +74,7 @@ class User:
         account_id: str,
         full_name: str,
         first_name: str,
+        last_name: str,
         preferred_name: str,
         email: str,
         expiration_ymd: str,
@@ -82,6 +85,7 @@ class User:
         self.account_id: str = account_id
         self.full_name: str = full_name
         self.first_name: str = first_name
+        self.last_name: str = last_name
         self.preferred_name: str = preferred_name
         self.email: str = email
         self.expiration_ymd: str = expiration_ymd
@@ -108,6 +112,7 @@ class User:
             "fob_codes": self.fob_codes,
             "full_name": self.full_name,
             "first_name": self.first_name,
+            "last_name": self.last_name,
             "preferred_name": self.preferred_name,
         }
 
@@ -185,6 +190,7 @@ class UsersConfig:
                 for k in [
                     "full_name",
                     "first_name",
+                    "last_name",
                     "preferred_name",
                     "email",
                     "expiration_ymd",

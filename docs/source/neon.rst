@@ -50,6 +50,7 @@ The ``static_fobs`` field is an array of user objects with the following require
 * ``email``: Email address
 * ``full_name``: Full name of the user
 * ``first_name``: First name
+* ``last_name``: Last name
 * ``preferred_name``: Preferred name
 * ``expiration_ymd``: Membership expiration date in YYYY-MM-DD format
 * ``authorizations``: Array of authorization/training field names
@@ -61,6 +62,7 @@ The ``static_fobs`` field is an array of user objects with the following require
     {
       "full_name_field": "Full Name (F)",
       "first_name_field": "First Name",
+      "last_name_field": "Last Name",
       "preferred_name_field": "Preferred Name",
       "email_field": "Email 1",
       "expiration_field": "Membership Expiration Date",
@@ -74,6 +76,7 @@ The ``static_fobs`` field is an array of user objects with the following require
           "email": "admin@example.com",
           "full_name": "Admin User",
           "first_name": "Admin",
+          "last_name": "User",
           "preferred_name": "Admin",
           "expiration_ymd": "2099-12-31",
           "authorizations": ["Woodshop 101", "CNC Router"]

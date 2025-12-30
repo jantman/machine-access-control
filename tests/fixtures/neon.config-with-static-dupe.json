@@ -1,6 +1,7 @@
 {
   "full_name_field": "Full Name (F)",
   "first_name_field": "First Name",
+  "last_name_field": "Last Name",
   "preferred_name_field": "Preferred Name",
   "email_field": "Email 1",
   "expiration_field": "Membership Expiration Date",
@@ -14,6 +15,7 @@
       "email": "dupe@example.com",
       "full_name": "Duplicate Fob User",
       "first_name": "Duplicate",
+      "last_name": "User",
       "preferred_name": "Dupe",
       "expiration_ymd": "2099-12-31",
       "authorizations": ["Woodshop 101"]

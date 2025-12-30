@@ -17,6 +17,7 @@
         ],
         "full_name": "Ashley Williams",
         "first_name": "Ashley",
+        "last_name": "Williams",
         "preferred_name": "PAshley"
     },
     {
@@ -32,6 +33,7 @@
         ],
         "full_name": "Kenneth Hunter",
         "first_name": "Kenneth",
+        "last_name": "Hunter",
         "preferred_name": "PKenneth"
     },
     {
@@ -50,6 +52,7 @@
         ],
         "full_name": "Jason Antman",
         "first_name": "Jason",
+        "last_name": "Antman",
         "preferred_name": "jantman"
     },
     {
@@ -65,6 +68,7 @@
         ],
         "full_name": "James Smith",
         "first_name": "James",
+        "last_name": "Smith",
         "preferred_name": "PJames"
     }
 ]
