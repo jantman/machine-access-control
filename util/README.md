@@ -71,34 +71,45 @@ python3 users_with_authorizations.py
 
 ### 4. analyze_fob_access.py
 
-Analyzes FOB access logs from the Excel file for recent months.
+Analyzes FOB access logs from the Excel file for recent months, aggregating access by user across all their FOB codes.
 
 **Usage:**
 ```bash
-python3 analyze_fob_access.py [--months N]
+python3 analyze_fob_access.py [--months N] [--top T]
 ```
 
 **Options:**
 - `--months N` - Number of past months to analyze (default: 3, includes current month + N past months)
+- `--top T` - Number of top users to include in top_users.csv (default: 100)
 
 **Examples:**
 ```bash
-# Analyze last 4 months (current + 3 past)
+# Analyze last 4 months (current + 3 past), show top 100 users
 python3 analyze_fob_access.py
 
-# Analyze last 2 months (current + 1 past)
-python3 analyze_fob_access.py --months 1
+# Analyze last 2 months (current + 1 past), show top 50 users
+python3 analyze_fob_access.py --months 1 --top 50
 
-# Analyze last 7 months (current + 6 past)
-python3 analyze_fob_access.py --months 6
+# Analyze last 7 months (current + 6 past), show top 200 users
+python3 analyze_fob_access.py --months 6 --top 200
 ```
 
 **Output:**
-- `fob_access_report.csv` - CSV file containing:
-  - `fob_code` - FOB code used for access (10-digit zero-padded string)
-  - `access_count` - Number of times this FOB was used (sorted descending)
+- `fob_access_report.csv` - CSV file containing all users with access, sorted by access count (descending):
+  - `account_id` - User's account ID
+  - `first_name` - User's first name
+  - `last_name` - User's last name
+  - `preferred_name` - User's preferred name
+  - `full_name` - User's full name
+  - `access_count` - Total number of accesses across all user's FOBs (sorted descending)
   - `last_access_date` - Date of the most recent access (YYYY-MM-DD format)
+- `top_users.csv` - CSV file containing top N users (configurable via --top) with highest access counts, sorted by last name, first name
 - Console output showing processing summary
+
+**Notes:**
+- Access is aggregated by user - if a user has multiple FOB codes, all their accesses are combined
+- FOB codes are looked up from users.json
+- Users without FOB codes in users.json will not appear in the report
 
 ### 5. combine_user_access.py
 

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Analyze FOB code access from Space Access Reports.xlsx
-Lists FOB codes that have accessed the space in the last N months,
+Aggregates access by user (across all their FOBs) from users.json,
 sorted by number of appearances.
 """
 
 import argparse
 import csv
-from collections import Counter
+import json
+from collections import defaultdict
 from datetime import datetime
 
 import pandas as pd
@@ -16,7 +17,7 @@ from dateutil.relativedelta import relativedelta
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Analyze FOB access from Space Access Reports"
+        description="Analyze FOB access from Space Access Reports by user"
     )
     parser.add_argument(
         "--months",
@@ -24,7 +25,33 @@ def main():
         default=3,
         help="Number of past months to analyze (default: 3, meaning current month + 3 past months)",
     )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=100,
+        help="Number of top users to include in top_users.csv (default: 100)",
+    )
     args = parser.parse_args()
+
+    # Load users.json to map fob codes to users
+    print("Loading users.json...")
+    with open("users.json") as f:
+        users_data = json.load(f)
+
+    # Create mapping of fob_code -> user
+    fob_to_user = {}
+    users_by_account_id = {}
+
+    for user in users_data:
+        account_id = user.get("account_id", "")
+        users_by_account_id[account_id] = user
+
+        # Map each fob code to this user
+        for fob_code in user.get("fob_codes", []):
+            fob_to_user[fob_code] = account_id
+
+    print(f"Loaded {len(users_data)} users with {len(fob_to_user)} total FOB codes")
+    print()
 
     # Read the Excel file
     excel_file = "Space Access Reports.xlsx"
@@ -54,10 +81,11 @@ def main():
     print(f"Found {len(log_sheets)} matching Log sheets: {', '.join(log_sheets)}")
     print()
 
-    # Collect all FOB codes
-    fob_counter = Counter()
-    fob_last_access = {}  # Track last access timestamp for each FOB
+    # Collect access data by user (aggregating across all their fobs)
+    user_access_count = defaultdict(int)
+    user_last_access = {}  # Track last access timestamp for each user
     total_records = 0
+    fobs_not_found = set()
 
     for sheet_name in log_sheets:
         print(f"Processing: {sheet_name}")
@@ -70,7 +98,7 @@ def main():
         print(f"  Found {len(df)} records")
         total_records += len(df)
 
-        # Count FOB codes and track last access
+        # Count access by user (aggregating across all fobs)
         for _, row in df.iterrows():
             fob_code = row["Fob #"]
             timestamp = row["Timestamp"]
@@ -78,39 +106,93 @@ def main():
             if pd.notna(fob_code):
                 # Format FOB code as 10-digit zero-padded string
                 fob_code_str = str(int(fob_code)).zfill(10)
-                fob_counter[fob_code_str] += 1
 
-                # Update last access date if this is more recent
-                if pd.notna(timestamp):
-                    if (
-                        fob_code_str not in fob_last_access
-                        or timestamp > fob_last_access[fob_code_str]
-                    ):
-                        fob_last_access[fob_code_str] = timestamp
+                # Find the user for this fob code
+                account_id = fob_to_user.get(fob_code_str)
+
+                if account_id:
+                    user_access_count[account_id] += 1
+
+                    # Update last access date if this is more recent
+                    if pd.notna(timestamp):
+                        if (
+                            account_id not in user_last_access
+                            or timestamp > user_last_access[account_id]
+                        ):
+                            user_last_access[account_id] = timestamp
+                else:
+                    # Track FOBs that aren't in users.json
+                    fobs_not_found.add(fob_code_str)
 
     print(f"\nTotal records processed: {total_records}")
+    if fobs_not_found:
+        print(f"Warning: {len(fobs_not_found)} FOB codes not found in users.json")
 
     print("\n" + "=" * 60)
-    print(f"FOB Code Access Summary (Last {args.months + 1} Months)")
+    print(f"User Access Summary (Last {args.months + 1} Months)")
     print("=" * 60)
-    print(f"Total unique FOB codes: {len(fob_counter)}")
-    print(f"Total access events: {sum(fob_counter.values())}")
+    print(f"Total unique users with access: {len(user_access_count)}")
+    print(f"Total access events: {sum(user_access_count.values())}")
 
-    # Sort by count (descending)
-    sorted_fobs = sorted(fob_counter.items(), key=lambda x: (-x[1], x[0]))
+    # Prepare user data for CSV output
+    user_records = []
+    for account_id, access_count in user_access_count.items():
+        user = users_by_account_id.get(account_id)
+        if user:
+            last_access = user_last_access.get(account_id)
+            user_records.append(
+                {
+                    "account_id": account_id,
+                    "first_name": user.get("first_name", ""),
+                    "last_name": user.get("last_name", ""),
+                    "preferred_name": user.get("preferred_name", ""),
+                    "full_name": user.get("full_name", ""),
+                    "access_count": access_count,
+                    "last_access_date": (
+                        last_access.strftime("%Y-%m-%d") if last_access else ""
+                    ),
+                }
+            )
 
-    # Write to CSV
+    # Sort by access_count descending
+    user_records.sort(
+        key=lambda x: (-x["access_count"], x["last_name"], x["first_name"])
+    )
+
+    # Write main report to CSV
     output_file = "fob_access_report.csv"
+    fieldnames = [
+        "account_id",
+        "first_name",
+        "last_name",
+        "preferred_name",
+        "full_name",
+        "access_count",
+        "last_access_date",
+    ]
+
     with open(output_file, "w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["fob_code", "access_count", "last_access_date"])
-        for fob_code, count in sorted_fobs:
-            last_access = fob_last_access.get(fob_code, None)
-            last_access_str = last_access.strftime("%Y-%m-%d") if last_access else ""
-            writer.writerow([fob_code, count, last_access_str])
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(user_records)
 
     print(f"\nResults written to {output_file}")
-    print(f"Total {len(sorted_fobs)} FOB codes with access recorded")
+    print(f"Total {len(user_records)} users with access recorded")
+
+    # Create top users report
+    top_users = user_records[: args.top]
+    # Sort top users by last name, first name
+    top_users.sort(key=lambda x: (x["last_name"], x["first_name"]))
+
+    top_output_file = "top_users.csv"
+    with open(top_output_file, "w", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(top_users)
+
+    print(
+        f"Top {len(top_users)} users written to {top_output_file} (sorted by last name, first name)"
+    )
 
 
 if __name__ == "__main__":
