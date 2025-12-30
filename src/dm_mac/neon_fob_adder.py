@@ -5,6 +5,7 @@ import csv
 import json
 import logging
 import sys
+from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
@@ -64,6 +65,44 @@ class NeonFobUpdater:
         self._fobcsv_field_id: Optional[int] = None
         # Cache for update logger
         self._update_logger: Optional[logging.Logger] = None
+
+    def _setup_update_logger(self, timestamp: str) -> logging.Logger:
+        """
+        Set up a logger for writing fob update records to file.
+
+        Args:
+            timestamp: Timestamp string for log filename (format: YYYYmmddHHMMSS)
+
+        Returns:
+            Configured logger instance
+        """
+        if self._update_logger is not None:
+            return self._update_logger
+
+        # Create logger
+        update_logger = logging.getLogger(f"neon_fob_adder.updates.{timestamp}")
+        update_logger.setLevel(logging.INFO)
+        update_logger.propagate = False  # Don't propagate to root logger
+
+        # Create file handler
+        log_filename = f"neon_fob_adder_{timestamp}.log"
+        file_handler = logging.FileHandler(log_filename)
+        file_handler.setLevel(logging.INFO)
+
+        # Create formatter
+        # Format: timestamp - Account <id> (<name>) - Previous: [list]
+        #         - Added: <code> - Updated: <csv>
+        formatter = logging.Formatter("%(asctime)s - %(message)s")
+        file_handler.setFormatter(formatter)
+
+        # Add handler to logger
+        update_logger.addHandler(file_handler)
+
+        # Cache the logger
+        self._update_logger = update_logger
+
+        logger.info("Created update log file: %s", log_filename)
+        return update_logger
 
     def _get_custom_fields_raw(self) -> List[Dict[str, Any]]:
         """Return the raw API response for custom fields."""
@@ -313,9 +352,99 @@ class NeonFobUpdater:
         """
         Interactive method to add a fob to an account.
 
-        Will be implemented in M2.2.
+        Displays account information, prompts for new fob code, validates,
+        and updates if confirmed.
+
+        Args:
+            account_id: Neon account ID to process
         """
-        raise NotImplementedError("add_fob_to_account will be implemented in M2")
+        # Get account info
+        try:
+            account_info = self.get_account_info(account_id)
+        except Exception as e:
+            print(f"\nError retrieving account {account_id}: {e}")
+            logger.error("Failed to retrieve account %s: %s", account_id, e)
+            return
+
+        # Display account information
+        print("\n" + "=" * 70)
+        print(f"Account ID: {account_info['account_id']}")
+        print(f"Full Name: {account_info['full_name']}")
+        print(f"Preferred Name: {account_info['preferred_name']}")
+        print(f"Email: {account_info['email']}")
+        print(
+            f"Current Fob Codes ({len(account_info['fob_codes'])}): {account_info['fob_codes']}"
+        )
+        print("=" * 70)
+
+        # Prompt for new fob code
+        new_fob = input("\nEnter new fob code (or 's' to skip): ").strip()
+
+        # Check if user wants to skip
+        if new_fob.lower() in ("s", "skip"):
+            print("Skipped")
+            return
+
+        # Pad to 10 digits
+        padded_fob = new_fob.zfill(10)
+
+        # Validate numeric
+        if not padded_fob.isdigit():
+            print(
+                f"Error: Fob code must be numeric. Got: '{new_fob}' (padded: '{padded_fob}')"
+            )
+            return
+
+        # Validate length
+        if len(padded_fob) != 10:
+            print(
+                f"Error: Fob code must be 10 digits. Got: '{padded_fob}' ({len(padded_fob)} digits)"
+            )
+            return
+
+        # Check for duplicate
+        if padded_fob in account_info["fob_codes"]:
+            print(f"Error: Fob code '{padded_fob}' already exists on this account")
+            return
+
+        # Display proposed change
+        print("\nProposed change:")
+        print(f"   Will add fob code: {padded_fob}")
+        print(
+            f"   To account: {account_info['account_id']} ({account_info['full_name']})"
+        )
+
+        # Confirm
+        confirmation = input("\nConfirm addition? [y/N]: ").strip().lower()
+
+        if confirmation != "y":
+            print("Cancelled")
+            return
+
+        # Perform update
+        try:
+            new_fobcsv = self.update_account_fob(account_id, padded_fob)
+            print(f"Success! Updated FobCSV: {new_fobcsv}")
+
+            # Log to update file
+            # Create timestamp if logger not yet set up
+            if self._update_logger is None:
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                self._setup_update_logger(timestamp)
+
+            # Log the update
+            self._update_logger.info(
+                "Account %s (%s) - Previous: %s - Added: %s - Updated FobCSV: %s",
+                account_info["account_id"],
+                account_info["full_name"],
+                account_info["fob_codes"],
+                padded_fob,
+                new_fobcsv,
+            )
+
+        except Exception as e:
+            print(f"\nError updating account: {e}")
+            logger.error("Failed to update account %s: %s", account_id, e)
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
