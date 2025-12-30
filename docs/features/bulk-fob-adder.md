@@ -13,3 +13,78 @@ For the CLI interface, the script can either be called with one or more account 
 Comprehensive unit tests should be added under `tests/` for all functionality, with all API calls/requests mocked out.
 
 Finally, the documentation at `docs/source/neon.rst` must be updated with a detailed user guide for this new module/CLI.
+
+## Implementation Plan
+
+### Key Design Decisions
+
+1. **Module-level constant**: `FOB_CSV_FIELD = "FobCSV"` for the custom field name
+2. **Configuration reuse**: Leverage existing `NEONGETTER_CONFIG` and `neon.config.json` for field mappings
+3. **API endpoints**:
+   - `GET /accounts/{accountId}` - Retrieve account info with all custom fields
+   - `GET /customFields?category=Account` - Get custom field IDs (cached)
+   - `PATCH /accounts/{accountId}` - Update account with new FobCSV value
+4. **Fob code handling**:
+   - Display fobs from both `Fob10Digit` and `FobCSV` fields (read from config `fob_fields`)
+   - Only update `FobCSV` field (append to CSV string)
+   - Auto-pad input to 10 digits with leading zeroes
+5. **Logging**: Write `neon_fob_adder_<YYYYmmddHHMMSS>.log` to current directory
+
+### Implementation Milestones
+
+#### Milestone 1: Core NeonFobUpdater Class
+**Status**: ✅ Complete (2025-12-30)
+**Commit prefix**: `bulk-fob-adder - M1.{task}`
+
+**Tasks**:
+1. **M1.1**: ✅ Create module structure with `FOB_CSV_FIELD` constant and `NeonFobUpdater.__init__()`
+2. **M1.2**: ✅ Implement `_get_fobcsv_field_id() -> int`
+3. **M1.3**: ✅ Implement `get_account_info(account_id: str) -> Dict[str, Any]`
+4. **M1.4**: ✅ Implement `update_account_fob(account_id: str, new_fob_code: str) -> str`
+5. **M1.5**: ✅ Run tests and commit M1
+
+**Summary**: Created core NeonFobUpdater class with methods to retrieve account info, get FobCSV field ID, and update accounts with new fob codes. All existing tests passing.
+
+#### Milestone 2: Interactive Helper and Logging
+**Status**: Not started
+**Commit prefix**: `bulk-fob-adder - M2.{task}`
+
+**Tasks**:
+1. **M2.1**: Implement `_setup_update_logger(timestamp: str) -> logging.Logger`
+2. **M2.2**: Implement `add_fob_to_account(account_id: str) -> None`
+3. **M2.3**: Run tests and commit M2
+
+#### Milestone 3: CLI Implementation
+**Status**: Not started
+**Commit prefix**: `bulk-fob-adder - M3.{task}`
+
+**Tasks**:
+1. **M3.1**: Implement `parse_args(argv: List[str]) -> argparse.Namespace`
+2. **M3.2**: Implement `process_csv_file(csv_path: str, field_name: str, updater: NeonFobUpdater) -> None`
+3. **M3.3**: Implement `main() -> None`
+4. **M3.4**: Add entrypoint to `pyproject.toml`
+5. **M3.5**: Run tests and commit M3
+
+#### Milestone 4: Comprehensive Testing
+**Status**: Not started
+**Commit prefix**: `bulk-fob-adder - M4.{task}`
+
+**Tasks**:
+1. **M4.1**: Create test fixtures
+2. **M4.2**: Test `__init__` and basic setup
+3. **M4.3**: Test `get_account_info()`
+4. **M4.4**: Test `update_account_fob()`
+5. **M4.5**: Test `add_fob_to_account()`
+6. **M4.6**: Test CLI
+7. **M4.7**: Run tests and commit M4
+
+#### Milestone 5: Acceptance Criteria
+**Status**: Not started
+**Commit prefix**: `bulk-fob-adder - M5.{task}`
+
+**Tasks**:
+1. **M5.1**: Update `docs/source/neon.rst`
+2. **M5.2**: Update `CLAUDE.md`
+3. **M5.3**: Verify test coverage
+4. **M5.4**: Run all nox sessions
+5. **M5.5**: Move feature to completed
