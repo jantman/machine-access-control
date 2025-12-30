@@ -84,7 +84,13 @@ poetry run mac-server --port 8080
 ```bash
 # Update users.json from NeonOne CRM
 poetry run neongetter
+
+# Interactively add RFID fobs to Neon accounts
+poetry run neon-fob-adder 123 456 789
+poetry run neon-fob-adder --csv members.csv --field account_id
 ```
+
+Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and ``NEONGETTER_CONFIG``.
 
 ## Architecture
 

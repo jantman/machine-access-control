@@ -23,6 +23,7 @@ Submodules
    :maxdepth: 4
 
    dm_mac.cli_utils
+   dm_mac.neon_fob_adder
    dm_mac.neongetter
    dm_mac.slack_handler
    dm_mac.utils

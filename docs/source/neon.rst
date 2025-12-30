@@ -104,6 +104,136 @@ Usage
 
 Set up your configuration file and environment variables as described above, then run ``neongetter``. If all goes well, it will write a ``users.json`` file in the current directory; a different output path can be specified with the ``-o`` option.
 
+.. _neon.fob-adder:
+
+Neon Fob Adder
+--------------
+
+The ``neon-fob-adder`` tool (:py:mod:`dm_mac.neon_fob_adder`) provides an interactive command-line interface for adding RFID fob codes to member accounts in Neon One CRM. This tool simplifies the process of bulk-adding fobs by displaying account information, validating fob codes, and updating the ``FobCSV`` custom field via the Neon API.
+
+Prerequisites
++++++++++++++
+
+The ``neon-fob-adder`` tool uses the same environment variables and configuration file as ``neongetter``:
+
+* ``NEON_ORG`` - Your Neon organization ID
+* ``NEON_KEY`` - Your Neon API key
+* ``NEONGETTER_CONFIG`` - Path to your ``neon.config.json`` file (optional, defaults to ``./neon.config.json``)
+
+Ensure these are set up as described in :ref:`neon.config` before using ``neon-fob-adder``.
+
+Usage Modes
++++++++++++
+
+The tool supports two modes of operation:
+
+**Account IDs Mode** - Process a list of account IDs provided as command-line arguments:
+
+.. code-block:: bash
+
+    neon-fob-adder 123 456 789
+
+**CSV File Mode** - Process accounts from a CSV file:
+
+.. code-block:: bash
+
+    neon-fob-adder --csv members.csv --field account_id
+
+The CSV file should have a header row, and you specify which column contains the Neon account IDs using the ``--field`` option.
+
+Interactive Workflow
+++++++++++++++++++++
+
+For each account, the tool will:
+
+1. Retrieve and display the account information including:
+
+   * Account ID
+   * Full name and preferred name
+   * Email address
+   * All current fob codes (from both ``Fob10Digit`` and ``FobCSV`` fields)
+
+2. Prompt you to enter a new fob code, or type ``s`` / ``skip`` to skip this account
+
+3. Validate the fob code:
+
+   * Auto-pads to 10 digits with leading zeros
+   * Checks that it's numeric
+   * Checks for duplicates across all existing fob fields
+
+4. Display the proposed change and ask for confirmation (y/N, defaults to No)
+
+5. If confirmed, update the account and log the change
+
+**Example interaction:**
+
+.. code-block:: text
+
+    ========================================
+    Account ID: 123
+    Name: John Doe (preferred: Johnny)
+    Email: john@example.com
+    Current fobs: 1234567890
+    ========================================
+
+    Enter new fob code (or 's' to skip): 555
+
+    Will add fob: 0000000555
+    Current fobs: 1234567890
+    Updated fobs: 1234567890,0000000555
+
+    Confirm update? (y/N): y
+
+    ✓ Successfully updated account 123
+
+Logging
++++++++
+
+All fob additions are logged to a timestamped file in the current directory:
+
+.. code-block:: text
+
+    neon_fob_adder_20251230143022.log
+
+Each log entry includes:
+
+* Timestamp
+* Account ID and name
+* Previous fob codes
+* New fob code added
+* Updated fob codes list
+
+Command-Line Options
+++++++++++++++++++++
+
+.. code-block:: text
+
+    usage: neon-fob-adder [-h] [-c CSV] [-f FIELD] [-v] [account_ids ...]
+
+    positional arguments:
+      account_ids           Neon account IDs to process
+
+    options:
+      -h, --help            show this help message and exit
+      -c CSV, --csv CSV     Path to CSV file containing account IDs
+      -f FIELD, --field FIELD
+                            Field name in CSV for account IDs
+      -v, --verbose         Enable verbose (debug) logging
+
+**Note:** You cannot use both positional account IDs and CSV mode in the same invocation.
+
+Error Handling
+++++++++++++++
+
+The tool will display clear error messages for common issues:
+
+* **Invalid fob code** - Non-numeric or wrong length after padding
+* **Duplicate fob** - Fob already exists on this account
+* **Account not found** - Invalid account ID
+* **API errors** - Network or authentication issues
+
+When an error occurs, the tool will display the error and continue to the next account.
+
 .. _neon.development:
 
 Development
