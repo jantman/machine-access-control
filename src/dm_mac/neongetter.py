@@ -180,7 +180,7 @@ class NeonUserUpdater:
             len(self._token),
             self._token[:3],
         )
-        self._timeout: int = 10
+        self._timeout: int = 30
         if dump_fields:
             logger.debug("dump_fields passed; dumping fields and then exiting")
             self._dump_fields()
