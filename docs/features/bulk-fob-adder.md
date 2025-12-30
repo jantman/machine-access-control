@@ -57,15 +57,17 @@ Finally, the documentation at `docs/source/neon.rst` must be updated with a deta
 **Summary**: Implemented interactive fob addition workflow with account info display, user prompts, validation, and logging to timestamped log files. All existing tests passing.
 
 #### Milestone 3: CLI Implementation
-**Status**: Not started
+**Status**: ✅ Complete (2025-12-30)
 **Commit prefix**: `bulk-fob-adder - M3.{task}`
 
 **Tasks**:
-1. **M3.1**: Implement `parse_args(argv: List[str]) -> argparse.Namespace`
-2. **M3.2**: Implement `process_csv_file(csv_path: str, field_name: str, updater: NeonFobUpdater) -> None`
-3. **M3.3**: Implement `main() -> None`
-4. **M3.4**: Add entrypoint to `pyproject.toml`
-5. **M3.5**: Run tests and commit M3
+1. **M3.1**: ✅ Implement `parse_args(argv: List[str]) -> argparse.Namespace` (done in M1.1)
+2. **M3.2**: ✅ Implement `process_csv_file(csv_path: str, field_name: str, updater: NeonFobUpdater) -> None` (done in M1.1)
+3. **M3.3**: ✅ Implement `main() -> None` (done in M1.1)
+4. **M3.4**: ✅ Add entrypoint to `pyproject.toml`
+5. **M3.5**: ✅ Run tests and commit M3
+
+**Summary**: CLI implementation was mostly completed in M1, with argument parsing, CSV processing, and main entrypoint. Added CLI entrypoint to pyproject.toml. Tool is now runnable via `poetry run neon-fob-adder`. All existing tests passing.
 
 #### Milestone 4: Comprehensive Testing
 **Status**: Not started

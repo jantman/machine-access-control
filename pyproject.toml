@@ -17,6 +17,7 @@ classifiers = [
 
 [tool.poetry.scripts]
 neongetter = "dm_mac.neongetter:main"
+neon-fob-adder = "dm_mac.neon_fob_adder:main"
 mac-server = "dm_mac:main"
 
 [tool.poetry.urls]
