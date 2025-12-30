@@ -240,3 +240,5 @@ venv
 /users.json
 /docker-compose.yml
 /neon.config.json
+/util/*.json
+/util/*.xlsx
