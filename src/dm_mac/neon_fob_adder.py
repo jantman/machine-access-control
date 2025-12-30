@@ -189,6 +189,7 @@ class NeonFobUpdater:
         # Add standard fields from primaryContact
         flat_account["First Name"] = primary_contact.get("firstName", "")
         flat_account["Email 1"] = primary_contact.get("email1", "")
+        flat_account["Preferred Name"] = primary_contact.get("preferredName", "")
 
         # Build full name from firstName and lastName
         first_name = primary_contact.get("firstName", "")

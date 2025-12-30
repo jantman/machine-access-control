@@ -1,0 +1,9 @@
+responses:
+  - response:
+      auto_calculate_content_length: false
+      body:
+        '{"id":"123","status":"SUCCESS"}'
+      content_type: application/json
+      method: PATCH
+      status: 200
+      url: https://api.neoncrm.com/v2/accounts/123

@@ -1,0 +1,9 @@
+responses:
+  - response:
+      auto_calculate_content_length: false
+      body:
+        '{"individualAccount":{"accountId":"123","primaryContact":{"contactId":"456","firstName":"John","lastName":"Doe","preferredName":"Johnny","email1":"john.doe@example.com"},"accountCustomFields":[{"id":"79","name":"Fob10Digit","value":"1234567890"}]}}'
+      content_type: application/json
+      method: GET
+      status: 200
+      url: https://api.neoncrm.com/v2/accounts/123

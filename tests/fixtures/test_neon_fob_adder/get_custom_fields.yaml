@@ -1,0 +1,9 @@
+responses:
+  - response:
+      auto_calculate_content_length: false
+      body:
+        '[{"id":"79","name":"Fob10Digit","component":"Account","dataType":"Text","status":"ACTIVE"},{"id":"145","name":"FobCSV","component":"Account","dataType":"Text","status":"ACTIVE"}]'
+      content_type: application/json
+      method: GET
+      status: 200
+      url: https://api.neoncrm.com/v2/customFields?category=Account
