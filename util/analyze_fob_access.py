@@ -31,6 +31,12 @@ def main():
         default=100,
         help="Number of top users to include in top_users.csv (default: 100)",
     )
+    parser.add_argument(
+        "-O",
+        "--only-one-fob",
+        action="store_true",
+        help="Only include users with exactly one fob code in top_users.csv",
+    )
     args = parser.parse_args()
 
     # Load users.json to map fob codes to users
@@ -180,7 +186,17 @@ def main():
     print(f"Total {len(user_records)} users with access recorded")
 
     # Create top users report
-    top_users = user_records[: args.top]
+    # Filter to only users with one fob code if requested (before selecting top N)
+    if args.only_one_fob:
+        filtered_records = [
+            user
+            for user in user_records
+            if len(users_by_account_id[user["account_id"]].get("fob_codes", [])) == 1
+        ]
+        top_users = filtered_records[: args.top]
+    else:
+        top_users = user_records[: args.top]
+
     # Sort top users by last name, first name
     top_users.sort(key=lambda x: (x["last_name"], x["first_name"]))
 
@@ -190,8 +206,12 @@ def main():
         writer.writeheader()
         writer.writerows(top_users)
 
+    filter_msg = (
+        " (filtered to users with only one fob code)" if args.only_one_fob else ""
+    )
     print(
-        f"Top {len(top_users)} users written to {top_output_file} (sorted by last name, first name)"
+        f"Top {len(top_users)} users written to {top_output_file}{filter_msg} "
+        f"(sorted by last name, first name)"
     )
 
 
