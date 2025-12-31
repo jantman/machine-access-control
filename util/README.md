@@ -81,6 +81,7 @@ python3 analyze_fob_access.py [--months N] [--top T]
 **Options:**
 - `--months N` - Number of past months to analyze (default: 3, includes current month + N past months)
 - `--top T` - Number of top users to include in top_users.csv (default: 100)
+- `-O`, `--only-one-fob` - Only include users with exactly one fob code in top_users.csv
 
 **Examples:**
 ```bash
@@ -104,6 +105,7 @@ python3 analyze_fob_access.py --months 6 --top 200
   - `access_count` - Total number of accesses across all user's FOBs (sorted descending)
   - `last_access_date` - Date of the most recent access (YYYY-MM-DD format)
 - `top_users.csv` - CSV file containing top N users (configurable via --top) with highest access counts, sorted by last name, first name
+- `print_top_user_labels.sh` - Auto-generated bash script to print labels for top users (for use with [pt-p710bt-label-maker](https://github.com/jantman/pt-p710bt-label-maker))
 - Console output showing processing summary
 
 **Notes:**
