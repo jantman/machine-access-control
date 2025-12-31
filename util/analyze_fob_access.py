@@ -162,7 +162,11 @@ def main():
 
     # Sort by access_count descending
     user_records.sort(
-        key=lambda x: (-x["access_count"], x["last_name"], x["first_name"])
+        key=lambda x: (
+            -x["access_count"],
+            x["last_name"].lower(),
+            x["first_name"].lower(),
+        )
     )
 
     # Write main report to CSV
@@ -198,7 +202,7 @@ def main():
         top_users = user_records[: args.top]
 
     # Sort top users by last name, first name
-    top_users.sort(key=lambda x: (x["last_name"], x["first_name"]))
+    top_users.sort(key=lambda x: (x["last_name"].lower(), x["first_name"].lower()))
 
     top_output_file = "top_users.csv"
     with open(top_output_file, "w", newline="") as csvfile:
