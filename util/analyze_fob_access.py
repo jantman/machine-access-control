@@ -214,6 +214,21 @@ def main():
         f"(sorted by last name, first name)"
     )
 
+    # Generate bash script to print labels
+    script_file = "print_top_user_labels.sh"
+    with open(script_file, "w") as f:
+        f.write("#!/bin/bash\n")
+        f.write("# Auto-generated script to print labels for top users\n")
+        f.write("# Generated from top_users.csv\n\n")
+        for user in top_users:
+            full_name = user["full_name"]
+            # Escape single quotes in the name by replacing ' with '\''
+            escaped_name = full_name.replace("'", "'\\''")
+            f.write(f"sato-bin-1x2 -W '{escaped_name}'\n")
+
+    print(f"Label printing script written to {script_file}")
+    print(f"Run with: bash {script_file}")
+
 
 if __name__ == "__main__":
     main()
