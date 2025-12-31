@@ -378,35 +378,44 @@ class NeonFobUpdater:
         )
         print("=" * 70)
 
-        # Prompt for new fob code
-        new_fob = input("\nEnter new fob code (or 's' to skip): ").strip()
+        # Prompt for new fob code with validation loop
+        while True:
+            new_fob = input("\nEnter new fob code (or 's' to skip): ").strip()
 
-        # Check if user wants to skip
-        if new_fob.lower() in ("s", "skip"):
-            print("Skipped")
-            return
+            # Check if user wants to skip
+            if new_fob.lower() == "s":
+                print("Skipped")
+                return
 
-        # Pad to 10 digits
-        padded_fob = new_fob.zfill(10)
+            # Pad to 10 digits
+            padded_fob = new_fob.zfill(10)
 
-        # Validate numeric
-        if not padded_fob.isdigit():
-            print(
-                f"Error: Fob code must be numeric. Got: '{new_fob}' (padded: '{padded_fob}')"
-            )
-            return
+            # Validate numeric
+            if not padded_fob.isdigit():
+                print(
+                    f"Error: Fob code must be numeric. Got: '{new_fob}' "
+                    f"(padded: '{padded_fob}'). Please try again."
+                )
+                continue
 
-        # Validate length
-        if len(padded_fob) != 10:
-            print(
-                f"Error: Fob code must be 10 digits. Got: '{padded_fob}' ({len(padded_fob)} digits)"
-            )
-            return
+            # Validate length
+            if len(padded_fob) != 10:
+                print(
+                    f"Error: Fob code must be 10 digits. Got: '{padded_fob}' "
+                    f"({len(padded_fob)} digits). Please try again."
+                )
+                continue
 
-        # Check for duplicate
-        if padded_fob in account_info["fob_codes"]:
-            print(f"Error: Fob code '{padded_fob}' already exists on this account")
-            return
+            # Check for duplicate
+            if padded_fob in account_info["fob_codes"]:
+                print(
+                    f"Error: Fob code '{padded_fob}' already exists on this account. "
+                    f"Please try again."
+                )
+                continue
+
+            # Valid input - break out of loop
+            break
 
         # Display proposed change
         print("\nProposed change:")

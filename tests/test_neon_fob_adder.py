@@ -535,11 +535,12 @@ class TestAddFobToAccount:
     )
     @patch(f"{pbm}.input")
     @patch("builtins.print")
-    def test_invalid_fob_input(
+    def test_invalid_fob_input_then_skip(
         self, m_print: Mock, m_input: Mock, fixtures_path: str
     ) -> None:
-        """Test invalid fob code input."""
-        m_input.return_value = "not-a-number"
+        """Test invalid fob code input followed by skip."""
+        # First input is invalid, second is skip
+        m_input.side_effect = ["not-a-number", "s"]
 
         responses._add_from_file(
             os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
@@ -548,9 +549,154 @@ class TestAddFobToAccount:
         cls = NeonFobUpdater()
         cls.add_fob_to_account("123")
 
-        # Should print error
+        # Should print error and then skip
         print_calls = [str(call) for call in m_print.mock_calls]
         assert any("Error" in call and "numeric" in call for call in print_calls)
+        assert any("Skipped" in call for call in print_calls)
+
+    @responses.activate(registry=OrderedRegistry)
+    @patch.dict(
+        "os.environ",
+        {
+            "NEON_ORG": "test",
+            "NEON_KEY": "12345",
+            "NEONGETTER_CONFIG": "tests/fixtures/neon.config.json",
+        },
+    )
+    @patch(f"{pbm}.input")
+    @patch("builtins.print")
+    def test_invalid_fob_input_then_valid(
+        self, m_print: Mock, m_input: Mock, fixtures_path: str
+    ) -> None:
+        """Test invalid fob code input followed by valid input."""
+        # First input is invalid, second is valid, third is confirmation
+        m_input.side_effect = ["not-a-number", "3333333333", "y"]
+
+        # Load fixtures for successful addition
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_custom_fields.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses.add(
+            responses.PATCH,
+            "https://api.neoncrm.com/v2/accounts/123",
+            json={"status": "SUCCESS"},
+            status=200,
+        )
+
+        cls = NeonFobUpdater()
+        cls.add_fob_to_account("123")
+
+        # Should print error, then success
+        print_calls = [str(call) for call in m_print.mock_calls]
+        assert any("Error" in call and "numeric" in call for call in print_calls)
+        assert any("Success" in call for call in print_calls)
+
+    @responses.activate(registry=OrderedRegistry)
+    @patch.dict(
+        "os.environ",
+        {
+            "NEON_ORG": "test",
+            "NEON_KEY": "12345",
+            "NEONGETTER_CONFIG": "tests/fixtures/neon.config.json",
+        },
+    )
+    @patch(f"{pbm}.input")
+    @patch("builtins.print")
+    def test_multiple_invalid_inputs_then_valid(
+        self, m_print: Mock, m_input: Mock, fixtures_path: str
+    ) -> None:
+        """Test multiple invalid inputs before valid input."""
+        # Multiple invalid inputs, then valid, then confirmation
+        m_input.side_effect = [
+            "abc123",  # non-numeric
+            "12345678901",  # too long (11 digits)
+            "3333333333",  # valid
+            "y",  # confirmation
+        ]
+
+        # Load fixtures for successful addition
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_custom_fields.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses.add(
+            responses.PATCH,
+            "https://api.neoncrm.com/v2/accounts/123",
+            json={"status": "SUCCESS"},
+            status=200,
+        )
+
+        cls = NeonFobUpdater()
+        cls.add_fob_to_account("123")
+
+        # Should print multiple errors, then success
+        print_calls = [str(call) for call in m_print.mock_calls]
+        assert any("Error" in call and "numeric" in call for call in print_calls)
+        assert any("Error" in call and "10 digits" in call for call in print_calls)
+        assert any("Success" in call for call in print_calls)
+
+    @responses.activate(registry=OrderedRegistry)
+    @patch.dict(
+        "os.environ",
+        {
+            "NEON_ORG": "test",
+            "NEON_KEY": "12345",
+            "NEONGETTER_CONFIG": "tests/fixtures/neon.config.json",
+        },
+    )
+    @patch(f"{pbm}.input")
+    @patch("builtins.print")
+    def test_duplicate_fob_input_then_valid(
+        self, m_print: Mock, m_input: Mock, fixtures_path: str
+    ) -> None:
+        """Test duplicate fob code input followed by valid input."""
+        # First input is duplicate, second is valid, third is confirmation
+        m_input.side_effect = ["1234567890", "3333333333", "y"]
+
+        # Load fixtures for successful addition
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_custom_fields.yaml")
+        )
+        responses._add_from_file(
+            os.path.join(fixtures_path, "test_neon_fob_adder", "get_account.yaml")
+        )
+        responses.add(
+            responses.PATCH,
+            "https://api.neoncrm.com/v2/accounts/123",
+            json={"status": "SUCCESS"},
+            status=200,
+        )
+
+        cls = NeonFobUpdater()
+        cls.add_fob_to_account("123")
+
+        # Should print error about duplicate, then success
+        print_calls = [str(call) for call in m_print.mock_calls]
+        assert any("Error" in call and "already exists" in call for call in print_calls)
+        assert any("Success" in call for call in print_calls)
 
 
 class TestParseArgs:
