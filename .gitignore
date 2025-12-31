@@ -244,3 +244,4 @@ venv
 /util/*.xlsx
 /util/*.csv
 util/print_top_user_labels.sh
+util/*.txt
