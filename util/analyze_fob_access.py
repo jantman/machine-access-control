@@ -219,7 +219,8 @@ def main():
     with open(script_file, "w") as f:
         f.write("#!/bin/bash\n")
         f.write("# Auto-generated script to print labels for top users\n")
-        f.write("# Generated from top_users.csv\n\n")
+        f.write("# Generated from top_users.csv\n")
+        f.write("# for use with: https://github.com/jantman/pt-p710bt-label-maker\n\n")
         for user in top_users:
             full_name = user["full_name"]
             # Escape single quotes in the name by replacing ' with '\''
