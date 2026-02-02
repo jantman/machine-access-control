@@ -1776,18 +1776,15 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
-        },
-        "hide": 2,
+        "allValue": "",
+        "current": {},
+        "hide": 0,
         "includeAll": true,
         "label": "Machine",
         "multi": true,
         "name": "machine",
         "options": [],
-        "query": "prometheus",
+        "query": "label_values(machine_relay_state, machine_name)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
