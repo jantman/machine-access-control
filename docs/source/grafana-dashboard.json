@@ -524,12 +524,12 @@
             {
               "options": {
                 "0": {
-                  "color": "red",
-                  "text": "OOPS!"
-                },
-                "1": {
                   "color": "dark-gray",
                   "text": "OK"
+                },
+                "1": {
+                  "color": "red",
+                  "text": "OOPS!"
                 }
               },
               "type": "value"
@@ -544,10 +544,6 @@
               },
               {
                 "color": "red",
-                "value": 0
-              },
-              {
-                "color": "dark-gray",
                 "value": 1
               }
             ]
@@ -581,7 +577,7 @@
       "pluginVersion": "11.0.0",
       "targets": [
         {
-          "expr": "machine_oops_state == 0",
+          "expr": "machine_oops_state",
           "legendFormat": "{{display_name}}",
           "refId": "A"
         }
@@ -1363,7 +1359,9 @@
       },
       "id": 23,
       "panels": [],
-      "title": "Machine Details (Use variable to select machine)",
+      "repeat": "machine",
+      "repeatDirection": "v",
+      "title": "Machine Details - $machine",
       "type": "row"
     },
     {
@@ -1778,23 +1776,27 @@
   "templating": {
     "list": [
       {
-        "current": {},
-        "hide": 0,
-        "includeAll": false,
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 2,
+        "includeAll": true,
         "label": "Machine",
-        "multi": false,
+        "multi": true,
         "name": "machine",
         "options": [],
         "query": "prometheus",
         "refresh": 1,
-        "regex": "/display_name=\"([^\"]+)\"/",
+        "regex": "",
         "skipUrlSync": false,
         "type": "query",
         "datasource": {
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(machine_relay_state, display_name)"
+        "definition": "label_values(machine_relay_state, machine_name)"
       },
       {
         "current": {},
