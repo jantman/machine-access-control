@@ -479,6 +479,27 @@ class MachineState:
                 else:
                     await self._handle_rfid_insert(users, rfid_value)
                 self.last_update = time()
+            else:
+                # No RFID change - check for stale always-enabled state.
+                # This handles the case where always_enabled config was changed
+                # from true to false: the cached state has relay on but there's
+                # no authorized user and the machine is no longer always-enabled.
+                if (
+                    self.relay_desired_state
+                    and self.current_user is None
+                    and not self.machine.always_enabled
+                    and not self.is_oopsed
+                    and not self.is_locked_out
+                ):
+                    logger.info(
+                        "Resetting stale always-enabled state for machine %s",
+                        self.machine.display_name,
+                    )
+                    self.relay_desired_state = False
+                    self.display_text = self.DEFAULT_DISPLAY_TEXT
+                    self.status_led_rgb = (0.0, 0.0, 0.0)
+                    self.status_led_brightness = 0.0
+                    self.last_update = time()
         self._save_cache()
         return self.machine_response
 
