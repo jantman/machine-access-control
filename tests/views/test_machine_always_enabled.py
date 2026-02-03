@@ -377,3 +377,83 @@ class TestAlwaysEnabledMachine:
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
         }
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_always_enabled_config_change_to_disabled(
+        self, tmp_path: Path
+    ) -> None:
+        """Test machine resets to disabled when always_enabled config changes to false.
+
+        This tests the bug fix where a machine configured with always_enabled=true
+        that later has that config changed to always_enabled=false should reset
+        to disabled state on the next update, even without an RFID card change.
+        """
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        mname: str = "always-on-machine"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+
+        # Verify machine starts with always_enabled=true
+        assert m.always_enabled is True
+
+        # First update to establish the always-enabled state
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 12.3,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        json_response = await response.json
+        # Machine should be in always-on state
+        assert json_response["relay"] is True
+        assert json_response["display"] == MachineState.ALWAYS_ON_DISPLAY_TEXT
+        assert json_response["status_led_rgb"] == [0.0, 1.0, 0.0]
+
+        # Verify internal state
+        assert m.state.relay_desired_state is True
+        assert m.state.display_text == MachineState.ALWAYS_ON_DISPLAY_TEXT
+        assert m.state.current_user is None  # No user, just always-enabled
+
+        # Simulate config change: set always_enabled to false
+        # This simulates what happens when machines.json is edited and reloaded
+        m.always_enabled = False
+
+        # Send another update with NO RFID change (still empty)
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",  # Same as before - no card
+                "uptime": 13.5,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        json_response = await response.json
+
+        # Machine should now be in disabled state (the bug fix)
+        assert json_response == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+
+        # Verify internal state was reset
+        assert m.state.relay_desired_state is False
+        assert m.state.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert m.state.status_led_rgb == (0.0, 0.0, 0.0)
+        assert m.state.status_led_brightness == 0.0
