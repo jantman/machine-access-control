@@ -32,7 +32,7 @@ jobs:
           GITHUB_REF_NAME: ${{ github.event.client_payload.pull_request.head.ref || github.event.pull_request.head.ref || github.ref_name }}
         run: |
           nox --non-interactive --session=docs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: build
           path: docs/build
