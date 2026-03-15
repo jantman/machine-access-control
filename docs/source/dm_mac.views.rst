@@ -3,9 +3,9 @@ dm\_mac.views package
 
 .. automodule:: dm_mac.views
    :members:
-   :undoc-members:
-   :show-inheritance:
    :private-members:
+   :show-inheritance:
+   :undoc-members:
 
 Submodules
 ----------
