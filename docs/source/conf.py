@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_last_updated_by_git",
     "sphinx-jsonschema",
+    "sphinxcontrib.openapi",
 ]
 
 templates_path = ["_templates"]

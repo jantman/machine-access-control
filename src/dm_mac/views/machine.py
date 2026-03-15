@@ -13,7 +13,14 @@ from quart import Response
 from quart import current_app
 from quart import jsonify
 from quart import request
+from quart_schema import document_request
+from quart_schema import document_response
+from quart_schema import tag
 
+from dm_mac.models.api_schemas import ErrorResponse
+from dm_mac.models.api_schemas import MachineUpdateRequest
+from dm_mac.models.api_schemas import MachineUpdateResponse
+from dm_mac.models.api_schemas import SuccessResponse
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
@@ -25,6 +32,11 @@ machineapi: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")
 
 
 @machineapi.route("/update", methods=["POST"])
+@tag(["Machine"])
+@document_request(MachineUpdateRequest)
+@document_response(MachineUpdateResponse, 200)
+@document_response(ErrorResponse, 404)
+@document_response(ErrorResponse, 500)
 async def update() -> Tuple[Response, int]:
     """API method to update machine state.
 
@@ -126,8 +138,16 @@ async def update() -> Tuple[Response, int]:
 
 
 @machineapi.route("/oops/<machine_name>", methods=["POST", "DELETE"])
+@tag(["Machine"])
+@document_response(SuccessResponse, 200)
+@document_response(ErrorResponse, 404)
+@document_response(ErrorResponse, 500)
 async def oops(machine_name: str) -> Tuple[Response, int]:
-    """API method to set or un-set machine Oops state."""
+    """Set or clear machine Oops state.
+
+    POST to set the machine into Oops (maintenance needed) state.
+    DELETE to clear the Oops state.
+    """
     method: str = request.method
     logger.warning("%s oops on machine %s", method, machine_name)
     mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
@@ -153,8 +173,16 @@ async def oops(machine_name: str) -> Tuple[Response, int]:
 
 
 @machineapi.route("/locked_out/<machine_name>", methods=["POST", "DELETE"])
+@tag(["Machine"])
+@document_response(SuccessResponse, 200)
+@document_response(ErrorResponse, 404)
+@document_response(ErrorResponse, 500)
 async def locked_out(machine_name: str) -> Tuple[Response, int]:
-    """API method to set or un-set machine locked out state."""
+    """Set or clear machine lockout state.
+
+    POST to lock out a machine (prevent all use).
+    DELETE to unlock the machine.
+    """
     method: str = request.method
     logger.warning("%s lock-out on machine %s", method, machine_name)
     mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa

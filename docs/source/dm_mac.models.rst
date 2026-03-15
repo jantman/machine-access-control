@@ -13,5 +13,6 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   dm_mac.models.api_schemas
    dm_mac.models.machine
    dm_mac.models.users
