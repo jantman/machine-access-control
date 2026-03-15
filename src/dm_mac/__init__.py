@@ -12,6 +12,7 @@ from quart import Quart
 from quart import has_request_context
 from quart import request
 from quart.logging import default_handler
+from quart_schema import QuartSchema
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
 from dm_mac.models.machine import MachinesConfig
@@ -77,6 +78,23 @@ def asyncio_exception_handler(_, context):
 def create_app() -> Quart:
     """Factory to create the app."""
     app: Quart = Quart("dm_mac")
+    QuartSchema(
+        app,
+        info={
+            "title": "Decatur Makers Machine Access Control API",
+            "version": "0.9.0",
+            "description": (
+                "HTTP API for the Decatur Makers Machine Access Control system. "
+                "Used by ESP32-based Machine Control Units (MCUs) to report state "
+                "and receive commands, and by administrators for machine management."
+            ),
+        },
+        tags=[
+            {"name": "Machine", "description": "Machine state and control endpoints"},
+            {"name": "Admin", "description": "Administrative endpoints"},
+            {"name": "Monitoring", "description": "Monitoring and metrics endpoints"},
+        ],
+    )
     app.config.update({"MACHINES": MachinesConfig()})
     app.config.update({"USERS": UsersConfig()})
     app.config.update({"START_TIME": time()})

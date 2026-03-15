@@ -25,8 +25,8 @@ class TestIndex:
         app, client = app_and_client(tmp_path)
         response: Response = await client.get("/api/")
         assert response.status_code == 200
-        assert await response.get_data(True) == "Nothing to see here..."
-        assert response.headers["Content-Type"] == "text/html; charset=utf-8"
+        assert await response.json == {"message": "Nothing to see here..."}
+        assert response.headers["Content-Type"] == "application/json"
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)

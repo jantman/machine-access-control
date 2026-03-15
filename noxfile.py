@@ -275,6 +275,14 @@ def docs(session: Session) -> None:
         "-M",
         "--private",
     )
+    session.run(
+        "python",
+        "docs/export_openapi.py",
+        env={
+            "MACHINES_CONFIG": "tests/fixtures/machines.json",
+            "USERS_CONFIG": "tests/fixtures/users.json",
+        },
+    )
     if os.environ.get("DOCS_REBUILD") == "true":
         session.run("sphinx-autobuild", *args)
     else:
