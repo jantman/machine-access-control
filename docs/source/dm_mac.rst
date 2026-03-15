@@ -3,9 +3,9 @@ dm\_mac package
 
 .. automodule:: dm_mac
    :members:
-   :undoc-members:
-   :show-inheritance:
    :private-members:
+   :show-inheritance:
+   :undoc-members:
 
 Subpackages
 -----------

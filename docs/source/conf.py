@@ -39,12 +39,7 @@ todo_include_todos = True
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
-html_theme_options = {
-    "navigation_depth": 4,
-    "collapse_navigation": False,
-    "sticky_navigation": False,
-}
+html_theme = "furo"
 html_static_path = ["_static"]
 
 html_context = {"theme_vcs_pageview_mode": "edit", "conf_py_path": "/source/"}
@@ -60,10 +55,7 @@ if os.environ.get("GITHUB_ACTIONS") == "true":
         os.environ.get("GITHUB_HEAD_REF", os.environ.get("GITHUB_SHA")),
     )
 
-html_css_files = [
-    # thanks to: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
-    "theme_overrides.css"  # override wide tables in RTD theme
-]
+html_css_files = []
 
 git_untracked_check_dependencies = False
 
