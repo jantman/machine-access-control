@@ -54,10 +54,8 @@ class TestRouteSpecialCases:
         app: Quart
         client: TestClientProtocol
         app, client = app_and_client(tmp_path)
-        # send request - mock machine.update to raise an exception
+        # send request
         mname: str = "metal-mill"
-        m: Machine = app.config["MACHINES"].machines_by_name[mname]
-        m.update = AsyncMock(side_effect=RuntimeError("test error"))  # type: ignore[method-assign]
         response: Response = await client.post(
             "/api/machine/update",
             json={
@@ -68,30 +66,15 @@ class TestRouteSpecialCases:
                 "wifi_signal_db": -54,
                 "wifi_signal_percent": 92,
                 "internal_temperature_c": 53.89,
+                "foo": "bar",
             },
         )
         # check response
         assert response.status_code == 500
         assert await response.json == {
-            "error": "test error",
+            "error": "MachineState.update() got an unexpected keyword "
+            "argument 'foo'",
         }
-
-    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
-    async def test_invalid_request(self, tmp_path: Path) -> None:
-        """Test request validation rejects incomplete payload."""
-        # boilerplate for test
-        app: Quart
-        client: TestClientProtocol
-        app, client = app_and_client(tmp_path)
-        # send request with missing required fields
-        response: Response = await client.post(
-            "/api/machine/update",
-            json={
-                "machine_name": "metal-mill",
-            },
-        )
-        # validate_request returns 400 for missing required fields
-        assert response.status_code == 400
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -200,12 +183,12 @@ class TestUpdateNewMachine:
         assert ms.status_led_brightness == 0.0
 
     async def test_empty_update(self, tmp_path: Path) -> None:
-        """Test that an empty update (missing required fields) is rejected."""
+        """Test first incorrectly empty update for a new machine."""
         # boilerplate for test
         app: Quart
         client: TestClientProtocol
         app, client = app_and_client(tmp_path)
-        # send request with only machine_name (missing all other required fields)
+        # send request
         mname: str = "metal-mill"
         response: Response = await client.post(
             "/api/machine/update",
@@ -213,8 +196,35 @@ class TestUpdateNewMachine:
                 "machine_name": mname,
             },
         )
-        # validate_request returns 400 for missing required fields
-        assert response.status_code == 400
+        # check response
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0, 0, 0],
+            "status_led_brightness": 0,
+        }
+        # boilerplate to read state from disk
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.current_amps == 0
+        assert ms.uptime == 0.0
+        assert ms.wifi_signal_db is None
+        assert ms.wifi_signal_percent is None
+        assert ms.internal_temperature_c is None
+        assert ms.last_checkin == 1689477248.0
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.rfid_value is None
+        assert ms.rfid_present_since is None
+        assert ms.relay_desired_state is False
+        assert ms.last_update is None
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
