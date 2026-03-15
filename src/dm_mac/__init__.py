@@ -82,7 +82,7 @@ def create_app() -> Quart:
         app,
         info={
             "title": "Decatur Makers Machine Access Control API",
-            "version": "0.9.0",
+            "version": "0.9.1",
             "description": (
                 "HTTP API for the Decatur Makers Machine Access Control system. "
                 "Used by ESP32-based Machine Control Units (MCUs) to report state "
