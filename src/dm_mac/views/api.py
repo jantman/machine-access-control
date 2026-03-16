@@ -8,7 +8,12 @@ from quart import Blueprint
 from quart import Response
 from quart import current_app
 from quart import jsonify
+from quart_schema import document_response
+from quart_schema import tag
 
+from dm_mac.models.api_schemas import ApiIndexResponse
+from dm_mac.models.api_schemas import ErrorResponse
+from dm_mac.models.api_schemas import ReloadUsersResponse
 from dm_mac.models.users import UsersConfig
 
 
@@ -18,14 +23,26 @@ api: Blueprint = Blueprint("api", __name__, url_prefix="/api")
 
 
 @api.route("/")
-async def index() -> str:
-    """Main API index route - placeholder."""
-    return "Nothing to see here..."
+@tag(["Admin"])
+@document_response(ApiIndexResponse, 200)
+async def index() -> Tuple[Response, int]:
+    """API index route.
+
+    Returns a placeholder message.
+    """
+    return jsonify({"message": "Nothing to see here..."}), 200
 
 
 @api.route("/reload-users", methods=["POST"])
+@tag(["Admin"])
+@document_response(ReloadUsersResponse, 200)
+@document_response(ErrorResponse, 500)
 async def reload_users() -> Tuple[Response, int]:
-    """Reload users config."""
+    """Reload users configuration.
+
+    Hot-reloads users.json without requiring a server restart.
+    Returns counts of removed, updated, and added users.
+    """
     added: int
     updated: int
     removed: int

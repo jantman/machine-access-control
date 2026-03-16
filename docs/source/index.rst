@@ -10,6 +10,7 @@
    Introduction <introduction>
    Installation <installation>
    Configuration <configuration>
+   HTTP API <http-api>
    Slack Integration <slack>
    Hardware <hardware>
    Administration <admin>

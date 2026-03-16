@@ -245,3 +245,4 @@ venv
 /util/*.csv
 util/print_top_user_labels.sh
 util/*.txt
+docs/source/openapi.json
