@@ -55,70 +55,52 @@ async def update() -> Tuple[Response, int]:
         °C.
     - ``amps`` (float; optional) - amperage value from the current clamp
         ammeter, if present, or 0.0 otherwise.
-
-    EXAMPLE Payloads for ESP without amperage sensor
-    ------------------------------------------------
-
-    Oops button pressed when no RFID present
-    ++++++++++++++++++++++++++++++++++++++++
-
-    .. code-block:: python
-
-       {
-           'machine_name': 'esp32test',
-           'oops': True,
-           'rfid_value': '',
-           'uptime': 59.29299927,
-           'wifi_signal_db': -58,
-           'wifi_signal_percent': 84,
-           'internal_temperature_c': 53.88888931
-       }
-
-    RFID inserted (tag 0014916441)
-    ++++++++++++++++++++++++++++++
-
-    .. code-block:: python
-
-       {
-           'machine_name': 'esp32test',
-           'oops': False,
-           'rfid_value': '14916441',
-           'uptime': 59.29299927,
-           'wifi_signal_db': -58,
-           'wifi_signal_percent': 84,
-           'internal_temperature_c': 53.88888931
-       }
-
-    Oops button pressed when RFID present
-    +++++++++++++++++++++++++++++++++++++
-
-    .. code-block:: python
-
-       {
-           'machine_name': 'esp32test',
-           'oops': True,
-           'rfid_value': '14916441',
-           'uptime': 59.29299927,
-           'wifi_signal_db': -58,
-           'wifi_signal_percent': 84,
-           'internal_temperature_c': 53.88888931
-       }
-
-    RFID removed
-    ++++++++++++
-
-    .. code-block:: python
-
-       {
-           'machine_name': 'esp32test',
-           'oops': False,
-           'rfid_value': '',
-           'uptime': 119.2929993,
-           'wifi_signal_db': -54,
-           'wifi_signal_percent': 92,
-           'internal_temperature_c': 53.88888931
-       }
     """
+    # EXAMPLE Payloads for ESP without amperage sensor
+    #
+    # Oops button pressed when no RFID present:
+    #   {
+    #       'machine_name': 'esp32test',
+    #       'oops': True,
+    #       'rfid_value': '',
+    #       'uptime': 59.29299927,
+    #       'wifi_signal_db': -58,
+    #       'wifi_signal_percent': 84,
+    #       'internal_temperature_c': 53.88888931
+    #   }
+    #
+    # RFID inserted (tag 0014916441):
+    #   {
+    #       'machine_name': 'esp32test',
+    #       'oops': False,
+    #       'rfid_value': '14916441',
+    #       'uptime': 59.29299927,
+    #       'wifi_signal_db': -58,
+    #       'wifi_signal_percent': 84,
+    #       'internal_temperature_c': 53.88888931
+    #   }
+    #
+    # Oops button pressed when RFID present:
+    #   {
+    #       'machine_name': 'esp32test',
+    #       'oops': True,
+    #       'rfid_value': '14916441',
+    #       'uptime': 59.29299927,
+    #       'wifi_signal_db': -58,
+    #       'wifi_signal_percent': 84,
+    #       'internal_temperature_c': 53.88888931
+    #   }
+    #
+    # RFID removed:
+    #   {
+    #       'machine_name': 'esp32test',
+    #       'oops': False,
+    #       'rfid_value': '',
+    #       'uptime': 119.2929993,
+    #       'wifi_signal_db': -54,
+    #       'wifi_signal_percent': 92,
+    #       'internal_temperature_c': 53.88888931
+    #   }
     data: Dict[str, Any] = cast(Dict[str, Any], await request.json)  # noqa
     logger.info("UPDATE request: %s", data)
     machine_name: str = data.pop("machine_name")
