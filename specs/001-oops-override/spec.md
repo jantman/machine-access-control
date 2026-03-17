@@ -19,7 +19,7 @@ A designated repair member arrives at a machine that has been oopsed (reported a
 
 1. **Given** a machine is in oopsed state and a user with oops override authorization inserts their RFID, **When** the system processes the update, **Then** the machine relay is activated, the LCD displays "OVERRIDE BY [preferred name]", the oops state is preserved (not cleared), and the machine state reflects an override login.
 2. **Given** a machine is in override login state (from an oopsed machine) and the override user removes their RFID, **When** the system processes the update, **Then** the machine relay is deactivated, the oops state is restored (oops LED on, LCD shows oops message), and no "un-oops" notification is sent.
-3. **Given** a machine is in oopsed state and a normal user (without override authorization) inserts their RFID, **When** the system processes the update, **Then** the existing behavior is unchanged (oops is cleared, normal login proceeds).
+3. **Given** a machine is in oopsed state and a normal user (without override authorization) inserts their RFID, **When** the system processes the update, **Then** the existing behavior is unchanged (login is rejected, oops state remains).
 
 ---
 
@@ -109,6 +109,7 @@ All relevant documentation is updated to reflect the new override login feature,
 - What happens if the server restarts while an override login is active? The persisted state should correctly restore the override login state, and upon the next card-remove update, the machine should return to its pre-override state.
 - What happens if a machine reboots (uptime drops) during an override login? The machine should handle reboot detection the same as a normal login -- reset state appropriately, restoring the underlying oops/lockout state.
 - What happens if an admin clears the oops or lockout via Slack or API while an override login is active? The override login should continue, but when the card is removed, the machine should return to normal state (since the underlying oops/lockout was cleared).
+- What happens if an admin oopses or locks out a machine while an override login is active? The admin action should take effect immediately (relay off, power cut), since admin authority supersedes override. When the override user eventually removes their card, the machine should remain in the newly-set oopsed/locked state.
 
 ## Requirements *(mandatory)*
 
