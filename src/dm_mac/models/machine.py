@@ -248,6 +248,8 @@ class MachineState:
         self.is_oopsed: bool = False
         #: Whether the machine is locked out from use.
         self.is_locked_out: bool = False
+        #: Whether the machine is in an override login state
+        self.is_override_login: bool = False
         #: Last reported output ammeter reading (if equipped).
         self.current_amps: float = 0
         #: Text currently displayed on the machine LCD screen
@@ -291,6 +293,7 @@ class MachineState:
                     "relay_desired_state": self.relay_desired_state,
                     "is_oopsed": self.is_oopsed,
                     "is_locked_out": self.is_locked_out,
+                    "is_override_login": self.is_override_login,
                     "current_amps": self.current_amps,
                     "display_text": self.display_text,
                     "uptime": self.uptime,
@@ -335,6 +338,7 @@ class MachineState:
         )
         # locking handled in update()
         self.current_user = None
+        self.is_override_login = False
         # Restore always-enabled state if applicable
         if self.machine.always_enabled:
             self.relay_desired_state = True
@@ -531,11 +535,13 @@ class MachineState:
 
     async def _handle_rfid_remove(self) -> None:
         """Handle RFID card removed."""
+        was_override: bool = self.is_override_login
         logging.getLogger("AUTH").info(
-            "RFID logout on %s by %s; session duration %d seconds",
+            "RFID logout on %s by %s; session duration %d seconds%s",
             self.machine.display_name,
             self.current_user.full_name if self.current_user else self.rfid_value,
             time() - cast(float, self.rfid_present_since),
+            " (override session)" if was_override else "",
         )
         log_str: str = (
             f"RFID logout on {self.machine.display_name} by "
@@ -543,12 +549,30 @@ class MachineState:
             + "; session duration "
             + naturaldelta(time() - cast(float, self.rfid_present_since))
         )
+        if was_override:
+            log_str += " (override session)"
         # locking handled in update()
         self.rfid_value = None
         self.rfid_present_since = None
         self.current_user = None
         self.relay_desired_state = False
-        if not self.is_oopsed and not self.is_locked_out:
+        self.is_override_login = False
+        if was_override:
+            # Restore oops/lockout display state
+            if self.is_oopsed:
+                self.display_text = self.OOPS_DISPLAY_TEXT
+                self.status_led_rgb = (1.0, 0.0, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            elif self.is_locked_out:
+                self.display_text = self.LOCKOUT_DISPLAY_TEXT
+                self.status_led_rgb = (1.0, 0.5, 0.0)
+                self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            else:
+                # Admin cleared oops/lockout during override
+                self.display_text = self.DEFAULT_DISPLAY_TEXT
+                self.status_led_rgb = (0.0, 0.0, 0.0)
+                self.status_led_brightness = 0.0
+        elif not self.is_oopsed and not self.is_locked_out:
             self.display_text = self.DEFAULT_DISPLAY_TEXT
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0.0
@@ -589,6 +613,22 @@ class MachineState:
             return
         # ok, we have a known user
         logname = f"{user.full_name} ({rfid_value})"
+        # Check for override login on oopsed/locked-out machine
+        if user.oops_override and (self.is_oopsed or self.is_locked_out):
+            logging.getLogger("AUTH").info(
+                "Override login on %s by %s",
+                self.machine.display_name,
+                logname,
+            )
+            self.is_override_login = True
+            self.current_user = user
+            self.relay_desired_state = True
+            self.display_text = f"OVERRIDE BY\n{user.preferred_name}"
+            self.status_led_rgb = (0.0, 1.0, 0.0)
+            self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            if slack:
+                await slack.log_override_login(self.machine, user.full_name)
+            return
         if self.is_oopsed:
             logging.getLogger("AUTH").warning(
                 "RFID login attempt while oopsed on %s by %s",

@@ -84,10 +84,11 @@ class TestUsersConfig:
         assert len(cls.users) == 3
         assert len(cls.users_by_fob) == 3
         assert isinstance(cls.users_by_fob["5683773370"], User)
-        assert cls.users_by_fob["5683773370"].as_dict == conf[2]
+        expected: List[Dict[str, Any]] = [{**c, "oops_override": False} for c in conf]
+        assert cls.users_by_fob["5683773370"].as_dict == expected[2]
         for x in range(0, len(conf)):
             assert isinstance(cls.users[x], User)
-            assert cls.users[x].as_dict == conf[x]
+            assert cls.users[x].as_dict == expected[x]
         assert cls.load_time == 1689477248.0
         # Check that file_mtime is set to the actual file's mtime
         assert isinstance(cls.file_mtime, float)
@@ -221,3 +222,87 @@ class TestUser:
         assert u1 != u2
         assert u1 == u3
         assert u1 != Mock()
+
+    def test_oops_override_default(self) -> None:
+        """Test that oops_override defaults to False."""
+        u: User = User(
+            fob_codes=["0123"],
+            account_id="100",
+            full_name="John Doe",
+            first_name="John",
+            last_name="Doe",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+        )
+        assert u.oops_override is False
+
+    def test_oops_override_true(self) -> None:
+        """Test that oops_override can be set to True."""
+        u: User = User(
+            fob_codes=["0123"],
+            account_id="100",
+            full_name="John Doe",
+            first_name="John",
+            last_name="Doe",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+            oops_override=True,
+        )
+        assert u.oops_override is True
+
+    def test_as_dict_includes_oops_override(self) -> None:
+        """Test that as_dict includes oops_override field."""
+        u: User = User(
+            fob_codes=["0123"],
+            account_id="100",
+            full_name="John Doe",
+            first_name="John",
+            last_name="Doe",
+            preferred_name="PJohn",
+            email="john@example.com",
+            expiration_ymd="2027-09-10",
+            authorizations=[],
+            oops_override=True,
+        )
+        d = u.as_dict
+        assert "oops_override" in d
+        assert d["oops_override"] is True
+
+    def test_schema_valid_without_oops_override(self) -> None:
+        """Test that schema validates without oops_override field."""
+        conf: List[Dict[str, Any]] = [
+            {
+                "account_id": "100",
+                "authorizations": [],
+                "email": "test@example.com",
+                "expiration_ymd": "2027-09-10",
+                "fob_codes": ["0123456789"],
+                "full_name": "Test User",
+                "first_name": "Test",
+                "last_name": "User",
+                "preferred_name": "PTest",
+            }
+        ]
+        UsersConfig.validate_config(conf)
+
+    def test_schema_valid_with_oops_override(self) -> None:
+        """Test that schema validates with oops_override field."""
+        conf: List[Dict[str, Any]] = [
+            {
+                "account_id": "100",
+                "authorizations": [],
+                "email": "test@example.com",
+                "expiration_ymd": "2027-09-10",
+                "fob_codes": ["0123456789"],
+                "full_name": "Test User",
+                "first_name": "Test",
+                "last_name": "User",
+                "preferred_name": "PTest",
+                "oops_override": True,
+            }
+        ]
+        UsersConfig.validate_config(conf)

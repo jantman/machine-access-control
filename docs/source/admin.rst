@@ -91,6 +91,13 @@ An example response from the metrics endpoint is:
     machine_lockout_state{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
     machine_lockout_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
     machine_lockout_state{display_name="esp32test",machine_name="esp32test"} 0.0
+    # HELP machine_override_login_state The override login state of the machine
+    # TYPE machine_override_login_state gauge
+    machine_override_login_state{display_name="Metal Mill",machine_name="metal-mill"} 0.0
+    machine_override_login_state{display_name="hammer",machine_name="hammer"} 0.0
+    machine_override_login_state{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
+    machine_override_login_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
+    machine_override_login_state{display_name="esp32test",machine_name="esp32test"} 0.0
     # HELP machine_unauth_warn_only_state The unauthorized_warn_only state of the machine
     # TYPE machine_unauth_warn_only_state gauge
     machine_unauth_warn_only_state{display_name="Metal Mill",machine_name="metal-mill"} 0.0
@@ -215,6 +222,7 @@ The Grafana dashboard includes the following visualizations:
 * Real-time relay state visualization (which machines are powered on)
 * RFID presence indicators
 * Oops button status monitoring
+* Override login state monitoring (repair members overriding oops/lockout)
 * Machine relay state timeline
 
 **Machine Health & Connectivity**

@@ -350,6 +350,20 @@ class SlackHandler:
             )
         )
 
+    async def log_override_login(self, machine: "Machine", user_name: str) -> None:
+        """
+        Log an override login to the admin channel only.
+
+        This uses :py:meth:`asyncio.create_task` to fire-and-forget the Slack
+        postMessage call, so that we don't block on communication with Slack.
+        """
+        create_task(
+            self.app.client.chat_postMessage(
+                channel=self.control_channel_id,
+                text=f"Override login on {machine.display_name} by {user_name}.",
+            )
+        )
+
     async def admin_log(self, message: str) -> None:
         """
         Log a string to the admin channel only.

@@ -134,6 +134,10 @@ class PromCustomCollector:
         temp_c: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
             "machine_esp_temperature_c", "The machine ESP32 internal temperature in °C"
         )
+        override_login_state: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_override_login_state",
+            "The override login state of the machine",
+        )
         led: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
             "machine_status_led", "The machine status LED state"
         )
@@ -143,6 +147,9 @@ class PromCustomCollector:
             relay_state.add_metric(labels, 1 if m.state.relay_desired_state else 0)
             oops_state.add_metric(labels, 1 if m.state.is_oopsed else 0)
             lockout_state.add_metric(labels, 1 if m.state.is_locked_out else 0)
+            override_login_state.add_metric(
+                labels, 1 if m.state.is_override_login else 0
+            )
             unauth_state.add_metric(labels, 1 if m.unauthorized_warn_only else 0)
             m_checkin.add_metric(labels, m.state.last_checkin or 0)
             m_update.add_metric(labels, m.state.last_update or 0)
@@ -179,6 +186,7 @@ class PromCustomCollector:
         yield relay_state
         yield oops_state
         yield lockout_state
+        yield override_login_state
         yield unauth_state
         yield m_checkin
         yield m_update
