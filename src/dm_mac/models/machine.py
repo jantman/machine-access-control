@@ -540,7 +540,7 @@ class MachineState:
             "RFID logout on %s by %s; session duration %d seconds%s",
             self.machine.display_name,
             self.current_user.full_name if self.current_user else self.rfid_value,
-            time() - cast(float, self.rfid_present_since),
+            int(time() - cast(float, self.rfid_present_since)),
             " (override session)" if was_override else "",
         )
         log_str: str = (

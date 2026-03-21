@@ -427,6 +427,7 @@ class NeonUserUpdater:
                     x
                     for x in user.keys()
                     if user[x] == self._config["authorized_field_value"]
+                    and x != override_field
                 ],
                 "oops_override": user.get(override_field)
                 == self._config["authorized_field_value"],
