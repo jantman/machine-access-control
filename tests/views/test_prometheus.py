@@ -70,6 +70,7 @@ class TestPrometheus:
         mill.state.internal_temperature_c = 102
         mill.state.status_led_rgb = (1, 2, 3)
         mill.state.status_led_brightness = 12
+        mill.state.is_override_login = True
         mill.state._save_cache()
         hammer: Machine = mconf.machines_by_name["hammer"]
         hammer.state.is_oopsed = True
@@ -140,6 +141,14 @@ class TestPrometheus:
         machine_lockout_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
         machine_lockout_state{display_name="esp32test",machine_name="esp32test"} 0.0
         machine_lockout_state{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
+        # HELP machine_override_login_state The override login state of the machine
+        # TYPE machine_override_login_state gauge
+        machine_override_login_state{display_name="Metal Mill",machine_name="metal-mill"} 1.0
+        machine_override_login_state{display_name="hammer",machine_name="hammer"} 0.0
+        machine_override_login_state{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
+        machine_override_login_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
+        machine_override_login_state{display_name="esp32test",machine_name="esp32test"} 0.0
+        machine_override_login_state{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
         # HELP machine_unauth_warn_only_state The unauthorized_warn_only state of the machine
         # TYPE machine_unauth_warn_only_state gauge
         machine_unauth_warn_only_state{display_name="Metal Mill",machine_name="metal-mill"} 0.0
@@ -324,6 +333,14 @@ class TestPrometheus:
         machine_lockout_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
         machine_lockout_state{display_name="esp32test",machine_name="esp32test"} 0.0
         machine_lockout_state{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
+        # HELP machine_override_login_state The override login state of the machine
+        # TYPE machine_override_login_state gauge
+        machine_override_login_state{display_name="Metal Mill",machine_name="metal-mill"} 0.0
+        machine_override_login_state{display_name="hammer",machine_name="hammer"} 0.0
+        machine_override_login_state{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
+        machine_override_login_state{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
+        machine_override_login_state{display_name="esp32test",machine_name="esp32test"} 0.0
+        machine_override_login_state{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
         # HELP machine_unauth_warn_only_state The unauthorized_warn_only state of the machine
         # TYPE machine_unauth_warn_only_state gauge
         machine_unauth_warn_only_state{display_name="Metal Mill",machine_name="metal-mill"} 0.0

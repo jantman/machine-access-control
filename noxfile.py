@@ -154,6 +154,10 @@ def safety(session: Session) -> None:
         "--strict",
         "--desc",
         f"--requirement={requirements}",
+        # pygments CVE-2026-4539: local-only ReDoS in ADL lexer,
+        # no fix available as of 2.19.2 (latest)
+        "--ignore-vuln",
+        "CVE-2026-4539",
     )
 
 

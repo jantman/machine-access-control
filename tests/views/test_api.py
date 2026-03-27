@@ -125,6 +125,7 @@ class TestReloadUsers:
                 "fob_codes": ["8114346998", "0012348901"],
                 "full_name": "Ashley Williams",
                 "preferred_name": "PAshley",
+                "oops_override": False,
             },
             {
                 "account_id": "3",
@@ -136,6 +137,7 @@ class TestReloadUsers:
                 "fob_codes": ["0091703745"],
                 "full_name": "Kenneth Hunter",
                 "preferred_name": "PKenneth",
+                "oops_override": False,
             },
             {
                 "account_id": "4",
@@ -153,6 +155,7 @@ class TestReloadUsers:
                 "fob_codes": ["0014916441"],
                 "full_name": "Jason Antman",
                 "preferred_name": "jantman",
+                "oops_override": True,
             },
             {
                 "account_id": "19",
@@ -164,6 +167,7 @@ class TestReloadUsers:
                 "fob_codes": ["8682768000"],
                 "full_name": "James Smith",
                 "preferred_name": "PJames",
+                "oops_override": False,
             },
         ]
         assert len(users.users_by_fob) == 5

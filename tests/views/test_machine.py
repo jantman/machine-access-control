@@ -3357,3 +3357,366 @@ class TestLockApi:
         )
         # check response
         assert response.status_code == 500
+
+
+@freeze_time("2023-07-16 03:14:08", tz_offset=0)
+class TestOverrideLogin:
+    """Tests for oops/lockout override login feature (T013-T017)."""
+
+    async def test_override_login_oopsed(self, tmp_path: Path) -> None:
+        """T013: Override login on an oopsed machine by user with oops_override."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        slack = AsyncMock(spec_set=SlackHandler)
+        app.config.update({"SLACK_HANDLER": slack})
+        # set up state - oops the machine first
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        # Oops the machine via update
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": True,
+                "rfid_value": "",
+                "uptime": 12.3,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        assert (await response.json)["oops_led"] is True
+        # reset slack mock to only track override login calls
+        slack.reset_mock()
+        # Now insert Jason's RFID (oops_override user)
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": True,
+            "display": "OVERRIDE BY\njantman",
+            "oops_led": True,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_override_login is True
+        assert ms.is_oopsed is True
+        assert ms.is_locked_out is False
+        assert ms.relay_desired_state is True
+        assert ms.display_text == "OVERRIDE BY\njantman"
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.rfid_value == "0014916441"
+        assert ms.current_user is not None
+        assert ms.current_user.account_id == "4"
+        # verify Slack
+        assert slack.log_override_login.mock_calls == [call(m, "Jason Antman")]
+
+    async def test_override_login_locked_out(self, tmp_path: Path) -> None:
+        """T014: Override login on a locked-out machine by user with oops_override."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        slack = AsyncMock(spec_set=SlackHandler)
+        app.config.update({"SLACK_HANDLER": slack})
+        # set up state - lock out the machine
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.lockout()
+        m.state._save_cache()
+        # reset slack mock
+        slack.reset_mock()
+        # Now insert Jason's RFID (oops_override user)
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": True,
+            "display": "OVERRIDE BY\njantman",
+            "oops_led": False,
+            "status_led_rgb": [0.0, 1.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state
+        assert ms.is_override_login is True
+        assert ms.is_locked_out is True
+        assert ms.is_oopsed is False
+        assert ms.relay_desired_state is True
+        assert ms.display_text == "OVERRIDE BY\njantman"
+        assert ms.status_led_rgb == (0.0, 1.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.rfid_value == "0014916441"
+        assert ms.current_user is not None
+        assert ms.current_user.account_id == "4"
+        # verify Slack
+        assert slack.log_override_login.mock_calls == [call(m, "Jason Antman")]
+
+    async def test_override_login_then_remove(self, tmp_path: Path) -> None:
+        """T015: Override login on oopsed machine, then card removed."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        slack = AsyncMock(spec_set=SlackHandler)
+        app.config.update({"SLACK_HANDLER": slack})
+        # set up state - oops the machine
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.uptime = 10.3
+        m.state._save_cache()
+        # Insert Jason's RFID (override login)
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        assert (await response.json)["relay"] is True
+        assert (await response.json)["display"] == "OVERRIDE BY\njantman"
+        # reset slack mock
+        slack.reset_mock()
+        # Now remove the card
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 14.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response - should return to oopsed state
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state - back to oopsed
+        assert ms.is_override_login is False
+        assert ms.is_oopsed is True
+        assert ms.is_locked_out is False
+        assert ms.relay_desired_state is False
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.rfid_value is None
+        assert ms.current_user is None
+
+    async def test_admin_clear_during_override(self, tmp_path: Path) -> None:
+        """T016: Admin clears oops during override login, then card removed."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        slack = AsyncMock(spec_set=SlackHandler)
+        app.config.update({"SLACK_HANDLER": slack})
+        # set up state - oops the machine
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.is_oopsed = True
+        m.state.display_text = MachineState.OOPS_DISPLAY_TEXT
+        m.state.status_led_rgb = (1.0, 0.0, 0.0)
+        m.state.status_led_brightness = MachineState.STATUS_LED_BRIGHTNESS
+        m.state.uptime = 10.3
+        m.state._save_cache()
+        # Insert Jason's RFID (override login)
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        assert (await response.json)["relay"] is True
+        # Admin clears oops via DELETE
+        response = await client.delete(
+            "/api/machine/oops/metal-mill",
+        )
+        assert response.status_code == 200
+        assert await response.json == {"success": True}
+        # reset slack mock
+        slack.reset_mock()
+        # Now remove the card
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 15.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response - should return to normal idle state (not oopsed)
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": False,
+            "display": MachineState.DEFAULT_DISPLAY_TEXT,
+            "oops_led": False,
+            "status_led_rgb": [0.0, 0.0, 0.0],
+            "status_led_brightness": 0.0,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state - back to normal idle
+        assert ms.is_override_login is False
+        assert ms.is_oopsed is False
+        assert ms.is_locked_out is False
+        assert ms.relay_desired_state is False
+        assert ms.display_text == MachineState.DEFAULT_DISPLAY_TEXT
+        assert ms.status_led_rgb == (0.0, 0.0, 0.0)
+        assert ms.status_led_brightness == 0.0
+        assert ms.rfid_value is None
+        assert ms.current_user is None
+
+    async def test_admin_oops_during_override(self, tmp_path: Path) -> None:
+        """T017: Admin oopses machine during override login on locked-out machine."""
+        # boilerplate for test
+        app: Quart
+        client: TestClientProtocol
+        app, client = app_and_client(tmp_path)
+        slack = AsyncMock(spec_set=SlackHandler)
+        app.config.update({"SLACK_HANDLER": slack})
+        # set up state - lock out the machine
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+        m.state.lockout()
+        m.state._save_cache()
+        # Insert Jason's RFID (override login)
+        response: Response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 13.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        assert (await response.json)["relay"] is True
+        # Admin oopses the machine via POST
+        response = await client.post(
+            "/api/machine/oops/metal-mill",
+        )
+        assert response.status_code == 200
+        assert await response.json == {"success": True}
+        # Verify relay is now off (oops takes effect immediately)
+        # Next MCU update with card still present should show oopsed state
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "0014916441",
+                "uptime": 14.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        assert response.status_code == 200
+        resp_json = await response.json
+        assert resp_json["relay"] is False
+        assert resp_json["oops_led"] is True
+        # reset slack mock
+        slack.reset_mock()
+        # Now remove the card
+        response = await client.post(
+            "/api/machine/update",
+            json={
+                "machine_name": mname,
+                "oops": False,
+                "rfid_value": "",
+                "uptime": 15.6,
+                "wifi_signal_db": -54,
+                "wifi_signal_percent": 92,
+                "internal_temperature_c": 53.89,
+            },
+        )
+        # check response - should stay in oopsed state
+        assert response.status_code == 200
+        assert await response.json == {
+            "relay": False,
+            "display": MachineState.OOPS_DISPLAY_TEXT,
+            "oops_led": True,
+            "status_led_rgb": [1.0, 0.0, 0.0],
+            "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+        }
+        # boilerplate to read state from disk
+        with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
+            ms: MachineState = MachineState(m)
+        # verify state - oopsed
+        assert ms.is_oopsed is True
+        assert ms.is_locked_out is True
+        assert ms.is_override_login is False
+        assert ms.relay_desired_state is False
+        assert ms.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert ms.status_led_rgb == (1.0, 0.0, 0.0)
+        assert ms.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        assert ms.rfid_value is None
+        assert ms.current_user is None

@@ -12,6 +12,8 @@ users.json
 
 Users are configured via a ``users.json`` file in the current directory, or another file name/path specified in the ``USERS_CONFIG`` environment variable. This file defines all of the users and their contact information, as well as their RFID fob code(s) and the authorizations/trainings they have. If using the Neon One CRM, this file can be auto-generated from your CRM Accounts via the :ref:`neon`.
 
+Each user may optionally include an ``oops_override`` boolean field (defaults to ``false``). When set to ``true``, the user can activate machines that are oopsed or locked out without clearing those states. This is intended for designated repair members who need to test machines without generating confusing Slack notifications. Existing ``users.json`` files without this field remain fully compatible.
+
 The schema of this file is as follows:
 
 .. jsonschema:: dm_mac.models.users.CONFIG_SCHEMA

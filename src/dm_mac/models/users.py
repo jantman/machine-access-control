@@ -48,6 +48,11 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                 "items": {"type": "string"},
                 "description": "List of authorized field names for user.",
             },
+            "oops_override": {
+                "type": "boolean",
+                "description": "Whether user can perform override logins on "
+                "oopsed/locked-out machines.",
+            },
         },
         "required": [
             "fob_codes",
@@ -79,6 +84,7 @@ class User:
         email: str,
         expiration_ymd: str,
         authorizations: List[str],
+        oops_override: bool = False,
     ):
         """Initialize one user."""
         self.fob_codes: List[str] = fob_codes
@@ -90,6 +96,7 @@ class User:
         self.email: str = email
         self.expiration_ymd: str = expiration_ymd
         self.authorizations: List[str] = authorizations
+        self.oops_override: bool = oops_override
 
     def __eq__(self, other: Any) -> bool:
         """Check equality between Users."""
@@ -114,6 +121,7 @@ class User:
             "first_name": self.first_name,
             "last_name": self.last_name,
             "preferred_name": self.preferred_name,
+            "oops_override": self.oops_override,
         }
 
 
@@ -195,6 +203,7 @@ class UsersConfig:
                     "email",
                     "expiration_ymd",
                     "authorizations",
+                    "oops_override",
                 ]:
                     if getattr(user, k) != getattr(nuser, k):
                         logger.warning(

@@ -53,7 +53,8 @@
         "full_name": "Jason Antman",
         "first_name": "Jason",
         "last_name": "Antman",
-        "preferred_name": "jantman"
+        "preferred_name": "jantman",
+        "oops_override": true
     },
     {
         "account_id": "19",

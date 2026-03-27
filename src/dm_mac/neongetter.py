@@ -81,6 +81,11 @@ CONFIG_SCHEMA: Dict[str, Any] = {
             "description": "Value for name of option indicating that "
             "member is authorized / training complete.",
         },
+        "oops_override_field": {
+            "type": "string",
+            "description": "Neon custom field name for the oops override "
+            "authorization checkbox. Defaults to 'OOPS_OVERRIDE'.",
+        },
         "static_fobs": {
             "type": "array",
             "items": {
@@ -124,6 +129,11 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "List of authorizations for this user.",
+                    },
+                    "oops_override": {
+                        "type": "boolean",
+                        "description": "Whether this user can perform "
+                        "override logins on oopsed/locked-out machines.",
                     },
                 },
                 "required": [
@@ -278,6 +288,9 @@ class NeonUserUpdater:
             self._config["last_name_field"],
             self._config["preferred_name_field"],
         ]
+        override_field: str = cast(
+            str, self._config.get("oops_override_field", "OOPS_OVERRIDE")
+        )
         customs: List[Dict[str, Any]] = self._get_custom_fields_raw()
         logger.debug("Neon API returned %d custom fields", len(customs))
         for cust in customs:
@@ -292,6 +305,8 @@ class NeonUserUpdater:
                     have_value = True
                     break
             if have_value:
+                field_names.append(int(cust["id"]))
+            elif cust["name"] == override_field:
                 field_names.append(int(cust["id"]))
         logger.info("Fields to get from Neon API: %s", field_names)
         return field_names
@@ -389,6 +404,9 @@ class NeonUserUpdater:
         logger.info("Generating users config")
         fobs: Dict[str, Dict[str, Any]] = {}
         dupes: List[str] = []
+        override_field: str = cast(
+            str, self._config.get("oops_override_field", "OOPS_OVERRIDE")
+        )
         for user in rawdata:
             # Handle last_name - if not in response, extract from full_name
             last_name = user.get(self._config["last_name_field"])  # type: ignore
@@ -409,7 +427,10 @@ class NeonUserUpdater:
                     x
                     for x in user.keys()
                     if user[x] == self._config["authorized_field_value"]
+                    and x != override_field
                 ],
+                "oops_override": user.get(override_field)
+                == self._config["authorized_field_value"],
             }
             for x in self._config["fob_fields"]:
                 if tmpfobs := user.get(x):
@@ -468,6 +489,9 @@ class NeonUserUpdater:
                     valid_fob_count += 1
                 # Only add the static user if they have at least one valid fob
                 if valid_fob_count > 0:
+                    # Set oops_override default for static users
+                    if "oops_override" not in static_user:
+                        static_user["oops_override"] = False
                     users.append(static_user)
             if dupes:
                 raise RuntimeError(

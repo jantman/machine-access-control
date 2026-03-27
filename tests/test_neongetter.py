@@ -222,6 +222,37 @@ class TestValidateConfig:
         }
         NeonUserUpdater.validate_config(config)
 
+    def test_valid_with_oops_override_field(self) -> None:
+        """Ensure config with oops_override_field validates successfully."""
+        config = {
+            "full_name_field": "Full Name (F)",
+            "first_name_field": "First Name",
+            "last_name_field": "Last Name",
+            "preferred_name_field": "Preferred Name",
+            "email_field": "Email 1",
+            "expiration_field": "Membership Expiration Date",
+            "account_id_field": "Account ID",
+            "fob_fields": ["Fob10Digit"],
+            "authorized_field_value": "Training Complete",
+            "oops_override_field": "CUSTOM_FIELD",
+        }
+        NeonUserUpdater.validate_config(config)
+
+    def test_valid_without_oops_override_field(self) -> None:
+        """Ensure config without oops_override_field validates successfully."""
+        config = {
+            "full_name_field": "Full Name (F)",
+            "first_name_field": "First Name",
+            "last_name_field": "Last Name",
+            "preferred_name_field": "Preferred Name",
+            "email_field": "Email 1",
+            "expiration_field": "Membership Expiration Date",
+            "account_id_field": "Account ID",
+            "fob_fields": ["Fob10Digit"],
+            "authorized_field_value": "Training Complete",
+        }
+        NeonUserUpdater.validate_config(config)
+
     def test_static_fobs_invalid_raises_exception(self) -> None:
         """Ensure invalid static_fobs raises an exception."""
         config = {

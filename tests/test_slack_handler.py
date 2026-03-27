@@ -687,6 +687,23 @@ class TestSlackHandler:
         assert self.slack_app.mock_calls == []
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_log_override_login(self, tmp_path) -> None:
+        """Test log_override_login method."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        machine = mconf.machines_by_name["metal-mill"]
+        await self.cls.log_override_login(machine, "Some User")
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="Override login on Metal Mill by Some User.",
+            ),
+        ]
+        assert self.slack_app.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
     async def test_handle_command_oops_by_alias(self, tmp_path) -> None:
         """Oops command using machine alias instead of name."""
         self.slack_app.reset_mock()

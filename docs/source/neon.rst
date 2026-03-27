@@ -100,6 +100,17 @@ This script uses custom fields on users' Neon Accounts to store whether or not t
 
 For each user, their list of authorizations will be made up of the custom field names, which on their account have a value matching the "authorized_field_value".
 
+.. _neon.config.oops_override:
+
+Oops Override Field
++++++++++++++++++++
+
+The configuration file supports an optional ``oops_override_field`` setting that specifies a NeonOne custom field name for the oops override authorization. This defaults to ``"OOPS_OVERRIDE"`` if not specified.
+
+The field must be a "Checkbox" type custom field in Neon. If a user's account has this field set to the ``authorized_field_value`` (e.g., "Training Complete"), the user will be granted override authorization (``oops_override: true`` in ``users.json``). This allows designated repair members to activate oopsed or locked-out machines without clearing those states.
+
+Static fob users can also be granted override authorization by including ``"oops_override": true`` in their static fob entry.
+
 .. _neon.running:
 
 Usage

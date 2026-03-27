@@ -142,6 +142,7 @@ class TestSaveCache(MachineStateTester):
             "relay_desired_state": False,
             "is_oopsed": False,
             "is_locked_out": False,
+            "is_override_login": False,
             "current_amps": 0,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
@@ -191,6 +192,7 @@ class TestSaveCache(MachineStateTester):
             "relay_desired_state": True,
             "is_oopsed": True,
             "is_locked_out": True,
+            "is_override_login": False,
             "current_amps": 12,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
@@ -235,6 +237,7 @@ class TestLoadFromCache(MachineStateTester):
             "relay_desired_state": False,
             "is_oopsed": False,
             "is_locked_out": False,
+            "is_override_login": False,
             "current_amps": 0,
             "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
             "uptime": 0,
@@ -288,6 +291,7 @@ class TestLoadFromCache(MachineStateTester):
             "relay_desired_state": True,
             "is_oopsed": True,
             "is_locked_out": True,
+            "is_override_login": False,
             "current_amps": 12,
             "display_text": "Some text",
             "uptime": 1234,
@@ -383,3 +387,127 @@ class TestMachineResponse(MachineStateTester):
             "status_led_rgb": [0.25, 0.3, 0.4],
             "status_led_brightness": 0.25,
         }
+
+
+class TestOverrideLogin(MachineStateTester):
+    """Tests for the oops/lockout override login feature."""
+
+    def test_init_default(self) -> None:
+        """Test that is_override_login defaults to False on init."""
+        assert self.cls.is_override_login is False
+
+    def test_save_cache_includes_override_login(self, tmp_path: Path) -> None:
+        """Test that _save_cache persists is_override_login."""
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        self.cls.is_override_login = True
+        self.cls._save_cache()
+        with open(os.path.join(tmp_path, "MachineName-state.pickle"), "rb") as f:
+            state = pickle.load(f)
+        assert state["is_override_login"] is True
+
+    def test_save_cache_override_login_false(self, tmp_path: Path) -> None:
+        """Test that _save_cache persists is_override_login=False."""
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        self.cls._save_cache()
+        with open(os.path.join(tmp_path, "MachineName-state.pickle"), "rb") as f:
+            state = pickle.load(f)
+        assert state["is_override_login"] is False
+
+    def test_load_from_cache_with_override_login(self, tmp_path: Path) -> None:
+        """Test that _load_from_cache loads is_override_login when present."""
+        state = {
+            "machine_name": "MachineName",
+            "last_checkin": None,
+            "last_update": None,
+            "rfid_value": None,
+            "rfid_present_since": None,
+            "relay_desired_state": False,
+            "is_oopsed": False,
+            "is_locked_out": False,
+            "is_override_login": True,
+            "current_amps": 0,
+            "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
+            "uptime": 0,
+            "status_led_rgb": (0, 0, 0),
+            "status_led_brightness": 0,
+            "wifi_signal_db": None,
+            "wifi_signal_percent": None,
+            "internal_temperature_c": None,
+            "current_user": None,
+        }
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        with open(os.path.join(tmp_path, "MachineName-state.pickle"), "wb") as f:
+            pickle.dump(state, f, pickle.HIGHEST_PROTOCOL)
+        self.cls._load_from_cache()
+        assert self.cls.is_override_login is True
+
+    def test_load_from_cache_backward_compat(self, tmp_path: Path) -> None:
+        """Test backward compat: old pickle without is_override_login defaults to False."""
+        state = {
+            "machine_name": "MachineName",
+            "last_checkin": None,
+            "last_update": None,
+            "rfid_value": None,
+            "rfid_present_since": None,
+            "relay_desired_state": False,
+            "is_oopsed": False,
+            "is_locked_out": False,
+            "current_amps": 0,
+            "display_text": MachineState.DEFAULT_DISPLAY_TEXT,
+            "uptime": 0,
+            "status_led_rgb": (0, 0, 0),
+            "status_led_brightness": 0,
+            "wifi_signal_db": None,
+            "wifi_signal_percent": None,
+            "internal_temperature_c": None,
+            "current_user": None,
+        }
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        with open(os.path.join(tmp_path, "MachineName-state.pickle"), "wb") as f:
+            pickle.dump(state, f, pickle.HIGHEST_PROTOCOL)
+        self.cls._load_from_cache()
+        # is_override_login not in pickle, so it stays at init default
+        assert self.cls.is_override_login is False
+
+    def test_oops_with_override_login_set(self) -> None:
+        """Test that oops() still works when is_override_login is True."""
+        self.cls.is_override_login = True
+        self.cls.relay_desired_state = True
+        self.cls.oops()
+        assert self.cls.is_oopsed is True
+        assert self.cls.relay_desired_state is False
+        assert self.cls.current_user is None
+        assert self.cls.display_text == MachineState.OOPS_DISPLAY_TEXT
+        assert self.cls.status_led_rgb == (1.0, 0.0, 0.0)
+        assert self.cls.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+        # Note: oops() does not clear is_override_login itself
+        # That is handled by the rfid remove / reboot paths
+
+    def test_lockout_with_override_login_set(self) -> None:
+        """Test that lockout() still works when is_override_login is True."""
+        self.cls.is_override_login = True
+        self.cls.relay_desired_state = True
+        self.cls.lockout()
+        assert self.cls.is_locked_out is True
+        assert self.cls.relay_desired_state is False
+        assert self.cls.current_user is None
+        assert self.cls.display_text == MachineState.LOCKOUT_DISPLAY_TEXT
+        assert self.cls.status_led_rgb == (1.0, 0.5, 0.0)
+        assert self.cls.status_led_brightness == MachineState.STATUS_LED_BRIGHTNESS
+
+    def test_save_load_roundtrip(self, tmp_path: Path) -> None:
+        """Test that is_override_login survives a save/load roundtrip."""
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        self.cls.is_override_login = True
+        self.cls.is_oopsed = True
+        self.cls.relay_desired_state = True
+        self.cls._save_cache()
+        # Reset state to defaults
+        self.cls.is_override_login = False
+        self.cls.is_oopsed = False
+        self.cls.relay_desired_state = False
+        # Load from cache should restore
+        self.cls._load_from_cache()
+        assert self.cls.is_override_login is True
+        assert self.cls.is_oopsed is True
+        assert self.cls.relay_desired_state is True

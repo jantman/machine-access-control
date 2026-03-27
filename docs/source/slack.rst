@@ -55,3 +55,14 @@ Using an example bot name of ``@machine-access-control``, the supported commands
 **Note:** If a machine has an ``alias`` configured in ``machines.json``, the bot's responses will use the alias instead of the machine name for better readability.
 
 In addition, changes to all machines' Oops and maintenance lock-out states will be posted as messages in the ``SLACK_OOPS_CHANNEL_ID`` channel.
+
+.. _slack.override_logins:
+
+Override Login Notifications
+----------------------------
+
+When a user with ``oops_override`` authorization performs an override login on an oopsed or locked-out machine, a notification is posted **only** to the ``SLACK_CONTROL_CHANNEL_ID`` channel with the format:
+
+    ``Override login on <machine name> by <user name>.``
+
+No notification is posted to the ``SLACK_OOPS_CHANNEL_ID`` channel for override events. This prevents confusing "un-oops" or "unlock" messages from appearing in the public channel when repair members are testing machines. When the override user removes their card, a logout message is posted to the control channel with an ``(override session)`` suffix.

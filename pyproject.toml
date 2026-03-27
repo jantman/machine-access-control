@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "machine_access_control"
-version = "0.9.1"
+version = "0.10.0"
 description = "Decatur Makers Machine Access Control package"
 authors = ["Jason Antman <jason@jasonantman.com>"]
 license = "MIT"
@@ -62,7 +62,6 @@ pre-commit = ">=2.16.0"
 pre-commit-hooks = ">=4.1.0"
 pytest = ">=6.2.5"
 pyupgrade = ">=2.29.1"
-safety = ">=1.10.3"
 typeguard = ">=2.13.3"
 types-jsonschema = "^4.23.0.20240712"
 pytest-blockage = "^0.2.4"
