@@ -43,27 +43,28 @@ jobs:
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'
 
-          allowed_tools: |
-            Bash(git add:*)
-            Bash(git commit:*)
-            Bash(git checkout:*)
-            Bash(git diff:*)
-            Bash(git log:*)
-            Bash(git status:*)
-            Bash(git fetch:*)
-            Bash(git branch:*)
-            Bash(git push:*)
-            Bash(nox:*)
-            Bash(poetry:*)
-            Bash(pip install:*)
-            Bash(pip index:*)
-            Bash(gh pr:*)
-            Bash(gh pr view:*)
-            Bash(gh pr list:*)
-            Bash(gh api:*)
-            Bash(gh run:*)
-            Bash(cat:*)
-            Bash(ls:*)
+          claude_args: >-
+            --allowedTools
+            "Bash(git add:*)"
+            "Bash(git commit:*)"
+            "Bash(git checkout:*)"
+            "Bash(git diff:*)"
+            "Bash(git log:*)"
+            "Bash(git status:*)"
+            "Bash(git fetch:*)"
+            "Bash(git branch:*)"
+            "Bash(git push:*)"
+            "Bash(nox:*)"
+            "Bash(poetry:*)"
+            "Bash(pip install:*)"
+            "Bash(pip index:*)"
+            "Bash(gh pr:*)"
+            "Bash(gh pr view:*)"
+            "Bash(gh pr list:*)"
+            "Bash(gh api:*)"
+            "Bash(gh run:*)"
+            "Bash(cat:*)"
+            "Bash(ls:*)"
             Read
             Write
             Edit
