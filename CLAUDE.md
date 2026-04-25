@@ -199,3 +199,8 @@ We have a special process for developing features. When asked to begin work on a
 
 ## Recent Changes
 - 001-oops-override: Added Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
