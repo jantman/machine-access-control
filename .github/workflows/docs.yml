@@ -32,7 +32,7 @@ jobs:
           GITHUB_REF_NAME: ${{ github.event.client_payload.pull_request.head.ref || github.event.pull_request.head.ref || github.ref_name }}
         run: |
           nox --non-interactive --session=docs
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: build
           path: docs/build
@@ -58,9 +58,9 @@ jobs:
         run: |
           touch docs/build/.nojekyll
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/build
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
