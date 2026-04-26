@@ -24,7 +24,7 @@ Holds the authorization rules governing a machine's second relay. Constructed du
 ### Validation rules
 
 - `authorizations_or` MUST be a list of at least one string when `always_enabled` is `false`. (Same rule as root machine config.)
-- When `always_enabled` is `true`, `authorizations_or` MUST still be present and non-empty (consistency with root config; the list is unused at decision time but kept for symmetry and future flexibility).
+- When `always_enabled` is `true`, `authorizations_or` MUST still be present and non-empty (consistency with root machine schema; avoids a conditional schema rule). The list is unused at decision time when `always_enabled` is true.
 - `alias`, if present, MUST be a non-empty string.
 - The `second_relay` block MUST NOT itself contain a nested `second_relay` (no recursion). Schema enforces via explicit `additionalProperties: false`.
 - Unknown fields MUST be rejected at config load time (`additionalProperties: false`).
