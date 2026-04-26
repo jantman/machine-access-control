@@ -196,6 +196,8 @@ We have a special process for developing features. When asked to begin work on a
 ## Active Technologies
 - Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize (001-oops-override)
 - JSON config files (users.json, machines.json), pickle state files with file locking (001-oops-override)
+- Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize, pydantic (existing) (002-second-relay-support)
+- JSON config files (`machines.json`, `users.json`); per-machine pickle state under `MACHINE_STATE_DIR` (default `./machine_state/`) protected by `filelock` (002-second-relay-support)
 
 ## Recent Changes
 - 001-oops-override: Added Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize
