@@ -3,6 +3,8 @@
 import os
 import pickle
 from pathlib import Path
+from typing import Iterable
+from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -16,7 +18,7 @@ pbm: str = "dm_mac.models.machine"
 pb: str = f"{pbm}.MachineState"
 
 
-def _make_user(name: str, auths) -> User:
+def _make_user(name: str, auths: Iterable[str]) -> User:
     """Make a real User-like object for tests."""
     return User(
         fob_codes=["0000000000"],
@@ -32,7 +34,8 @@ def _make_user(name: str, auths) -> User:
 
 
 def _make_machine_state(
-    second_relay: SecondRelayConfig = None, root_always_enabled: bool = False
+    second_relay: Optional[SecondRelayConfig] = None,
+    root_always_enabled: bool = False,
 ) -> MachineState:
     """Build a MachineState with a real Machine wrapping a SecondRelayConfig."""
     mach: Machine = Mock(spec_set=Machine)
@@ -149,6 +152,24 @@ class TestResolveSecondRelay:
         )
         cls = _make_machine_state(second_relay=sr)
         cls.relay_desired_state = False
+        cls.current_user = None
+        cls._resolve_second_relay()
+        assert cls.second_relay_desired_state is False
+        assert cls.second_relay_authorization is None
+
+    def test_warn_only_with_no_current_user_short_circuits(self) -> None:
+        """warn-only must NOT energize the accessory when no user is present.
+
+        Scenario: root machine is always_enabled (so primary relay is on
+        even without RFID) and second_relay has unauthorized_warn_only=true
+        but NOT always_enabled. There is no identified operator, so the
+        warn-only override does not apply and the second relay stays off.
+        """
+        sr = SecondRelayConfig(
+            authorizations_or=["secondary_auth"], unauthorized_warn_only=True
+        )
+        cls = _make_machine_state(second_relay=sr, root_always_enabled=True)
+        cls.relay_desired_state = True  # always_enabled root
         cls.current_user = None
         cls._resolve_second_relay()
         assert cls.second_relay_desired_state is False

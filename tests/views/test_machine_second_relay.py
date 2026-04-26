@@ -3,7 +3,10 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
+from typing import Tuple
 
+from _pytest.logging import LogCaptureFixture
 from freezegun import freeze_time
 from quart import Quart
 from quart import Response
@@ -24,7 +27,7 @@ FOB_SHARED_ONLY = "1000000004"
 FOB_ASHLEY = "8114346998"  # has Metal Lathe etc.
 
 
-def _client(tmp_path: Path):
+def _client(tmp_path: Path) -> Tuple[Quart, TestClientProtocol]:
     """Build app/client wired to the second-relay fixtures."""
     return app_and_client(
         tmp_path,
@@ -33,7 +36,9 @@ def _client(tmp_path: Path):
     )
 
 
-async def _post_update(client: TestClientProtocol, mname: str, **overrides) -> Response:
+async def _post_update(
+    client: TestClientProtocol, mname: str, **overrides: Any
+) -> Response:
     body = {
         "machine_name": mname,
         "oops": False,
@@ -346,7 +351,7 @@ class TestUS4SingleRelayCompat:
         assert body["second_relay"] is False
 
     async def test_no_second_relay_log_text_for_single_relay(
-        self, tmp_path: Path, caplog
+        self, tmp_path: Path, caplog: LogCaptureFixture
     ) -> None:
         """[US4 T032] No log mentions 'second relay', 'accessory', etc."""
         import logging

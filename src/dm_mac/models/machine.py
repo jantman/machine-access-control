@@ -885,7 +885,13 @@ class MachineState:
                 self.second_relay_authorization = "always_enabled"
             else:
                 user: Optional[User] = self.current_user
-                if user is not None and self._user_is_second_authorized(user):
+                if user is None:
+                    # No identified operator (e.g., root always_enabled with
+                    # no RFID present). warn-only does not apply because
+                    # there is no operator to warn about — fail closed.
+                    self.second_relay_desired_state = False
+                    self.second_relay_authorization = None
+                elif self._user_is_second_authorized(user):
                     self.second_relay_desired_state = True
                     self.second_relay_authorization = "granted"
                 elif sr.unauthorized_warn_only:

@@ -1,8 +1,12 @@
 """[US3 T037] Tests for structured AUTH logs from second-relay decisions."""
 
 import logging
+from typing import Iterable
+from typing import Optional
 from unittest.mock import Mock
 from unittest.mock import patch
+
+from _pytest.logging import LogCaptureFixture
 
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
@@ -14,7 +18,7 @@ pbm: str = "dm_mac.models.machine"
 pb: str = f"{pbm}.MachineState"
 
 
-def _make_user(name: str, auths) -> User:
+def _make_user(name: str, auths: Iterable[str]) -> User:
     return User(
         fob_codes=["0000000000"],
         account_id="acct-" + name,
@@ -28,7 +32,10 @@ def _make_user(name: str, auths) -> User:
     )
 
 
-def _make_state(second_relay=None, alias=None) -> MachineState:
+def _make_state(
+    second_relay: Optional[SecondRelayConfig] = None,
+    alias: Optional[str] = None,
+) -> MachineState:
     mach: Machine = Mock(spec_set=Machine)
     type(mach).name = "m1"
     type(mach).display_name = alias if alias else "m1"
@@ -42,7 +49,7 @@ def _make_state(second_relay=None, alias=None) -> MachineState:
 class TestStructuredAuthLogs:
     """AUTH logger emits one record per second-relay decision."""
 
-    def test_granted_log(self, caplog) -> None:
+    def test_granted_log(self, caplog: LogCaptureFixture) -> None:
         sr = SecondRelayConfig(authorizations_or=["secondary"], alias="Rotary")
         cls = _make_state(second_relay=sr, alias="Laser Cutter")
         cls.relay_desired_state = True
@@ -56,7 +63,7 @@ class TestStructuredAuthLogs:
             for r in caplog.records
         )
 
-    def test_denied_log(self, caplog) -> None:
+    def test_denied_log(self, caplog: LogCaptureFixture) -> None:
         sr = SecondRelayConfig(authorizations_or=["secondary"], alias="Rotary")
         cls = _make_state(second_relay=sr, alias="Laser Cutter")
         cls.relay_desired_state = True
@@ -70,7 +77,7 @@ class TestStructuredAuthLogs:
             for r in caplog.records
         )
 
-    def test_warn_log(self, caplog) -> None:
+    def test_warn_log(self, caplog: LogCaptureFixture) -> None:
         sr = SecondRelayConfig(
             authorizations_or=["secondary"],
             unauthorized_warn_only=True,
@@ -87,7 +94,7 @@ class TestStructuredAuthLogs:
             for r in caplog.records
         )
 
-    def test_always_enabled_log(self, caplog) -> None:
+    def test_always_enabled_log(self, caplog: LogCaptureFixture) -> None:
         sr = SecondRelayConfig(authorizations_or=["x"], always_enabled=True)
         cls = _make_state(second_relay=sr, alias="Mill")
         cls.relay_desired_state = True
@@ -98,7 +105,9 @@ class TestStructuredAuthLogs:
             for r in caplog.records
         )
 
-    def test_uses_default_accessory_name_when_no_alias(self, caplog) -> None:
+    def test_uses_default_accessory_name_when_no_alias(
+        self, caplog: LogCaptureFixture
+    ) -> None:
         sr = SecondRelayConfig(authorizations_or=["secondary"])
         cls = _make_state(second_relay=sr, alias="Mill")
         cls.relay_desired_state = True
@@ -110,7 +119,7 @@ class TestStructuredAuthLogs:
             for r in caplog.records
         )
 
-    def test_no_log_when_not_configured(self, caplog) -> None:
+    def test_no_log_when_not_configured(self, caplog: LogCaptureFixture) -> None:
         cls = _make_state(second_relay=None)
         cls.relay_desired_state = True
         with caplog.at_level(logging.DEBUG, logger="AUTH"):

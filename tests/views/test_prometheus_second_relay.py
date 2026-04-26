@@ -30,15 +30,28 @@ class TestPrometheusSecondRelay:
         assert "machine_second_relay_configured" in text
         assert "machine_second_relay_unauth_warn_only" in text
         assert "machine_second_relay_always_enabled" in text
-        # Configured=1 for the second-relay-strict machine
+        # Exact label set for second-relay-strict (root alias "Second Relay Strict",
+        # second_relay alias "Strict Accessory"):
         assert (
-            'machine_second_relay_configured{display_name="second-relay-strict",'
-            'machine_name="second-relay-strict",second_relay_alias=""} 1.0'
-        ) in text or (
-            'machine_second_relay_configured{display_name="Second Relay Strict"'
+            'machine_second_relay_configured{display_name="Second Relay Strict",'
+            'machine_name="second-relay-strict",'
+            'second_relay_alias="Strict Accessory"} 1.0'
+        ) in text
+        # And for second-relay-warn (no root alias, no second_relay alias):
+        assert (
+            'machine_second_relay_configured{display_name="second-relay-warn",'
+            'machine_name="second-relay-warn",second_relay_alias=""} 1.0'
+        ) in text
+        assert (
+            'machine_second_relay_unauth_warn_only{display_name="second-relay-warn",'
+            'machine_name="second-relay-warn",second_relay_alias=""} 1.0'
+        ) in text
+        # always_enabled flag set on second-relay-always:
+        assert (
+            'machine_second_relay_always_enabled{display_name="second-relay-always",'
+            'machine_name="second-relay-always",second_relay_alias=""} 1.0'
         ) in text
         # No sample for the single-relay machine in this fixture
-        # (it appears in second_relay_state? It SHOULD NOT.)
         for line in text.splitlines():
             if line.startswith("machine_second_relay_"):
                 # Only entries for machines with a configured second_relay
