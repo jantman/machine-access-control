@@ -109,6 +109,7 @@ class TestUpdateNewMachine:
             "oops_led": False,
             "status_led_rgb": [0, 0, 0],
             "status_led_brightness": 0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -160,6 +161,7 @@ class TestUpdateNewMachine:
             "oops_led": False,
             "status_led_rgb": [0, 0, 0],
             "status_led_brightness": 0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -204,6 +206,7 @@ class TestUpdateNewMachine:
             "oops_led": False,
             "status_led_rgb": [0, 0, 0],
             "status_led_brightness": 0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -261,6 +264,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0, 0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -314,6 +318,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0, 0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -376,6 +381,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0, 0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -437,6 +443,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -501,6 +508,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -569,6 +577,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -631,6 +640,7 @@ class TestOops:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -692,6 +702,7 @@ class TestLockOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.5, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -755,6 +766,7 @@ class TestLockOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.5, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -817,6 +829,7 @@ class TestLockOut:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -883,6 +896,7 @@ class TestReboot:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -947,6 +961,7 @@ class TestReboot:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1008,6 +1023,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1062,6 +1078,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1122,6 +1139,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1184,6 +1202,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1248,6 +1267,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1309,6 +1329,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.5, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1368,6 +1389,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.5, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1436,6 +1458,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1491,6 +1514,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1548,6 +1572,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1613,6 +1638,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1677,6 +1703,7 @@ class TestRfidChanged:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1739,6 +1766,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1801,6 +1829,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1856,6 +1885,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1915,6 +1945,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -1987,6 +2018,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2042,6 +2074,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2104,6 +2137,7 @@ class TestRfidUnauthorizedWarnOnly:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2165,6 +2199,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2223,6 +2258,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2287,6 +2323,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2350,6 +2387,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2409,6 +2447,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2472,6 +2511,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2531,6 +2571,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2592,6 +2633,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2661,6 +2703,7 @@ class TestRfidChangedWhenOopsed:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2722,6 +2765,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2780,6 +2824,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2845,6 +2890,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2908,6 +2954,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -2967,6 +3014,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3030,6 +3078,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3089,6 +3138,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3152,6 +3202,7 @@ class TestRfidChangedWhenLockedOut:
             "oops_led": False,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3412,6 +3463,7 @@ class TestOverrideLogin:
             "oops_led": True,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3466,6 +3518,7 @@ class TestOverrideLogin:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3540,6 +3593,7 @@ class TestOverrideLogin:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3616,6 +3670,7 @@ class TestOverrideLogin:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):
@@ -3706,6 +3761,7 @@ class TestOverrideLogin:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         with patch.dict("os.environ", {"MACHINE_STATE_DIR": m.state._state_dir}):

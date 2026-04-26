@@ -259,6 +259,11 @@ class SlackHandler:
         if not acted:
             await say(f"Machine {mach.display_name} is not oopsed or locked-out.")
 
+    @staticmethod
+    def _both_relays_suffix(machine: Machine) -> str:
+        """Return ' (both relays)' if machine has second_relay, else empty."""
+        return " (both relays)" if machine.second_relay is not None else ""
+
     async def log_unoops(self, machine: Machine, source: str) -> None:
         """
         Log when a machine is un-oopsed.
@@ -268,10 +273,11 @@ class SlackHandler:
         Otherwise, updates to the relay/LCD/LED would be delayed by at least the
         timeout trying to post to Slack.
         """
+        suffix = self._both_relays_suffix(machine)
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.display_name} un-oopsed via {source}.",
+                text=f"Machine {machine.display_name} un-oopsed via {source}.{suffix}",
             )
         )
         create_task(
@@ -292,10 +298,14 @@ class SlackHandler:
         Otherwise, updates to the relay/LCD/LED would be delayed by at least the
         timeout trying to post to Slack.
         """
+        suffix = self._both_relays_suffix(machine)
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.display_name} oopsed via {source} by {user_name}.",
+                text=(
+                    f"Machine {machine.display_name} oopsed via {source} by "
+                    f"{user_name}.{suffix}"
+                ),
             )
         )
         create_task(
@@ -314,10 +324,14 @@ class SlackHandler:
         Otherwise, updates to the relay/LCD/LED would be delayed by at least the
         timeout trying to post to Slack.
         """
+        suffix = self._both_relays_suffix(machine)
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.display_name} locked-out cleared via {source}.",
+                text=(
+                    f"Machine {machine.display_name} locked-out cleared via "
+                    f"{source}.{suffix}"
+                ),
             )
         )
         create_task(
@@ -337,10 +351,14 @@ class SlackHandler:
         Otherwise, updates to the relay/LCD/LED would be delayed by at least the
         timeout trying to post to Slack.
         """
+        suffix = self._both_relays_suffix(machine)
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.display_name} locked-out via {source}.",
+                text=(
+                    f"Machine {machine.display_name} locked-out via "
+                    f"{source}.{suffix}"
+                ),
             )
         )
         create_task(

@@ -1,6 +1,7 @@
 """Request and response models for API endpoint validation."""
 
 from typing import List
+from typing import Optional
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -26,6 +27,12 @@ class MachineUpdateRequest(BaseModel):
         default=0.0,
         description="Amperage from the current clamp ammeter, if present.",
     )
+    second_relay_state: Optional[bool] = Field(
+        default=None,
+        description="Actual current state of the second relay as known to the "
+        "MCU; reported for observability only and never used in "
+        "authorization decisions. Older firmware omits this field.",
+    )
 
 
 class MachineUpdateResponse(BaseModel):
@@ -39,6 +46,12 @@ class MachineUpdateResponse(BaseModel):
     )
     status_led_brightness: float = Field(
         description="Brightness of the status LED (0.0-1.0)."
+    )
+    second_relay: bool = Field(
+        default=False,
+        description="Desired state of the second relay (V1 hardware GPIO14). "
+        "Always emitted; firmware that does not know about this "
+        "field ignores it.",
     )
 
 

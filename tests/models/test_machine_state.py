@@ -24,6 +24,7 @@ class MachineStateTester:
         """Setup mocks and a test class instance."""
         self.machine: Machine = Mock(spec_set=Machine)
         type(self.machine).name = "MachineName"
+        type(self.machine).second_relay = None
         with patch(f"{pb}._load_from_cache") as self.m_load:
             with patch(f"{pb}._save_cache") as self.m_save:
                 with patch(f"{pbm}.os.makedirs"):
@@ -152,6 +153,8 @@ class TestSaveCache(MachineStateTester):
             "wifi_signal_percent": None,
             "internal_temperature_c": None,
             "current_user": None,
+            "second_relay_desired_state": False,
+            "second_relay_authorization": None,
         }
 
     def test_non_defaults(self, tmp_path: Path, fixtures_path: str) -> None:
@@ -202,6 +205,8 @@ class TestSaveCache(MachineStateTester):
             "wifi_signal_percent": 0.9,
             "internal_temperature_c": 52.1,
             "current_user": user,
+            "second_relay_desired_state": False,
+            "second_relay_authorization": None,
         }
 
 
@@ -371,6 +376,7 @@ class TestMachineResponse(MachineStateTester):
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
 
     def test_nondefault_state(self) -> None:
@@ -386,6 +392,7 @@ class TestMachineResponse(MachineStateTester):
             "oops_led": True,
             "status_led_rgb": [0.25, 0.3, 0.4],
             "status_led_brightness": 0.25,
+            "second_relay": False,
         }
 
 

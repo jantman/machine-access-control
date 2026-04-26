@@ -1,0 +1,63 @@
+[
+    {
+        "account_id": "100",
+        "authorizations": [
+            "primary_auth"
+        ],
+        "email": "primary@example.net",
+        "expiration_ymd": "2099-01-01",
+        "fob_codes": [
+            "1000000001"
+        ],
+        "full_name": "Primary Only",
+        "first_name": "Primary",
+        "last_name": "Only",
+        "preferred_name": "PrimaryOnly"
+    },
+    {
+        "account_id": "101",
+        "authorizations": [
+            "secondary_auth"
+        ],
+        "email": "secondary@example.net",
+        "expiration_ymd": "2099-01-01",
+        "fob_codes": [
+            "1000000002"
+        ],
+        "full_name": "Secondary Only",
+        "first_name": "Secondary",
+        "last_name": "Only",
+        "preferred_name": "SecondaryOnly"
+    },
+    {
+        "account_id": "102",
+        "authorizations": [
+            "primary_auth",
+            "secondary_auth"
+        ],
+        "email": "both@example.net",
+        "expiration_ymd": "2099-01-01",
+        "fob_codes": [
+            "1000000003"
+        ],
+        "full_name": "Both Auths",
+        "first_name": "Both",
+        "last_name": "Auths",
+        "preferred_name": "BothAuths"
+    },
+    {
+        "account_id": "103",
+        "authorizations": [
+            "shared_auth"
+        ],
+        "email": "shared@example.net",
+        "expiration_ymd": "2099-01-01",
+        "fob_codes": [
+            "1000000004"
+        ],
+        "full_name": "Shared Auth",
+        "first_name": "Shared",
+        "last_name": "Auth",
+        "preferred_name": "SharedAuth"
+    }
+]

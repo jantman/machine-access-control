@@ -2,7 +2,7 @@
 
 **Feature Branch**: `002-second-relay-support`
 **Created**: 2026-04-25
-**Status**: Draft
+**Status**: Implemented
 **Input**: GitHub Issue #129 — "Second Relay Support"
 
 ## Summary
@@ -135,3 +135,9 @@ Existing machines without a `second_relay` block in `machines.json` continue to 
 - The locking/oops/admin Slack commands continue to operate at the machine level (not per-relay). There is no anticipated need for second-relay-only administrative actions in this feature.
 - Documentation for `machines.json`, MCU firmware, and operator behavior will be updated in step with the implementation; no separate documentation phase is required.
 - The configuration property name `second_relay` (snake_case) is used to match the rest of the `machines.json` schema, despite the issue text using `secondRelay`. The issue's spelling is treated as descriptive, not prescriptive.
+
+## Implementation Notes
+
+- Implemented on branch `002-second-relay-support` (2026-04-26). All four user stories (US1, US2, US3, US4) ship together. See `tasks.md` for the task list and `quickstart.md` for the administrator-facing walkthrough.
+- The MCU `/machine/update` response always emits `second_relay: false` for machines without `second_relay` configured (documented trade-off in `data-model.md`); this is the only protocol-level deviation from byte-identity for single-relay machines and is invisible to firmware that does not look at the field.
+- Prometheus metrics for second-relay state are only emitted when at least one configured machine has a `second_relay` block, keeping single-relay deployments byte-identical at `/metrics`.

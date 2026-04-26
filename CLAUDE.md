@@ -108,6 +108,11 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
   - `unauthorized_warn_only`: (optional) Allow operation but log warning for unauthorized users
   - `always_enabled`: (optional) Machine always enabled without RFID authentication, displays "Always On"
   - `alias`: (optional) Human-friendly name used in Slack messages and logs instead of machine name
+  - `second_relay`: (optional) Object configuring an additional output relay (V1 hardware GPIO14 / connector pin 6) gated on a separate authorization. The second relay only energizes when the primary relay is energized AND the operator additionally satisfies these settings:
+    - `authorizations_or`: (required) List of authorizations, any one of which is sufficient to energize the second relay
+    - `unauthorized_warn_only`: (optional) Energize the second relay even for primary-authorized operators lacking secondary auth, with a warning logged + Slacked
+    - `always_enabled`: (optional) Second relay tracks the primary relay's state regardless of secondary auth
+    - `alias`: (optional) Human-readable name for the accessory (used in Slack/log lines that refer specifically to the second relay)
 - Users: `users.json` (schema in `models/users.py::CONFIG_SCHEMA`)
 - Machine names must match ESPHome configs and can only contain `[a-z0-9_-]`
 - Machines can be looked up by either name or alias in Slack commands
