@@ -277,7 +277,7 @@ class SlackHandler:
         create_task(
             self.app.client.chat_postMessage(
                 channel=self.control_channel_id,
-                text=f"Machine {machine.display_name} un-oopsed via {source}.{suffix}",
+                text=f"Machine {machine.display_name} un-oopsed via {source}{suffix}.",
             )
         )
         create_task(
@@ -304,7 +304,7 @@ class SlackHandler:
                 channel=self.control_channel_id,
                 text=(
                     f"Machine {machine.display_name} oopsed via {source} by "
-                    f"{user_name}.{suffix}"
+                    f"{user_name}{suffix}."
                 ),
             )
         )
@@ -330,7 +330,7 @@ class SlackHandler:
                 channel=self.control_channel_id,
                 text=(
                     f"Machine {machine.display_name} locked-out cleared via "
-                    f"{source}.{suffix}"
+                    f"{source}{suffix}."
                 ),
             )
         )
@@ -357,7 +357,7 @@ class SlackHandler:
                 channel=self.control_channel_id,
                 text=(
                     f"Machine {machine.display_name} locked-out via "
-                    f"{source}.{suffix}"
+                    f"{source}{suffix}."
                 ),
             )
         )

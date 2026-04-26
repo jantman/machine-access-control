@@ -76,14 +76,28 @@ A successful start logs `Validating Users config` and `Users is valid` (existing
 Tap your fob with full authorizations against the target machine. The Slack `admin_log` should read something like:
 
 ```
-RFID login on Laser Cutter by Alice; primary authorized; accessory (Rotary Attachment) authorized
+RFID login on Laser Cutter by authorized user Alice; Rotary Attachment authorized
 ```
 
 Tap your fob with primary-only authorization (or borrow a member with that profile):
 
 ```
-RFID login on Laser Cutter by Alice; primary authorized; accessory (Rotary Attachment) NOT authorized — relay off
+RFID login on Laser Cutter by authorized user Alice; Rotary Attachment NOT authorized — relay off
 ```
+
+If the second relay is configured with `unauthorized_warn_only: true` and the operator lacks the secondary auth:
+
+```
+RFID login on Laser Cutter by authorized user Alice; Rotary Attachment WARN-ONLY override — relay on
+```
+
+If the second relay is configured with `always_enabled: true`:
+
+```
+RFID login on Laser Cutter by authorized user Alice; Rotary Attachment always-enabled — relay on
+```
+
+The token after `;` resolves to `second_relay.alias` if set, otherwise the literal string `second relay`.
 
 ---
 

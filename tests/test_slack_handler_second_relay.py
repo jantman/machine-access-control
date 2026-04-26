@@ -117,3 +117,54 @@ class TestSlackBothRelaysSuffix:
         ]
         text = admin_calls[0].kwargs.get("text")
         assert "(both relays)" in text
+
+
+class TestTrailingPunctuation:
+    """Regression: control-channel messages end with a period whether or not
+    second_relay is configured (the suffix must land before the period)."""
+
+    async def _admin_text(self, client: AsyncMock, channel: str = "Cadmin") -> str:
+        admin_calls = [
+            c
+            for c in client.chat_postMessage.call_args_list
+            if c.kwargs.get("channel") == channel
+        ]
+        assert admin_calls, "no admin-channel message was posted"
+        return admin_calls[0].kwargs.get("text")
+
+    async def test_log_lock_period_with_suffix(self, handler: HandlerFixture) -> None:
+        h, client = handler
+        sr = SecondRelayConfig(authorizations_or=["s"])
+        await h.log_lock(_make_machine(second_relay=sr), "Slack")
+        text = await self._admin_text(client)
+        assert text.endswith("(both relays).")
+
+    async def test_log_lock_period_without_suffix(
+        self, handler: HandlerFixture
+    ) -> None:
+        h, client = handler
+        await h.log_lock(_make_machine(second_relay=None), "Slack")
+        text = await self._admin_text(client)
+        assert text.endswith(".")
+        assert "both relays" not in text
+
+    async def test_log_unlock_period_with_suffix(self, handler: HandlerFixture) -> None:
+        h, client = handler
+        sr = SecondRelayConfig(authorizations_or=["s"])
+        await h.log_unlock(_make_machine(second_relay=sr), "Slack")
+        text = await self._admin_text(client)
+        assert text.endswith("(both relays).")
+
+    async def test_log_oops_period_with_suffix(self, handler: HandlerFixture) -> None:
+        h, client = handler
+        sr = SecondRelayConfig(authorizations_or=["s"])
+        await h.log_oops(_make_machine(second_relay=sr), "Slack", user_name="Alice")
+        text = await self._admin_text(client)
+        assert text.endswith("(both relays).")
+
+    async def test_log_unoops_period_with_suffix(self, handler: HandlerFixture) -> None:
+        h, client = handler
+        sr = SecondRelayConfig(authorizations_or=["s"])
+        await h.log_unoops(_make_machine(second_relay=sr), "Slack")
+        text = await self._admin_text(client)
+        assert text.endswith("(both relays).")

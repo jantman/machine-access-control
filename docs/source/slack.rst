@@ -98,6 +98,6 @@ For machines configured with a :ref:`second relay <configuration.machines-json.s
 
       RFID login on <machine> by authorized user <user>; <accessory> always-enabled — relay on
 
-The token ``<accessory>`` resolves to ``second_relay.alias`` if set, otherwise the literal ``second relay``. Logout, oops, lockout, unoops, and unlock messages append the suffix ``(both relays)`` for second-relay-equipped machines.
+The token ``<accessory>`` resolves to ``second_relay.alias`` if set, otherwise the literal ``second relay``. For second-relay-equipped machines, RFID logout messages append the text ``; both relays off`` to the admin-channel message. Control-channel lock, unlock, oops, and unoops messages include ``(both relays)`` in the message text; the public oops-channel messages are unchanged.
 
 Single-relay machine messages are unchanged.
