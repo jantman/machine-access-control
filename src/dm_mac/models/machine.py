@@ -33,6 +33,41 @@ if TYPE_CHECKING:  # pragma: no cover
 logger: Logger = getLogger(__name__)
 
 
+_SECOND_RELAY_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "required": ["authorizations_or"],
+    "properties": {
+        "authorizations_or": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string"},
+            "description": "List of authorizations any one of which is "
+            "sufficient to energize the second relay. Must "
+            "be non-empty.",
+        },
+        "unauthorized_warn_only": {
+            "type": "boolean",
+            "description": "If true, the second relay energizes for "
+            "primary-authorized operators lacking secondary "
+            "auth, with a warning emitted to logs and Slack.",
+        },
+        "always_enabled": {
+            "type": "boolean",
+            "description": "If true, the second relay tracks the primary "
+            "relay's energized state regardless of "
+            "operator's secondary authorization.",
+        },
+        "alias": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable name for the accessory governed "
+            "by the second relay.",
+        },
+    },
+    "additionalProperties": False,
+}
+
+
 CONFIG_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "patternProperties": {
@@ -65,12 +100,40 @@ CONFIG_SCHEMA: Dict[str, Any] = {
                     "description": "Optional human-friendly alias for the machine. "
                     "Used in Slack messages and logs instead of the machine name.",
                 },
+                "second_relay": _SECOND_RELAY_SCHEMA,
             },
             "additionalProperties": False,
             "description": "Unique machine name, alphanumeric _ and - only.",
         }
     },
 }
+
+
+class SecondRelayConfig:
+    """Authorization rules governing a machine's second relay."""
+
+    def __init__(
+        self,
+        authorizations_or: List[str],
+        unauthorized_warn_only: bool = False,
+        always_enabled: bool = False,
+        alias: Optional[str] = None,
+    ):
+        """Initialize a new SecondRelayConfig instance."""
+        self.authorizations_or: List[str] = authorizations_or
+        self.unauthorized_warn_only: bool = unauthorized_warn_only
+        self.always_enabled: bool = always_enabled
+        self.alias: Optional[str] = alias
+
+    @property
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a dict representation of this second relay config."""
+        return {
+            "authorizations_or": self.authorizations_or,
+            "unauthorized_warn_only": self.unauthorized_warn_only,
+            "always_enabled": self.always_enabled,
+            "alias": self.alias,
+        }
 
 
 class Machine:
@@ -83,6 +146,7 @@ class Machine:
         unauthorized_warn_only: bool = False,
         always_enabled: bool = False,
         alias: Optional[str] = None,
+        second_relay: Optional[SecondRelayConfig] = None,
     ):
         """Initialize a new MachineState instance."""
         #: The name of the machine
@@ -96,6 +160,8 @@ class Machine:
         self.always_enabled: bool = always_enabled
         #: Optional human-friendly alias for the machine
         self.alias: Optional[str] = alias
+        #: Optional second-relay configuration
+        self.second_relay: Optional[SecondRelayConfig] = second_relay
         #: state of the machine
         self.state: "MachineState" = MachineState(self)
 
@@ -161,13 +227,16 @@ class Machine:
     @property
     def as_dict(self) -> Dict[str, Any]:
         """Return a dict representation of this machine."""
-        return {
+        d: Dict[str, Any] = {
             "name": self.name,
             "authorizations_or": self.authorizations_or,
             "unauthorized_warn_only": self.unauthorized_warn_only,
             "always_enabled": self.always_enabled,
             "alias": self.alias,
         }
+        if self.second_relay is not None:
+            d["second_relay"] = self.second_relay.as_dict
+        return d
 
 
 class MachinesConfig:
@@ -182,6 +251,8 @@ class MachinesConfig:
         mdict: Dict[str, Any]
         mname: str
         for mname, mdict in self._load_and_validate_config().items():
+            if "second_relay" in mdict:
+                mdict["second_relay"] = SecondRelayConfig(**mdict["second_relay"])
             mach: Machine = Machine(name=mname, **mdict)
             self.machines.append(mach)
             self.machines_by_name[mach.name] = mach
@@ -266,6 +337,11 @@ class MachineState:
         self.wifi_signal_percent: Optional[float] = None
         #: ESP32 internal temperature in °C
         self.internal_temperature_c: Optional[float] = None
+        #: Whether the server wants the second relay energized.
+        self.second_relay_desired_state: bool = False
+        #: Authorization decision outcome for the second relay
+        #: (granted/denied/warn/always_enabled), or None if no second relay.
+        self.second_relay_authorization: Optional[str] = None
         #: Path to the directory to save machine state in
         self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
         os.makedirs(self._state_dir, exist_ok=True)
@@ -303,6 +379,8 @@ class MachineState:
                     "wifi_signal_percent": self.wifi_signal_percent,
                     "internal_temperature_c": self.internal_temperature_c,
                     "current_user": self.current_user,
+                    "second_relay_desired_state": self.second_relay_desired_state,
+                    "second_relay_authorization": self.second_relay_authorization,
                 }
                 logger.debug("Saving state to: %s", self._state_path)
                 with open(self._state_path, "wb") as f:
@@ -350,6 +428,7 @@ class MachineState:
             self.display_text = self.DEFAULT_DISPLAY_TEXT
             self.status_led_rgb = (0.0, 0.0, 0.0)
             self.status_led_brightness = 0.0
+        self._resolve_second_relay()
         # log to Slack, if enabled
         slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if not slack:
@@ -369,6 +448,7 @@ class MachineState:
             self.display_text = self.LOCKOUT_DISPLAY_TEXT
             self.status_led_rgb = (1.0, 0.5, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            self._resolve_second_relay()
 
     def unlock(self) -> None:
         """Un-lock-out the machine."""
@@ -390,6 +470,7 @@ class MachineState:
                 self.display_text = self.DEFAULT_DISPLAY_TEXT
                 self.status_led_rgb = (0.0, 0.0, 0.0)
                 self.status_led_brightness = 0.0
+            self._resolve_second_relay()
 
     def oops(self, do_locking: bool = True) -> None:
         """Oops the machine."""
@@ -404,6 +485,7 @@ class MachineState:
             self.display_text = self.OOPS_DISPLAY_TEXT
             self.status_led_rgb = (1.0, 0.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            self._resolve_second_relay()
 
     def unoops(self, do_locking: bool = True) -> None:
         """Un-oops the machine."""
@@ -425,6 +507,7 @@ class MachineState:
                 self.display_text = self.DEFAULT_DISPLAY_TEXT
                 self.status_led_rgb = (0.0, 0.0, 0.0)
                 self.status_led_brightness = 0
+            self._resolve_second_relay()
 
     async def update(
         self,
@@ -436,8 +519,16 @@ class MachineState:
         wifi_signal_percent: Optional[float] = None,
         internal_temperature_c: Optional[float] = None,
         amps: Optional[float] = None,
+        second_relay_state: Optional[bool] = None,
     ) -> Dict[str, str | bool | float | List[float]]:
         """Handle an update to the machine via API."""
+        if second_relay_state is not None and self.machine.second_relay is None:
+            logger.debug(
+                "MCU %s reported second_relay_state=%s but no second_relay "
+                "configured; ignoring.",
+                self.machine.name,
+                second_relay_state,
+            )
         if rfid_value is not None:
             rfid_value = rfid_value.rjust(10, "0")
         with self._lock:
@@ -504,6 +595,7 @@ class MachineState:
                     self.status_led_rgb = (0.0, 0.0, 0.0)
                     self.status_led_brightness = 0.0
                     self.last_update = time()
+            self._resolve_second_relay()
         self._save_cache()
         return self.machine_response
 
@@ -551,6 +643,8 @@ class MachineState:
         )
         if was_override:
             log_str += " (override session)"
+        if self.machine.second_relay is not None:
+            log_str += "; both relays off"
         # locking handled in update()
         self.rfid_value = None
         self.rfid_present_since = None
@@ -667,11 +761,28 @@ class MachineState:
             self.display_text = f"Welcome,\n{user.preferred_name}"
             self.status_led_rgb = (0.0, 1.0, 0.0)
             self.status_led_brightness = self.STATUS_LED_BRIGHTNESS
+            # Compute second-relay decision now (no log yet) so we can craft
+            # the Slack message with the accessory clause; update() will emit
+            # the structured AUTH log later.
+            self._resolve_second_relay(emit_log=False)
             if slack:
-                await slack.admin_log(
+                msg = (
                     f"RFID login on {self.machine.display_name} by authorized user "
                     f"{user.full_name}"
                 )
+                sr = self.machine.second_relay
+                if sr is not None:
+                    accessory = sr.alias if sr.alias else "second relay"
+                    authz = self.second_relay_authorization
+                    if authz == "granted":
+                        msg += f"; {accessory} authorized"
+                    elif authz == "denied":
+                        msg += f"; {accessory} NOT authorized — relay off"
+                    elif authz == "warn":
+                        msg += f"; {accessory} WARN-ONLY override — relay on"
+                    elif authz == "always_enabled":
+                        msg += f"; {accessory} always-enabled — relay on"
+                await slack.admin_log(msg)
         else:
             logging.getLogger("AUTH").info(
                 "User %s (%s) UNAUTHORIZED for %s",
@@ -735,6 +846,106 @@ class MachineState:
                 )
             # State remains always-on (relay/display/LED not changed)
 
+    def _user_is_second_authorized(self, user: User) -> bool:
+        """Return whether user holds any of the second-relay authorizations."""
+        if self.machine.second_relay is None:
+            return False
+        for auth in self.machine.second_relay.authorizations_or:
+            if auth in user.authorizations:
+                return True
+        return False
+
+    def _resolve_second_relay(self, emit_log: bool = True) -> None:
+        """Compute desired second-relay state and authorization decision.
+
+        Called after every primary-state mutation. Sets
+        ``second_relay_desired_state`` and ``second_relay_authorization``
+        per the decision tree in data-model.md. Fails closed on unexpected
+        errors (False / "denied"). Emits a structured AUTH log line for
+        each decision unless ``emit_log`` is False (used to avoid double
+        logging when callers will log later).
+        """
+        try:
+            if self.machine.second_relay is None:
+                self.second_relay_desired_state = False
+                self.second_relay_authorization = None
+                return
+            if not self.relay_desired_state:
+                self.second_relay_desired_state = False
+                self.second_relay_authorization = None
+                return
+            sr = self.machine.second_relay
+            if sr.always_enabled:
+                self.second_relay_desired_state = True
+                self.second_relay_authorization = "always_enabled"
+            else:
+                user: Optional[User] = self.current_user
+                if user is None:
+                    # No identified operator (e.g., root always_enabled with
+                    # no RFID present). warn-only does not apply because
+                    # there is no operator to warn about — fail closed.
+                    self.second_relay_desired_state = False
+                    self.second_relay_authorization = None
+                elif self._user_is_second_authorized(user):
+                    self.second_relay_desired_state = True
+                    self.second_relay_authorization = "granted"
+                elif sr.unauthorized_warn_only:
+                    self.second_relay_desired_state = True
+                    self.second_relay_authorization = "warn"
+                else:
+                    self.second_relay_desired_state = False
+                    self.second_relay_authorization = "denied"
+        except Exception as ex:
+            logger.error(
+                "Error resolving second relay for %s: %s",
+                self.machine.name,
+                ex,
+                exc_info=True,
+            )
+            self.second_relay_desired_state = False
+            self.second_relay_authorization = "denied"
+        if emit_log:
+            self._log_second_relay_decision()
+
+    def _log_second_relay_decision(self) -> None:
+        """Emit a structured AUTH log line for the current second-relay decision."""
+        if self.machine.second_relay is None or self.second_relay_authorization is None:
+            return
+        sr = self.machine.second_relay
+        accessory: str = sr.alias if sr.alias else "second relay"
+        machine_label: str = self.machine.display_name
+        user_name: str = self.current_user.full_name if self.current_user else "<none>"
+        authz = self.second_relay_authorization
+        auth_log = logging.getLogger("AUTH")
+        if authz == "granted":
+            auth_log.info(
+                "User %s authorized for accessory %s on machine %s",
+                user_name,
+                accessory,
+                machine_label,
+            )
+        elif authz == "denied":
+            auth_log.info(
+                "User %s UNAUTHORIZED for accessory %s on machine %s",
+                user_name,
+                accessory,
+                machine_label,
+            )
+        elif authz == "warn":
+            auth_log.warning(
+                "User %s authorized for accessory %s on machine %s "
+                "(warn-only override)",
+                user_name,
+                accessory,
+                machine_label,
+            )
+        elif authz == "always_enabled":
+            auth_log.info(
+                "Accessory %s on machine %s always-enabled",
+                accessory,
+                machine_label,
+            )
+
     async def _user_is_authorized(
         self, user: User, slack: Optional["SlackHandler"] = None
     ) -> bool:
@@ -776,4 +987,5 @@ class MachineState:
             "oops_led": self.is_oopsed,
             "status_led_rgb": [x for x in self.status_led_rgb],
             "status_led_brightness": self.status_led_brightness,
+            "second_relay": self.second_relay_desired_state,
         }

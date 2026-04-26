@@ -108,6 +108,11 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
   - `unauthorized_warn_only`: (optional) Allow operation but log warning for unauthorized users
   - `always_enabled`: (optional) Machine always enabled without RFID authentication, displays "Always On"
   - `alias`: (optional) Human-friendly name used in Slack messages and logs instead of machine name
+  - `second_relay`: (optional) Object configuring an additional output relay (V1 hardware GPIO14 / connector pin 6) gated on a separate authorization. The second relay only energizes when the primary relay is energized AND the operator additionally satisfies these settings:
+    - `authorizations_or`: (required) List of authorizations, any one of which is sufficient to energize the second relay
+    - `unauthorized_warn_only`: (optional) Energize the second relay even for primary-authorized operators lacking secondary auth, with a warning logged + Slacked
+    - `always_enabled`: (optional) Second relay tracks the primary relay's state regardless of secondary auth
+    - `alias`: (optional) Human-readable name for the accessory (used in Slack/log lines that refer specifically to the second relay)
 - Users: `users.json` (schema in `models/users.py::CONFIG_SCHEMA`)
 - Machine names must match ESPHome configs and can only contain `[a-z0-9_-]`
 - Machines can be looked up by either name or alias in Slack commands
@@ -196,6 +201,8 @@ We have a special process for developing features. When asked to begin work on a
 ## Active Technologies
 - Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize (001-oops-override)
 - JSON config files (users.json, machines.json), pickle state files with file locking (001-oops-override)
+- Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize, pydantic (existing) (002-second-relay-support)
+- JSON config files (`machines.json`, `users.json`); per-machine pickle state under `MACHINE_STATE_DIR` (default `./machine_state/`) protected by `filelock` (002-second-relay-support)
 
 ## Recent Changes
 - 001-oops-override: Added Python 3.12 + Quart (async Flask), slack-bolt, prometheus-client, jsonschema, filelock, humanize

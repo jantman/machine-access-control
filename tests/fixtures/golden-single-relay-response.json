@@ -1,0 +1,37 @@
+{
+  "idle_no_fob": {
+    "relay": false,
+    "display": "Please Insert\nRFID Card",
+    "oops_led": false,
+    "status_led_rgb": [0, 0, 0],
+    "status_led_brightness": 0
+  },
+  "authorized_user_logged_in": {
+    "relay": true,
+    "display": "Welcome,\nPAshley",
+    "oops_led": false,
+    "status_led_rgb": [0.0, 1.0, 0.0],
+    "status_led_brightness": 0.5
+  },
+  "authorized_user_logged_out": {
+    "relay": false,
+    "display": "Please Insert\nRFID Card",
+    "oops_led": false,
+    "status_led_rgb": [0.0, 0.0, 0.0],
+    "status_led_brightness": 0.0
+  },
+  "oopsed": {
+    "relay": false,
+    "display": "Oops!! Please\ncheck/post Slack",
+    "oops_led": true,
+    "status_led_rgb": [1.0, 0.0, 0.0],
+    "status_led_brightness": 0.5
+  },
+  "locked_out": {
+    "relay": false,
+    "display": "Down for\nmaintenance",
+    "oops_led": false,
+    "status_led_rgb": [1.0, 0.5, 0.0],
+    "status_led_brightness": 0.5
+  }
+}

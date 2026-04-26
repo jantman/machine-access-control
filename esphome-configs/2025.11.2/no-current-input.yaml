@@ -5,6 +5,7 @@
 # - oops button connected between GPIO32 and ground, no external resistors (internal pullup)
 # - oops button LED connected directly to GPIO5
 # - output relay on GPIO33
+# - second output relay on GPIO14 (V1 connector pin 6); optional, driven from server's `second_relay` response field
 # - neopixel (clockless / 1-wire) output on GPIO27
 #
 # And the following secrets in ESPHome's secrets.yaml:
@@ -64,6 +65,7 @@ wifi:
             root["wifi_signal_db"] = id(wifi_signal_db).state;
             root["wifi_signal_percent"] = id(wifi_signal_percent).state;
             root["internal_temperature_c"] = id(internal_temperature_c).state;
+            root["second_relay_state"] = id(relay2_output).state;
           capture_response: true
           on_response:
             then:
@@ -91,6 +93,14 @@ wifi:
                       call.set_brightness(brightness);
                       call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
                       call.perform();
+                      bool sr_state = root["second_relay"] | false;
+                      if ( sr_state) {
+                        ESP_LOGI("RELAY2", "Turn second relay on");
+                        id(relay2_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY2", "Turn second relay off");
+                        id(relay2_output).turn_off();
+                      }
                       return true;
                   });
 
@@ -160,6 +170,7 @@ binary_sensor:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+              root["second_relay_state"] = id(relay2_output).state;
             capture_response: true
             on_response:
               then:
@@ -187,6 +198,14 @@ binary_sensor:
                         call.set_brightness(brightness);
                         call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
                         call.perform();
+                        bool sr_state = root["second_relay"] | false;
+                        if ( sr_state) {
+                          ESP_LOGI("RELAY2", "Turn second relay on");
+                          id(relay2_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY2", "Turn second relay off");
+                          id(relay2_output).turn_off();
+                        }
                         return true;
                     });
 
@@ -218,6 +237,7 @@ binary_sensor:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+              root["second_relay_state"] = id(relay2_output).state;
             capture_response: true
             on_response:
               then:
@@ -245,6 +265,14 @@ binary_sensor:
                         call.set_brightness(brightness);
                         call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
                         call.perform();
+                        bool sr_state = root["second_relay"] | false;
+                        if ( sr_state) {
+                          ESP_LOGI("RELAY2", "Turn second relay on");
+                          id(relay2_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY2", "Turn second relay off");
+                          id(relay2_output).turn_off();
+                        }
                         return true;
                     });
 
@@ -257,8 +285,16 @@ output:
     pin: GPIO33
     id: relay_output
   - platform: gpio
+    pin: GPIO14
+    id: relay2_output_pin
+  - platform: gpio
     pin: GPIO5
     id: oops_led
+
+switch:
+  - platform: output
+    output: relay2_output_pin
+    id: relay2_output
 
 light:
   - platform: esp32_rmt_led_strip
@@ -291,6 +327,7 @@ wiegand:
               root["wifi_signal_db"] = id(wifi_signal_db).state;
               root["wifi_signal_percent"] = id(wifi_signal_percent).state;
               root["internal_temperature_c"] = id(internal_temperature_c).state;
+              root["second_relay_state"] = id(relay2_output).state;
           capture_response: true
           on_response:
             then:
@@ -318,6 +355,14 @@ wiegand:
                       call.set_brightness(brightness);
                       call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
                       call.perform();
+                      bool sr_state = root["second_relay"] | false;
+                      if ( sr_state) {
+                        ESP_LOGI("RELAY2", "Turn second relay on");
+                        id(relay2_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY2", "Turn second relay off");
+                        id(relay2_output).turn_off();
+                      }
                       return true;
                   });
 
@@ -345,6 +390,7 @@ interval:
             root["wifi_signal_db"] = id(wifi_signal_db).state;
             root["wifi_signal_percent"] = id(wifi_signal_percent).state;
             root["internal_temperature_c"] = id(internal_temperature_c).state;
+            root["second_relay_state"] = id(relay2_output).state;
           capture_response: true
           on_response:
             then:
@@ -372,5 +418,13 @@ interval:
                       call.set_brightness(brightness);
                       call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
                       call.perform();
+                      bool sr_state = root["second_relay"] | false;
+                      if ( sr_state) {
+                        ESP_LOGI("RELAY2", "Turn second relay on");
+                        id(relay2_output).turn_on();
+                      } else {
+                        ESP_LOGI("RELAY2", "Turn second relay off");
+                        id(relay2_output).turn_off();
+                      }
                       return true;
                   });

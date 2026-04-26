@@ -46,6 +46,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # boilerplate to read state from disk
         m: Machine = app.config["MACHINES"].machines_by_name[mname]
@@ -105,6 +106,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
         # Release oops button (oops=false) - machine stays oopsed
@@ -129,6 +131,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": True,
             "status_led_rgb": [1.0, 0.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
         # Un-oops via API endpoint
@@ -157,6 +160,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -191,6 +195,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # Verify RFID value is tracked for auditing
         assert m.state.rfid_value == "8114346998"
@@ -250,6 +255,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
         # Verify RFID removal was tracked
         assert m.state.rfid_value is None
@@ -287,6 +293,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -328,6 +335,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -376,6 +384,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 1.0, 0.0],
             "status_led_brightness": MachineState.STATUS_LED_BRIGHTNESS,
+            "second_relay": False,
         }
 
     @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -450,6 +459,7 @@ class TestAlwaysEnabledMachine:
             "oops_led": False,
             "status_led_rgb": [0.0, 0.0, 0.0],
             "status_led_brightness": 0.0,
+            "second_relay": False,
         }
 
         # Verify internal state was reset

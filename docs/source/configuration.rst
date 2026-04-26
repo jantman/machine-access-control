@@ -31,6 +31,39 @@ The schema of this file is as follows:
 
 .. jsonschema:: dm_mac.models.machine.CONFIG_SCHEMA
 
+.. _configuration.machines-json.second_relay:
+
+Second Relay (``second_relay``) — Optional
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Each machine entry may optionally include a ``second_relay`` block to enable an additional output relay (driven by GPIO14 / V1 connector pin 6) gated on a separate authorization. This is useful for machines that have an accessory (for example a laser cutter rotary attachment) that requires its own training.
+
+The second relay only energizes when (a) the primary relay is already energized for the current operator AND (b) the operator additionally satisfies the ``second_relay`` rules.
+
+The block accepts the following options:
+
+* ``authorizations_or`` (required, non-empty list of strings) — operator must hold any one of these to energize the second relay
+* ``unauthorized_warn_only`` (optional bool, default ``false``) — energize the second relay even for primary-authorized operators lacking the secondary auth, but emit a warning log + Slack message
+* ``always_enabled`` (optional bool, default ``false``) — second relay tracks the primary relay's energized state regardless of operator's secondary authorization
+* ``alias`` (optional string) — human-readable name for the accessory governed by the second relay; used in Slack/log lines that refer specifically to second-relay events
+
+The LCD content is intentionally not modified by ``second_relay`` configuration; operators learn the accessory state from the physical accessory itself.
+
+Example::
+
+    {
+      "laser_cutter": {
+        "authorizations_or": ["laser_basic"],
+        "alias": "Laser Cutter",
+        "second_relay": {
+          "authorizations_or": ["laser_rotary"],
+          "alias": "Rotary Attachment"
+        }
+      }
+    }
+
+Adding, removing, or modifying a ``second_relay`` block requires a server restart, same as other ``machines.json`` changes.
+
 .. _configuration.env-vars:
 
 Environment Variables

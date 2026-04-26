@@ -210,6 +210,12 @@ This section uses the `$machine` template variable to show detailed stats for a 
 | `machine_wifi_signal_percent` | Gauge | WiFi signal strength as percentage | display_name, machine_name |
 | `machine_esp_temperature_c` | Gauge | ESP32 internal temperature (°C) | display_name, machine_name |
 | `machine_status_led` | Gauge | LED RGB values and brightness | display_name, led_attribute, machine_name |
+| `machine_second_relay_state` | Gauge | Second relay on (1) or off (0); only emitted for machines with `second_relay` configured | display_name, machine_name, second_relay_alias |
+| `machine_second_relay_configured` | Gauge | Always `1` for machines with a `second_relay` block; not emitted for single-relay machines | display_name, machine_name, second_relay_alias |
+| `machine_second_relay_unauth_warn_only` | Gauge | Second relay's `unauthorized_warn_only` flag (0/1) | display_name, machine_name, second_relay_alias |
+| `machine_second_relay_always_enabled` | Gauge | Second relay's `always_enabled` flag (0/1) | display_name, machine_name, second_relay_alias |
+
+The four `machine_second_relay_*` metric families are only emitted when at least one machine has a `second_relay` block configured. For single-relay-only deployments the metrics are absent entirely (no zero-padded series). Dashboard panels that target second-relay machines should filter on `machine_second_relay_configured == 1`.
 
 ### Calculated Metrics
 

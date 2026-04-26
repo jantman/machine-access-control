@@ -66,3 +66,38 @@ When a user with ``oops_override`` authorization performs an override login on a
     ``Override login on <machine name> by <user name>.``
 
 No notification is posted to the ``SLACK_OOPS_CHANNEL_ID`` channel for override events. This prevents confusing "un-oops" or "unlock" messages from appearing in the public channel when repair members are testing machines. When the override user removes their card, a logout message is posted to the control channel with an ``(override session)`` suffix.
+
+.. _slack.second_relay:
+
+Second Relay Messaging
+----------------------
+
+For machines configured with a :ref:`second relay <configuration.machines-json.second_relay>`, Slack admin-channel messages include additional context about the accessory:
+
+* RFID login by an operator authorized for both relays:
+
+  .. code-block:: text
+
+      RFID login on <machine> by authorized user <user>; <accessory> authorized
+
+* RFID login by a primary-only operator (second relay denied):
+
+  .. code-block:: text
+
+      RFID login on <machine> by authorized user <user>; <accessory> NOT authorized — relay off
+
+* RFID login when ``unauthorized_warn_only`` is set on the second relay:
+
+  .. code-block:: text
+
+      RFID login on <machine> by authorized user <user>; <accessory> WARN-ONLY override — relay on
+
+* RFID login when ``always_enabled`` is set on the second relay:
+
+  .. code-block:: text
+
+      RFID login on <machine> by authorized user <user>; <accessory> always-enabled — relay on
+
+The token ``<accessory>`` resolves to ``second_relay.alias`` if set, otherwise the literal ``second relay``. For second-relay-equipped machines, RFID logout messages append the text ``; both relays off`` to the admin-channel message. Control-channel lock, unlock, oops, and unoops messages include ``(both relays)`` in the message text; the public oops-channel messages are unchanged.
+
+Single-relay machine messages are unchanged.

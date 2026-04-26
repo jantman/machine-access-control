@@ -141,6 +141,26 @@ class PromCustomCollector:
         led: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
             "machine_status_led", "The machine status LED state"
         )
+        sr_state: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_second_relay_state",
+            "The state of the machine's second relay (only emitted for "
+            "machines with second_relay configured)",
+        )
+        sr_configured: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_second_relay_configured",
+            "Whether the machine has a second_relay block configured "
+            "(only emitted for machines with second_relay configured)",
+        )
+        sr_warn: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_second_relay_unauth_warn_only",
+            "The unauthorized_warn_only flag on the machine's second_relay "
+            "(only emitted for machines with second_relay configured)",
+        )
+        sr_always: LabeledGaugeMetricFamily = LabeledGaugeMetricFamily(
+            "machine_second_relay_always_enabled",
+            "The always_enabled flag on the machine's second_relay "
+            "(only emitted for machines with second_relay configured)",
+        )
         m: Machine
         for m in mconf.machines:
             labels = {"machine_name": m.name, "display_name": m.display_name}
@@ -177,6 +197,21 @@ class PromCustomCollector:
                 {**labels, "led_attribute": "brightness"},
                 m.state.status_led_brightness,
             )
+            if m.second_relay is not None:
+                sr_labels = {
+                    **labels,
+                    "second_relay_alias": m.second_relay.alias or "",
+                }
+                sr_state.add_metric(
+                    sr_labels, 1 if m.state.second_relay_desired_state else 0
+                )
+                sr_configured.add_metric(sr_labels, 1)
+                sr_warn.add_metric(
+                    sr_labels, 1 if m.second_relay.unauthorized_warn_only else 0
+                )
+                sr_always.add_metric(
+                    sr_labels, 1 if m.second_relay.always_enabled else 0
+                )
         yield mconf_load
         yield uconf_load
         yield uconf_mtime
@@ -199,6 +234,14 @@ class PromCustomCollector:
         yield wifi_percent
         yield temp_c
         yield led
+        # Only yield the second-relay metrics when at least one machine has
+        # a second_relay configured. This keeps single-relay deployments
+        # byte-identical to the pre-feature output.
+        if any(m.second_relay is not None for m in mconf.machines):
+            yield sr_state
+            yield sr_configured
+            yield sr_warn
+            yield sr_always
 
 
 async def prometheus_route() -> Response:

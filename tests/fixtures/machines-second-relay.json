@@ -1,0 +1,51 @@
+{
+  "single-relay-machine": {
+    "authorizations_or": ["Metal Mill"],
+    "alias": "Single Relay Machine"
+  },
+  "second-relay-strict": {
+    "authorizations_or": ["primary_auth"],
+    "alias": "Second Relay Strict",
+    "second_relay": {
+      "authorizations_or": ["secondary_auth"],
+      "alias": "Strict Accessory"
+    }
+  },
+  "second-relay-warn": {
+    "authorizations_or": ["primary_auth"],
+    "second_relay": {
+      "authorizations_or": ["secondary_auth"],
+      "unauthorized_warn_only": true
+    }
+  },
+  "second-relay-always": {
+    "authorizations_or": ["primary_auth"],
+    "second_relay": {
+      "authorizations_or": ["secondary_auth"],
+      "always_enabled": true
+    }
+  },
+  "second-relay-aliased": {
+    "authorizations_or": ["primary_auth"],
+    "alias": "Aliased Machine",
+    "second_relay": {
+      "authorizations_or": ["secondary_auth"],
+      "alias": "Rotary Attachment"
+    }
+  },
+  "second-relay-shared": {
+    "authorizations_or": ["shared_auth"],
+    "second_relay": {
+      "authorizations_or": ["shared_auth"],
+      "alias": "Shared Auth Accessory"
+    }
+  },
+  "always-on-with-second-always": {
+    "authorizations_or": ["never_used"],
+    "always_enabled": true,
+    "second_relay": {
+      "authorizations_or": ["never_used_second"],
+      "always_enabled": true
+    }
+  }
+}
