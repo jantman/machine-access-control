@@ -11,7 +11,7 @@ with interactive documentation at ``/docs`` (Swagger UI) and ``/redocs`` (ReDoc)
 Second Relay Protocol Additions
 -------------------------------
 
-``POST /machine/update`` accepts an optional additive request field and emits
+``POST /api/machine/update`` accepts an optional additive request field and emits
 an additive response field to support the per-machine ``second_relay``
 configuration (see :ref:`configuration.machines-json.second_relay`):
 

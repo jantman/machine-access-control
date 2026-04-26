@@ -1,10 +1,10 @@
-# Contract: `/machine/update` Protocol Additions
+# Contract: `/api/machine/update` Protocol Additions
 
 **Feature**: Second Relay Support
 **Branch**: `002-second-relay-support`
 **Date**: 2026-04-26
 
-This document specifies the additive changes to the MCU↔server JSON request/response on `POST /machine/update`. The pydantic models in `src/dm_mac/models/api_schemas.py` MUST match.
+This document specifies the additive changes to the MCU↔server JSON request/response on `POST /api/machine/update`. The pydantic models in `src/dm_mac/models/api_schemas.py` MUST match.
 
 ---
 

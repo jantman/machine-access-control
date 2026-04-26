@@ -15,9 +15,9 @@ Add an optional `second_relay` block to each machine's entry in `machines.json` 
 **Testing**: pytest, pytest-asyncio, pytest-blockage, fixtures under `tests/fixtures/`; nox sessions `tests`, `typeguard`, `mypy`, `pre-commit`, `safety`
 **Target Platform**: Linux server (server-side); ESP32 running ESPHome 2025.11.2 (firmware side)
 **Project Type**: Single-project Python web service plus YAML firmware configs
-**Performance Goals**: No new latency budget — second relay decision is computed in the same `/machine/update` request path as the primary decision (sub-100ms typical)
+**Performance Goals**: No new latency budget — second relay decision is computed in the same `/api/machine/update` request path as the primary decision (sub-100ms typical)
 **Constraints**:
-  - Backward-compatible `/machine/update` request and response schemas — new fields are additive and optional (Constitution §IV)
+  - Backward-compatible `/api/machine/update` request and response schemas — new fields are additive and optional (Constitution §IV)
   - Pickle state files MUST load when the new `second_*` keys are absent (older state) AND when present (newer state) (Constitution §IV)
   - Fail-closed: if the second-relay authorization decision raises, the response MUST set the second relay state to `false` (Constitution §I)
   - LCD content/strings MUST NOT change for any operator on any machine (FR-009)
@@ -50,7 +50,7 @@ specs/002-second-relay-support/
 ├── quickstart.md        # Phase 1 output
 ├── contracts/
 │   ├── machines-config-schema.md     # JSON schema additions for second_relay
-│   └── mcu-update-protocol.md        # MCU /machine/update request/response additions
+│   └── mcu-update-protocol.md        # MCU /api/machine/update request/response additions
 ├── checklists/
 │   └── requirements.md  # Spec quality checklist (already created)
 └── tasks.md             # Phase 2 output (created by /speckit.tasks, NOT this command)

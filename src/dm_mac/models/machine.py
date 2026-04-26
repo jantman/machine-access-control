@@ -595,8 +595,7 @@ class MachineState:
                     self.status_led_rgb = (0.0, 0.0, 0.0)
                     self.status_led_brightness = 0.0
                     self.last_update = time()
-            slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
-            self._resolve_second_relay(slack=slack)
+            self._resolve_second_relay()
         self._save_cache()
         return self.machine_response
 
@@ -847,9 +846,7 @@ class MachineState:
                 )
             # State remains always-on (relay/display/LED not changed)
 
-    def _user_is_second_authorized(
-        self, user: User, slack: Optional["SlackHandler"] = None
-    ) -> bool:
+    def _user_is_second_authorized(self, user: User) -> bool:
         """Return whether user holds any of the second-relay authorizations."""
         if self.machine.second_relay is None:
             return False
@@ -858,9 +855,7 @@ class MachineState:
                 return True
         return False
 
-    def _resolve_second_relay(
-        self, slack: Optional["SlackHandler"] = None, emit_log: bool = True
-    ) -> None:
+    def _resolve_second_relay(self, emit_log: bool = True) -> None:
         """Compute desired second-relay state and authorization decision.
 
         Called after every primary-state mutation. Sets

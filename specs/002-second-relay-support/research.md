@@ -126,7 +126,7 @@ For machines without `second_relay`, none of the four metrics emit a sample. Thi
   - Config validation (positive: minimal, all-options, alias-only; negative: empty `authorizations_or`, unknown field, deeply-nested `second_relay`).
   - Authorization decision matrix: (primary auth y/n) × (second auth y/n) × (`unauthorized_warn_only` y/n) × (`always_enabled` y/n) — driven by parametrized fixtures.
   - State persistence: save → restart → load round-trip preserves second-relay state; loading old-format pickle (without second-relay keys) yields safe defaults.
-- Integration tests via the Quart test client hitting `/machine/update`:
+- Integration tests via the Quart test client hitting `/api/machine/update`:
   - End-to-end tap-in / tap-out / oops / lockout sequences for second-relay-equipped machines.
   - Backwards-compat regression: a machine without `second_relay` must produce byte-identical responses to a fixture captured pre-feature.
 - Slack-handler tests using the existing `tests/test_slack_handler.py` patterns for the new messages.
