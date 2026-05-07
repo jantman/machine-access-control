@@ -31,6 +31,18 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
+    # Task watchdog: catastrophic-hang fallback only. The 60 s timeout is
+    # intentionally generous so this does NOT interrupt an in-progress
+    # operation (e.g. a laser cut) when the application-level liveness
+    # watchdog (interval below) can recover; this only fires when the loop
+    # task itself is so wedged that no software watchdog can run.
+    sdkconfig_options:
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
+      CONFIG_ESP_TASK_WDT_EN: y
+      CONFIG_ESP_TASK_WDT_INIT: y
+      CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0: y
+      CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1: y
+      CONFIG_ESP_TASK_WDT_PANIC: y
 
 # Enable logging
 logger:
@@ -53,6 +65,49 @@ wifi:
   reboot_timeout: "1min"
   on_connect:
     then:
+      - script.execute: post_to_mac
+
+globals:
+  - id: display_content
+    type: std::string
+    restore_value: False
+    max_restore_data_length: 34
+    initial_value: '"Connecting to\nWiFi"'
+  - id: rfid_tag
+    type: std::string
+    restore_value: False
+    max_restore_data_length: 34
+    initial_value: '""'
+  # Uptime seconds at which the most recent POST to mac_url returned 200
+  # (and was successfully parsed). Used by the liveness watchdog below.
+  - id: last_ok_post_uptime
+    type: uint32_t
+    restore_value: False
+    initial_value: '0'
+  # Count of consecutive failed POSTs since the last success. Used to
+  # surface persistent server-side problems on the LCD/log without
+  # rebooting the device while a relay is energized.
+  - id: consecutive_post_failures
+    type: uint32_t
+    restore_value: False
+    initial_value: '0'
+
+http_request:
+  # Bound any single POST to a few seconds. `timeout` is the per-recv
+  # socket timeout (best-effort upper bound); `watchdog_timeout` (esp-idf)
+  # caps the WDT-feed window during transfer and gives a real ceiling
+  # when paired with CONFIG_ESP_TASK_WDT_PANIC=y above.
+  timeout: 5s
+  watchdog_timeout: 8s
+
+# Single source of truth for the POST to mac_url. mode: restart so a fresh
+# trigger preempts a stuck one rather than queuing. Drives the relay,
+# display, oops LED, status LED, and second relay from the JSON response.
+# Tracks success/failure for the liveness watchdog interval below.
+script:
+  - id: post_to_mac
+    mode: restart
+    then:
       - http_request.post:
           url: !secret mac_url
           request_headers:
@@ -70,53 +125,53 @@ wifi:
           on_response:
             then:
               - lambda: |-
-                  json::parse_json(body, [](JsonObject root) -> bool {
-                      if ( root["relay"]) {
-                        ESP_LOGI("RELAY", "Turn relay on");
-                        id(relay_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY", "Turn relay off");
-                        id(relay_output).turn_off();
-                      }
-                      std::string dcontent = root["display"];
-                      id(display_content) = dcontent;
-                      id(my_display).print(dcontent);
-                      if ( root["oops_led"]) {
-                        ESP_LOGI("OOPS", "Turn oops LED on");
-                        id(oops_led).turn_on();
-                      } else {
-                        ESP_LOGI("OOPS", "Turn oops LED off");
-                        id(oops_led).turn_off();
-                      }
-                      auto call = id(status_led).turn_on();
-                      float brightness = root["status_led_brightness"];
-                      call.set_brightness(brightness);
-                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
-                      call.perform();
-                      bool sr_state = root["second_relay"] | false;
-                      if ( sr_state) {
-                        ESP_LOGI("RELAY2", "Turn second relay on");
-                        id(relay2_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY2", "Turn second relay off");
-                        id(relay2_output).turn_off();
-                      }
-                      return true;
-                  });
-
-globals:
-  - id: display_content
-    type: std::string
-    restore_value: False
-    max_restore_data_length: 34
-    initial_value: '"Connecting to\nWiFi"'
-  - id: rfid_tag
-    type: std::string
-    restore_value: False
-    max_restore_data_length: 34
-    initial_value: '""'
-
-http_request:
+                  if (status_code >= 200 && status_code < 300) {
+                    json::parse_json(body, [](JsonObject root) -> bool {
+                        if ( root["relay"]) {
+                          ESP_LOGI("RELAY", "Turn relay on");
+                          id(relay_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY", "Turn relay off");
+                          id(relay_output).turn_off();
+                        }
+                        std::string dcontent = root["display"];
+                        id(display_content) = dcontent;
+                        id(my_display).print(dcontent);
+                        if ( root["oops_led"]) {
+                          ESP_LOGI("OOPS", "Turn oops LED on");
+                          id(oops_led).turn_on();
+                        } else {
+                          ESP_LOGI("OOPS", "Turn oops LED off");
+                          id(oops_led).turn_off();
+                        }
+                        auto call = id(status_led).turn_on();
+                        float brightness = root["status_led_brightness"];
+                        call.set_brightness(brightness);
+                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
+                        call.perform();
+                        bool sr_state = root["second_relay"] | false;
+                        if ( sr_state) {
+                          ESP_LOGI("RELAY2", "Turn second relay on");
+                          id(relay2_output).turn_on();
+                        } else {
+                          ESP_LOGI("RELAY2", "Turn second relay off");
+                          id(relay2_output).turn_off();
+                        }
+                        return true;
+                    });
+                    id(last_ok_post_uptime) = (uint32_t) id(uptime_sensor).state;
+                    id(consecutive_post_failures) = 0;
+                  } else {
+                    id(consecutive_post_failures) += 1;
+                    ESP_LOGW("HTTP", "Non-2xx response %d; consec=%u",
+                             status_code, id(consecutive_post_failures));
+                  }
+          on_error:
+            then:
+              - lambda: |-
+                  id(consecutive_post_failures) += 1;
+                  ESP_LOGW("HTTP", "POST failed (network/timeout); consec=%u",
+                           id(consecutive_post_failures));
 
 i2c:
   sda: GPIO22
@@ -158,56 +213,7 @@ binary_sensor:
             id(rfid_tag) = "";
             id(display_content) = "Please insert\naccess card";
             id(my_display).print("Please insert\naccess card");
-        - http_request.post:
-            url: !secret mac_url
-            request_headers:
-              Content-Type: application/json
-            json: |-
-              root["machine_name"] = App.get_name().c_str();
-              root["oops"] = id(oops_button).state;
-              root["rfid_value"] = id(rfid_tag);
-              root["uptime"] = id(uptime_sensor).state;
-              root["wifi_signal_db"] = id(wifi_signal_db).state;
-              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
-              root["internal_temperature_c"] = id(internal_temperature_c).state;
-              root["second_relay_state"] = id(relay2_output).state;
-            capture_response: true
-            on_response:
-              then:
-                - lambda: |-
-                    json::parse_json(body, [](JsonObject root) -> bool {
-                        if ( root["relay"]) {
-                          ESP_LOGI("RELAY", "Turn relay on");
-                          id(relay_output).turn_on();
-                        } else {
-                          ESP_LOGI("RELAY", "Turn relay off");
-                          id(relay_output).turn_off();
-                        }
-                        std::string dcontent = root["display"];
-                        id(display_content) = dcontent;
-                        id(my_display).print(dcontent);
-                        if ( root["oops_led"]) {
-                          ESP_LOGI("OOPS", "Turn oops LED on");
-                          id(oops_led).turn_on();
-                        } else {
-                          ESP_LOGI("OOPS", "Turn oops LED off");
-                          id(oops_led).turn_off();
-                        }
-                        auto call = id(status_led).turn_on();
-                        float brightness = root["status_led_brightness"];
-                        call.set_brightness(brightness);
-                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
-                        call.perform();
-                        bool sr_state = root["second_relay"] | false;
-                        if ( sr_state) {
-                          ESP_LOGI("RELAY2", "Turn second relay on");
-                          id(relay2_output).turn_on();
-                        } else {
-                          ESP_LOGI("RELAY2", "Turn second relay off");
-                          id(relay2_output).turn_off();
-                        }
-                        return true;
-                    });
+        - script.execute: post_to_mac
 
   - platform: gpio
     pin:
@@ -225,56 +231,7 @@ binary_sensor:
         - lambda: |-
             id(display_content) = "OOPS!";
             id(my_display).print("OOPS!");
-        - http_request.post:
-            url: !secret mac_url
-            request_headers:
-              Content-Type: application/json
-            json: |-
-              root["machine_name"] = App.get_name().c_str();
-              root["oops"] = id(oops_button).state;
-              root["rfid_value"] = id(rfid_tag);
-              root["uptime"] = id(uptime_sensor).state;
-              root["wifi_signal_db"] = id(wifi_signal_db).state;
-              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
-              root["internal_temperature_c"] = id(internal_temperature_c).state;
-              root["second_relay_state"] = id(relay2_output).state;
-            capture_response: true
-            on_response:
-              then:
-                - lambda: |-
-                    json::parse_json(body, [](JsonObject root) -> bool {
-                        if ( root["relay"]) {
-                          ESP_LOGI("RELAY", "Turn relay on");
-                          id(relay_output).turn_on();
-                        } else {
-                          ESP_LOGI("RELAY", "Turn relay off");
-                          id(relay_output).turn_off();
-                        }
-                        std::string dcontent = root["display"];
-                        id(display_content) = dcontent;
-                        id(my_display).print(dcontent);
-                        if ( root["oops_led"]) {
-                          ESP_LOGI("OOPS", "Turn oops LED on");
-                          id(oops_led).turn_on();
-                        } else {
-                          ESP_LOGI("OOPS", "Turn oops LED off");
-                          id(oops_led).turn_off();
-                        }
-                        auto call = id(status_led).turn_on();
-                        float brightness = root["status_led_brightness"];
-                        call.set_brightness(brightness);
-                        call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
-                        call.perform();
-                        bool sr_state = root["second_relay"] | false;
-                        if ( sr_state) {
-                          ESP_LOGI("RELAY2", "Turn second relay on");
-                          id(relay2_output).turn_on();
-                        } else {
-                          ESP_LOGI("RELAY2", "Turn second relay off");
-                          id(relay2_output).turn_off();
-                        }
-                        return true;
-                    });
+        - script.execute: post_to_mac
 
 button:
   - platform: restart
@@ -315,56 +272,7 @@ wiegand:
             id(rfid_tag) = x.c_str();
             id(display_content) = ((std::string) "TAG RX: " + x).c_str();
             id(my_display).print(((std::string) "TAG RX: " + x).c_str());
-      - http_request.post:
-          url: !secret mac_url
-          request_headers:
-            Content-Type: application/json
-          json: |-
-              root["machine_name"] = App.get_name().c_str();
-              root["oops"] = id(oops_button).state;
-              root["rfid_value"] = id(rfid_tag);
-              root["uptime"] = id(uptime_sensor).state;
-              root["wifi_signal_db"] = id(wifi_signal_db).state;
-              root["wifi_signal_percent"] = id(wifi_signal_percent).state;
-              root["internal_temperature_c"] = id(internal_temperature_c).state;
-              root["second_relay_state"] = id(relay2_output).state;
-          capture_response: true
-          on_response:
-            then:
-              - lambda: |-
-                  json::parse_json(body, [](JsonObject root) -> bool {
-                      if ( root["relay"]) {
-                        ESP_LOGI("RELAY", "Turn relay on");
-                        id(relay_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY", "Turn relay off");
-                        id(relay_output).turn_off();
-                      }
-                      std::string dcontent = root["display"];
-                      id(display_content) = dcontent;
-                      id(my_display).print(dcontent);
-                      if ( root["oops_led"]) {
-                        ESP_LOGI("OOPS", "Turn oops LED on");
-                        id(oops_led).turn_on();
-                      } else {
-                        ESP_LOGI("OOPS", "Turn oops LED off");
-                        id(oops_led).turn_off();
-                      }
-                      auto call = id(status_led).turn_on();
-                      float brightness = root["status_led_brightness"];
-                      call.set_brightness(brightness);
-                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
-                      call.perform();
-                      bool sr_state = root["second_relay"] | false;
-                      if ( sr_state) {
-                        ESP_LOGI("RELAY2", "Turn second relay on");
-                        id(relay2_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY2", "Turn second relay off");
-                        id(relay2_output).turn_off();
-                      }
-                      return true;
-                  });
+      - script.execute: post_to_mac
 
 display:
   - platform: lcd_pcf8574
@@ -375,56 +283,43 @@ display:
       it.print(id(display_content));
 
 interval:
+  # Heartbeat: post current state to mac_url every 10s.
   - interval: 10s
     startup_delay: 30s
     then:
-      - http_request.post:
-          url: !secret mac_url
-          request_headers:
-            Content-Type: application/json
-          json: |-
-            root["machine_name"] = App.get_name().c_str();
-            root["oops"] = id(oops_button).state;
-            root["rfid_value"] = id(rfid_tag);
-            root["uptime"] = id(uptime_sensor).state;
-            root["wifi_signal_db"] = id(wifi_signal_db).state;
-            root["wifi_signal_percent"] = id(wifi_signal_percent).state;
-            root["internal_temperature_c"] = id(internal_temperature_c).state;
-            root["second_relay_state"] = id(relay2_output).state;
-          capture_response: true
-          on_response:
-            then:
-              - lambda: |-
-                  json::parse_json(body, [](JsonObject root) -> bool {
-                      if ( root["relay"]) {
-                        ESP_LOGI("RELAY", "Turn relay on");
-                        id(relay_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY", "Turn relay off");
-                        id(relay_output).turn_off();
-                      }
-                      std::string dcontent = root["display"];
-                      id(display_content) = dcontent;
-                      id(my_display).print(dcontent);
-                      if ( root["oops_led"]) {
-                        ESP_LOGI("OOPS", "Turn oops LED on");
-                        id(oops_led).turn_on();
-                      } else {
-                        ESP_LOGI("OOPS", "Turn oops LED off");
-                        id(oops_led).turn_off();
-                      }
-                      auto call = id(status_led).turn_on();
-                      float brightness = root["status_led_brightness"];
-                      call.set_brightness(brightness);
-                      call.set_rgb(root["status_led_rgb"][0], root["status_led_rgb"][1], root["status_led_rgb"][2]);
-                      call.perform();
-                      bool sr_state = root["second_relay"] | false;
-                      if ( sr_state) {
-                        ESP_LOGI("RELAY2", "Turn second relay on");
-                        id(relay2_output).turn_on();
-                      } else {
-                        ESP_LOGI("RELAY2", "Turn second relay off");
-                        id(relay2_output).turn_off();
-                      }
-                      return true;
-                  });
+      - script.execute: post_to_mac
+
+  # Application-level liveness watchdog. Reboots the ESP if heartbeats
+  # have stopped landing successfully — but only when no relay is
+  # energized, so an in-progress operation (e.g. a laser cut) is not
+  # interrupted. While the relay is on and the link is stale, surface
+  # the condition on the LCD instead of rebooting; the next watchdog
+  # tick after the relay drops will then reboot cleanly.
+  #
+  # 90 s threshold tolerates ~9 missed heartbeats and a typical
+  # mac-server cold-start. 120 s startup_delay keeps this from firing
+  # before the first successful POST has had a chance to land.
+  #
+  # The ESP-IDF task watchdog (CONFIG_ESP_TASK_WDT_PANIC=y above) is
+  # the catastrophic-hang fallback if the loop task itself is wedged
+  # so badly this interval never fires.
+  - interval: 30s
+    startup_delay: 120s
+    then:
+      - lambda: |-
+          uint32_t now = (uint32_t) id(uptime_sensor).state;
+          uint32_t last = id(last_ok_post_uptime);
+          uint32_t stale = (last == 0) ? now : (now - last);
+          bool relay_on = id(relay_output).state || id(relay2_output).state;
+          if (stale > 90 && !relay_on) {
+            ESP_LOGE("WDOG",
+                     "No successful POST in %us; relay off; rebooting",
+                     stale);
+            App.safe_reboot();
+          } else if (stale > 90 && relay_on) {
+            ESP_LOGW("WDOG",
+                     "No successful POST in %us; relay ON; deferring reboot",
+                     stale);
+            id(display_content) = "WARN: server\nlink stale";
+            id(my_display).print(id(display_content));
+          }

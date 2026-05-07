@@ -397,6 +397,45 @@ Order of operations:
 
 ## Implementation Status
 
-**Status:** ⏳ PLANNED — awaiting human approval to begin implementation.
+**Status:** 🚧 IN PROGRESS — server changes (Milestone 1) and firmware
+changes (Milestones 2–4) implemented; documentation, full-suite
+verification, and live rollout pending.
 
-(This section will be updated as Milestones complete.)
+- **Milestone 1 — Server-Side Write Timeout:** ✅ COMPLETE
+  - `STATE_SAVE_TIMEOUT_SEC = 2.0` in `src/dm_mac/models/machine.py`
+  - `StateSaveTimeoutError` raised by new async
+    `MachineState.save_cache()` wrapper around the existing sync
+    `_save_cache()`
+  - All three view handlers (`/machine/update`, `/machine/oops`,
+    `/machine/locked_out`) catch the exception and return HTTP 503
+    with `{"error": "state save timeout"}`
+  - Per-machine `state_save_timeouts` counter persisted with the rest
+    of the pickle state
+  - `mac_state_save_timeouts_total` Prometheus counter exposed via a
+    new `LabeledCounterMetricFamily` helper
+  - Slack notification fired on every timeout where the per-machine
+    count crosses ≥ 2 (single transient stalls do not page)
+  - Tests: `TestAsyncSaveCache` (5 tests), 503 surfacing tests for
+    each of the three endpoints, prometheus output regenerated
+  - All `nox` sessions (`tests`, `mypy`, `pre-commit`) passing; total
+    coverage 97 %
+- **Milestones 2–4 — Firmware Changes:** ✅ COMPLETE
+  - `esphome-configs/2025.11.2/no-current-input.yaml` validates with
+    `esphome config` (ESPHome 2025.6.3 locally available)
+  - **M2** — `http_request: timeout: 5s` and `watchdog_timeout: 8s`;
+    five duplicated `http_request.post` blocks replaced with
+    `script.execute: post_to_mac`; new `script: mode: restart` is the
+    single source of truth for the POST and now has both
+    `on_response` (status-code-aware) and `on_error` handlers; new
+    `last_ok_post_uptime` and `consecutive_post_failures` globals
+  - **M3** — second `interval:` entry implements the liveness
+    watchdog (90 s threshold, 120 s startup_delay, gated on relay
+    state — reboots only when both relays are off, otherwise displays
+    `WARN: server\nlink stale` on the LCD)
+  - **M4** — `esp32.framework.sdkconfig_options` configures the
+    esp-idf task WDT with a 60 s timeout and `..._PANIC: y` for the
+    catastrophic-hang fallback
+- **Milestone 5 — Acceptance:** ⏳ PENDING (docs already partially
+  updated as part of M1; remaining: full doc audit + run all `nox`
+  sessions + move file to `completed/`)
+- **Milestone 6 — Live Rollout:** ⏳ PENDING (post-merge)
