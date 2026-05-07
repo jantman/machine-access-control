@@ -122,6 +122,13 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
 - Default location: `./machine_state/` (configurable via `MACHINE_STATE_DIR` env var)
 - File locking via `filelock` ensures thread-safe state updates
 - Enables server restarts without affecting running machines
+- Each persistence write is bounded by `STATE_SAVE_TIMEOUT_SEC` (2.0 s) via
+  `MachineState.save_cache()`. If a write exceeds the budget the request
+  handler returns HTTP 503 to the MCU so the firmware sees a clean error
+  instead of a slow-but-200 response. Lifetime per-machine timeouts are
+  exposed as the `mac_state_save_timeouts_total` Prometheus counter, and
+  every timeout where the per-machine count is `>= 2` posts a notification
+  to `SLACK_CONTROL_CHANNEL_ID`.
 
 ### Request Flow
 
@@ -148,7 +155,9 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
 ### API Endpoints
 
 **Machine APIs** (`/machine/*`):
-- `POST /machine/update`: Main endpoint for MCU state updates
+- `POST /machine/update`: Main endpoint for MCU state updates. Returns 503
+  with `{"error": "state save timeout"}` if persisting the resulting state
+  exceeds `STATE_SAVE_TIMEOUT_SEC`.
 - `POST /machine/lock/<machine_name>`: Lock out a machine
 - `POST /machine/unlock/<machine_name>`: Unlock a machine
 

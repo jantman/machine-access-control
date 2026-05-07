@@ -76,6 +76,35 @@ class TestRouteSpecialCases:
             "argument 'foo'",
         }
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_state_save_timeout_returns_503(self, tmp_path: Path) -> None:
+        """Verify state-save timeout surfaces as HTTP 503 to firmware."""
+        from dm_mac.models.machine import StateSaveTimeoutError
+
+        app, client = app_and_client(tmp_path)
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+
+        async def boom() -> None:
+            m.state.state_save_timeouts += 1
+            raise StateSaveTimeoutError("simulated")
+
+        with patch.object(m.state, "save_cache", side_effect=boom):
+            response: Response = await client.post(
+                "/api/machine/update",
+                json={
+                    "machine_name": mname,
+                    "oops": False,
+                    "rfid_value": "",
+                    "uptime": 12.3,
+                    "wifi_signal_db": -54,
+                    "wifi_signal_percent": 92,
+                    "internal_temperature_c": 53.89,
+                },
+            )
+        assert response.status_code == 503
+        assert await response.json == {"error": "state save timeout"}
+
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
 class TestUpdateNewMachine:
@@ -3317,6 +3346,24 @@ class TestOopsApi:
         # check response
         assert response.status_code == 500
 
+    async def test_oops_state_save_timeout(self, tmp_path: Path) -> None:
+        """Test oops POST returns 503 on state-save timeout."""
+        from dm_mac.models.machine import StateSaveTimeoutError
+
+        app, client = app_and_client(tmp_path)
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+
+        async def boom() -> None:
+            raise StateSaveTimeoutError("simulated")
+
+        with patch.object(m.state, "save_cache", side_effect=boom):
+            response: Response = await client.post(
+                "/api/machine/oops/metal-mill",
+            )
+        assert response.status_code == 503
+        assert await response.json == {"error": "state save timeout"}
+
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
 class TestLockApi:
@@ -3408,6 +3455,24 @@ class TestLockApi:
         )
         # check response
         assert response.status_code == 500
+
+    async def test_lockout_state_save_timeout(self, tmp_path: Path) -> None:
+        """Test locked_out POST returns 503 on state-save timeout."""
+        from dm_mac.models.machine import StateSaveTimeoutError
+
+        app, client = app_and_client(tmp_path)
+        mname: str = "metal-mill"
+        m: Machine = app.config["MACHINES"].machines_by_name[mname]
+
+        async def boom() -> None:
+            raise StateSaveTimeoutError("simulated")
+
+        with patch.object(m.state, "save_cache", side_effect=boom):
+            response: Response = await client.post(
+                "/api/machine/locked_out/metal-mill",
+            )
+        assert response.status_code == 503
+        assert await response.json == {"error": "state save timeout"}
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)

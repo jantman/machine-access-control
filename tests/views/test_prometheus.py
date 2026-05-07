@@ -263,6 +263,14 @@ class TestPrometheus:
         machine_status_led{display_name="always-on-machine",led_attribute="green",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="blue",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="brightness",machine_name="always-on-machine"} 0.0
+        # HELP mac_state_save_timeouts_total Lifetime count of state-save timeouts (>2.0s) for the machine
+        # TYPE mac_state_save_timeouts_total counter
+        mac_state_save_timeouts_total{display_name="Metal Mill",machine_name="metal-mill"} 0.0
+        mac_state_save_timeouts_total{display_name="hammer",machine_name="hammer"} 0.0
+        mac_state_save_timeouts_total{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
+        mac_state_save_timeouts_total{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
+        mac_state_save_timeouts_total{display_name="esp32test",machine_name="esp32test"} 0.0
+        mac_state_save_timeouts_total{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
         """  # noqa: E501
         ).replace("__FILE_MTIME__", actual_mtime_str)
         assert custom_metrics == expected
@@ -455,6 +463,14 @@ class TestPrometheus:
         machine_status_led{display_name="always-on-machine",led_attribute="green",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="blue",machine_name="always-on-machine"} 0.0
         machine_status_led{display_name="always-on-machine",led_attribute="brightness",machine_name="always-on-machine"} 0.0
+        # HELP mac_state_save_timeouts_total Lifetime count of state-save timeouts (>2.0s) for the machine
+        # TYPE mac_state_save_timeouts_total counter
+        mac_state_save_timeouts_total{display_name="Metal Mill",machine_name="metal-mill"} 0.0
+        mac_state_save_timeouts_total{display_name="hammer",machine_name="hammer"} 0.0
+        mac_state_save_timeouts_total{display_name="permissive-lathe",machine_name="permissive-lathe"} 0.0
+        mac_state_save_timeouts_total{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
+        mac_state_save_timeouts_total{display_name="esp32test",machine_name="esp32test"} 0.0
+        mac_state_save_timeouts_total{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
         """  # noqa: E501
         ).replace("__FILE_MTIME__", actual_mtime_str)
         assert custom_metrics == expected
