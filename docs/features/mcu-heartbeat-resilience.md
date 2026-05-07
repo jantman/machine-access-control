@@ -435,7 +435,17 @@ verification, and live rollout pending.
   - **M4** — `esp32.framework.sdkconfig_options` configures the
     esp-idf task WDT with a 60 s timeout and `..._PANIC: y` for the
     catastrophic-hang fallback
-- **Milestone 5 — Acceptance:** ⏳ PENDING (docs already partially
-  updated as part of M1; remaining: full doc audit + run all `nox`
-  sessions + move file to `completed/`)
-- **Milestone 6 — Live Rollout:** ⏳ PENDING (post-merge)
+- **Milestone 5 — Acceptance:** ✅ COMPLETE (in this PR)
+  - `CLAUDE.md` updated with the State Persistence timeout behavior
+    and the 503 response on `/machine/update`.
+  - `docs/source/http-api.rst` gained a "State Save Timeout
+    (HTTP 503)" section and a paragraph in the Prometheus Metrics
+    section about `mac_state_save_timeouts_total`.
+  - All `nox` sessions pass: `tests` (97 % coverage), `mypy`,
+    `pre-commit`, `safety`, `docs`.
+  - The feature file is intentionally **not** moved to
+    `docs/features/completed/` in this PR because Milestone 6 (live
+    rollout) cannot complete until after merge; a follow-up commit
+    will move the file once live validation is signed off.
+- **Milestone 6 — Live Rollout:** ⏳ PENDING (post-merge — see
+  procedure above)

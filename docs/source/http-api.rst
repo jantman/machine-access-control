@@ -8,6 +8,35 @@ with interactive documentation at ``/docs`` (Swagger UI) and ``/redocs`` (ReDoc)
 
 .. openapi:: openapi.json
 
+State Save Timeout (HTTP 503)
+-----------------------------
+
+The endpoints that mutate machine state — ``POST /api/machine/update``,
+``POST/DELETE /api/machine/oops/<machine_name>``, and
+``POST/DELETE /api/machine/locked_out/<machine_name>`` — bound the time
+spent persisting state to disk to ``STATE_SAVE_TIMEOUT_SEC`` (2.0
+seconds). If the underlying disk hangs and the write exceeds this
+budget, the handler returns:
+
+::
+
+    HTTP/1.1 503 Service Unavailable
+    Content-Type: application/json
+
+    {"error": "state save timeout"}
+
+This is the recommended path for the firmware to recover from a stuck
+disk on the server: the MCU sees a clean error, leaves its current
+relay state alone, and retries on its next 10-second heartbeat. Without
+this bound, a slow-but-eventually-successful 200 response can wedge the
+firmware via ESPHome ``http_request`` issues such as `#6677
+<https://github.com/esphome/issues/issues/6677>`_.
+
+Each timeout increments the per-machine ``mac_state_save_timeouts_total``
+Prometheus counter. When the lifetime per-machine count reaches 2 or
+more, a notification is posted to ``SLACK_CONTROL_CHANNEL_ID``; a single
+transient timeout is logged and counted but does not page.
+
 Second Relay Protocol Additions
 -------------------------------
 
@@ -51,5 +80,10 @@ metrics are emitted (one sample per machine, with labels ``machine_name``,
 
 These metrics are not emitted at all for machines without ``second_relay``,
 keeping cardinality minimal.
+
+The ``mac_state_save_timeouts_total`` counter (one sample per machine)
+exposes the lifetime count of writes to the per-machine pickle that
+exceeded ``STATE_SAVE_TIMEOUT_SEC``. See `State Save Timeout (HTTP 503)`_
+above for the firmware-facing behavior.
 
 See :py:mod:`dm_mac.views.prometheus` for details on the available metrics.
