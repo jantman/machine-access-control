@@ -67,6 +67,22 @@ class ErrorResponse(BaseModel):
     error: str = Field(description="Error message describing what went wrong.")
 
 
+class StateSaveTimeoutResponse(BaseModel):
+    """503 response body for the oops and locked_out endpoints when
+    persisting machine state to disk exceeds ``STATE_SAVE_TIMEOUT_SEC``.
+
+    The in-memory state mutation (and any fire-and-forget Slack
+    notification) has already taken effect; only the pickle write
+    timed out. The next successful save will catch up.
+    """
+
+    error: str = Field(description="Error message; always 'state save timeout'.")
+    action_applied: bool = Field(
+        description="True; the requested state mutation took effect in "
+        "memory even though persistence to disk timed out."
+    )
+
+
 class ReloadUsersResponse(BaseModel):
     """Response body for POST /api/reload-users (200)."""
 

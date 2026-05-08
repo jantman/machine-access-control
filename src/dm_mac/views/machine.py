@@ -20,6 +20,7 @@ from quart_schema import tag
 from dm_mac.models.api_schemas import ErrorResponse
 from dm_mac.models.api_schemas import MachineUpdateRequest
 from dm_mac.models.api_schemas import MachineUpdateResponse
+from dm_mac.models.api_schemas import StateSaveTimeoutResponse
 from dm_mac.models.api_schemas import SuccessResponse
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
@@ -133,7 +134,7 @@ async def update() -> Tuple[Response, int]:
 @document_response(SuccessResponse, 200)
 @document_response(ErrorResponse, 404)
 @document_response(ErrorResponse, 500)
-@document_response(ErrorResponse, 503)
+@document_response(StateSaveTimeoutResponse, 503)
 async def oops(machine_name: str) -> Tuple[Response, int]:
     """Set or clear machine Oops state.
 
@@ -191,7 +192,7 @@ async def oops(machine_name: str) -> Tuple[Response, int]:
 @document_response(SuccessResponse, 200)
 @document_response(ErrorResponse, 404)
 @document_response(ErrorResponse, 500)
-@document_response(ErrorResponse, 503)
+@document_response(StateSaveTimeoutResponse, 503)
 async def locked_out(machine_name: str) -> Tuple[Response, int]:
     """Set or clear machine lockout state.
 

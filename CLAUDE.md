@@ -126,13 +126,18 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
   `MachineState.save_cache()`. If a write exceeds the budget the request
   handler returns HTTP 503 to the MCU so the firmware sees a clean error
   instead of a slow-but-200 response. `save_cache()` is single-flight per
-  machine (subsequent calls fail-fast while a previous save is hung) so a
-  stuck disk cannot exhaust the thread pool. Lifetime per-machine
-  timeouts are exposed as the `mac_state_save_timeouts_total` Prometheus
-  counter; a Slack notification is posted to `SLACK_CONTROL_CHANNEL_ID`
-  *exactly once*, on the transition to 2 timeouts for a given machine
-  (subsequent timeouts during a sustained disk hang do not re-page;
-  monitor the Prometheus counter for ongoing trend).
+  machine: only one worker *thread* runs at a time. Concurrent callers
+  *join* the in-flight task (each waits up to `STATE_SAVE_TIMEOUT_SEC`
+  for it to complete) instead of spawning a second thread that would
+  also block on the same disk, so a stuck disk cannot exhaust the
+  thread pool. Brief overlap between requests succeeds without
+  counting; only callers whose own wait actually exceeds the budget
+  count as timeouts. Lifetime per-machine timeouts are exposed as the
+  `mac_state_save_timeouts_total` Prometheus counter; a Slack
+  notification is posted to `SLACK_CONTROL_CHANNEL_ID` *exactly once*,
+  on the transition to 2 timeouts for a given machine (subsequent
+  timeouts during a sustained disk hang do not re-page; monitor the
+  Prometheus counter for ongoing trend).
 
 ### Request Flow
 
@@ -163,8 +168,10 @@ as `/api/machine/*`):
 - `POST /api/machine/update`: Main endpoint for MCU state updates. Returns
   503 with `{"error": "state save timeout"}` if persisting the resulting
   state exceeds `STATE_SAVE_TIMEOUT_SEC`.
-- `POST /api/machine/lock/<machine_name>`: Lock out a machine
-- `POST /api/machine/unlock/<machine_name>`: Unlock a machine
+- `POST /api/machine/oops/<machine_name>`: Set the machine into Oops
+  (maintenance-needed) state. `DELETE` on the same path clears it.
+- `POST /api/machine/locked_out/<machine_name>`: Lock out a machine.
+  `DELETE` on the same path unlocks it.
 
 **Admin APIs** (`/api/*`):
 - `POST /api/reload-users`: Hot-reload users.json without restart
