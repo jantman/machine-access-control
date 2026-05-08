@@ -16,7 +16,6 @@ from dm_mac.models.machine import MachineState
 
 from .quart_test_helpers import app_and_client
 
-
 # Fobs from tests/fixtures/users-second-relay.json
 FOB_PRIMARY_ONLY = "1000000001"
 FOB_SECONDARY_ONLY = "1000000002"

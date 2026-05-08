@@ -13,7 +13,6 @@ from jsonschema import validate
 
 from dm_mac.utils import load_json_config
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 

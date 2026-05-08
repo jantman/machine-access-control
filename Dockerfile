@@ -1,6 +1,6 @@
-FROM python:3.13-bookworm as base
+FROM python:3.13-trixie AS base
 
-FROM base as builder
+FROM base AS builder
 COPY . /app
 WORKDIR /app
 RUN pip install --root-user-action=ignore --break-system-packages poetry && poetry install --only main
@@ -8,7 +8,7 @@ RUN poetry self add poetry-plugin-export
 RUN poetry export -n --without-hashes --output=requirements.txt
 RUN poetry build -n --format=wheel
 
-FROM base as final
+FROM base AS final
 COPY --from=builder /app/requirements.txt /requirements.txt
 COPY --from=builder /app/dist /dist
 RUN pip install --root-user-action=ignore --break-system-packages -r /requirements.txt

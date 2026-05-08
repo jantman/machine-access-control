@@ -18,7 +18,6 @@ from dm_mac.neon_fob_adder import main
 from dm_mac.neon_fob_adder import parse_args
 from dm_mac.neon_fob_adder import process_csv_file
 
-
 # Module path prefixes for cleaner mocking
 pbm = "dm_mac.neon_fob_adder"
 pb = f"{pbm}.NeonFobUpdater"

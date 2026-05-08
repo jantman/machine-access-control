@@ -12,7 +12,6 @@ from dm_mac.cli_utils import set_log_debug
 from dm_mac.cli_utils import set_log_info
 from dm_mac.cli_utils import set_log_level_format
 
-
 pbm: str = "dm_mac.cli_utils"
 
 

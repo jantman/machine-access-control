@@ -13,7 +13,6 @@ from jsonschema.exceptions import ValidationError
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.machine import SecondRelayConfig
 
-
 pbm: str = "dm_mac.models.machine"
 
 

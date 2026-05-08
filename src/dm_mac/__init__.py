@@ -24,7 +24,6 @@ from dm_mac.views.api import api
 from dm_mac.views.machine import machineapi
 from dm_mac.views.prometheus import prometheus_route
 
-
 logger: logging.Logger = logging.getLogger()
 logging.basicConfig(
     level=logging.WARNING, format="[%(asctime)s %(levelname)s] %(message)s"

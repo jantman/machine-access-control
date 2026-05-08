@@ -18,7 +18,6 @@ from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
 
-
 logger: Logger = getLogger(__name__)
 
 CONTENT_TYPE_LATEST = "text/plain; version=0.0.4"
