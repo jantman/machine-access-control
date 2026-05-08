@@ -609,9 +609,14 @@ class TestAsyncSaveCache(MachineStateTester):
         assert "2" in kwargs["text"]
 
     @pytest.mark.asyncio
-    async def test_single_flight_fails_fast_when_save_in_progress(self) -> None:
-        """A second call while the first is still running fails immediately
-        instead of spawning another thread (preventing pool exhaustion)."""
+    async def test_single_flight_joins_existing_task_under_sustained_hang(
+        self,
+    ) -> None:
+        """A second call while the first is still running joins the same
+        task instead of spawning another thread (preventing pool exhaustion).
+        Each caller hits its own budget and counts as a timeout, so a
+        sustained hang correctly drives the counter to >= 2 (which is what
+        triggers the Slack notification)."""
 
         # Use a real Event so the underlying thread blocks deterministically
         # and we can assert that no second thread was spawned.
@@ -629,10 +634,12 @@ class TestAsyncSaveCache(MachineStateTester):
         with patch(f"{pbm}.current_app", new=m_app):
             with patch.object(self.cls, "_save_cache", side_effect=slow_save):
                 with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
-                    # First call hits the budget timeout while the thread blocks
+                    # First call spawns the task, hits the budget while
+                    # the thread is still blocked.
                     with pytest.raises(StateSaveTimeoutError) as exc1:
                         await self.cls.save_cache()
-                    # Second call sees the still-running task and fails-fast
+                    # Second call joins the same in-flight task and
+                    # also hits its own budget (the disk is still hung).
                     with pytest.raises(StateSaveTimeoutError) as exc2:
                         await self.cls.save_cache()
 
@@ -640,8 +647,48 @@ class TestAsyncSaveCache(MachineStateTester):
         block_thread.set()
         assert len(spawned) == 1, "second call must not have spawned a thread"
         assert "exceeded" in str(exc1.value)
-        assert "already in flight" in str(exc2.value)
+        assert "exceeded" in str(exc2.value)
         assert self.cls.state_save_timeouts == 2
+
+    @pytest.mark.asyncio
+    async def test_brief_contention_does_not_count_as_timeout(self) -> None:
+        """When a save is in flight but completes within the joiner's budget,
+        the joining call returns successfully without incrementing the
+        timeout counter. Brief overlap is contention, not a real timeout."""
+
+        import threading
+
+        # Block briefly, much shorter than the patched budget. The first
+        # caller spawns and waits past the unblock; the second caller
+        # joins the same task and also sees it complete in time.
+        unblock = threading.Event()
+        spawned: list[int] = []
+
+        def briefly_slow_save() -> None:
+            spawned.append(1)
+            unblock.wait(timeout=2.0)
+
+        async def release_after_a_bit() -> None:
+            await asyncio.sleep(0.05)
+            unblock.set()
+
+        with patch.object(self.cls, "_save_cache", side_effect=briefly_slow_save):
+            # Budget of 0.5 s comfortably exceeds the 0.05 s block.
+            with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.5):
+                # Spawn caller and joiner concurrently with a delayed unblock.
+                releaser = asyncio.create_task(release_after_a_bit())
+                # Both calls succeed once the thread unblocks; neither
+                # exceeds its 0.5 s budget.
+                await asyncio.gather(
+                    self.cls.save_cache(),
+                    self.cls.save_cache(),
+                )
+                await releaser
+
+        assert len(spawned) == 1, "second call must not have spawned a thread"
+        assert (
+            self.cls.state_save_timeouts == 0
+        ), "brief contention must not count as timeout"
 
     @pytest.mark.asyncio
     async def test_no_slack_handler_does_not_error(self) -> None:

@@ -370,11 +370,22 @@ class MachineState:
         self.state_save_timeouts: int = 0
         #: Tracks the in-flight ``asyncio.to_thread`` task spawned by
         #: :meth:`save_cache`. While this task is running (or hung on a
-        #: stuck disk) subsequent calls to :meth:`save_cache` fail-fast
-        #: with :class:`StateSaveTimeoutError` instead of spawning more
-        #: threads, so a single hung disk write cannot exhaust the
-        #: default thread pool.
+        #: stuck disk) subsequent calls to :meth:`save_cache` *join*
+        #: the existing task instead of spawning more threads, so a
+        #: single hung disk write cannot exhaust the default thread
+        #: pool. Each joiner gets its own :data:`STATE_SAVE_TIMEOUT_SEC`
+        #: budget, so brief overlap finishes successfully while a
+        #: sustained hang produces independent timeout events on each
+        #: subsequent request (which is what drives the
+        #: :func:`mac_state_save_timeouts_total <prometheus>` counter
+        #: and the Slack-on-second-timeout rule).
         self._save_task: Optional["asyncio.Task[None]"] = None
+        #: Guards the check-and-set of :attr:`_save_task` so two
+        #: concurrent callers cannot both observe ``_save_task`` as
+        #: ``None``/``done()`` and spawn separate workers. Lazily
+        #: created on first use so we don't bind to a specific event
+        #: loop at construction time.
+        self._save_spawn_lock: Optional[asyncio.Lock] = None
         #: Path to the directory to save machine state in
         self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
         os.makedirs(self._state_dir, exist_ok=True)
@@ -430,43 +441,49 @@ class MachineState:
     async def save_cache(self) -> None:
         """Save machine state cache to disk with a timeout.
 
-        Single-flight per machine: only one save thread can be
-        outstanding at a time. If a previous save is still running
-        (typically because the disk is hung) a new call returns
-        immediately with :class:`StateSaveTimeoutError` instead of
-        spawning another thread that would also block on the same
-        disk; this prevents thread-pool exhaustion under a sustained
-        disk hang while heartbeats keep arriving.
+        Single-flight per machine: only one save *thread* is
+        outstanding at a time. Concurrent callers see the existing
+        in-flight task and *join* it (awaiting the same task) rather
+        than spawning a second thread that would also block on the
+        same disk lock; this prevents thread-pool exhaustion under a
+        sustained disk hang while heartbeats keep arriving.
 
-        Otherwise spawns a worker thread to run :meth:`_save_cache`
-        and waits up to :data:`STATE_SAVE_TIMEOUT_SEC` seconds for it
-        to complete. On timeout, the underlying thread is *shielded*
-        and continues running (Python cannot cancel a thread blocked
-        on file I/O); :attr:`state_save_timeouts` is incremented and a
-        Slack notification fires once the lifetime count is >= 2.
+        Whether the caller spawned the task or joined an existing
+        one, it then awaits with its own :data:`STATE_SAVE_TIMEOUT_SEC`
+        budget. Brief overlap (the existing save finishes within the
+        joiner's budget) returns success without counting a timeout.
+        A sustained hang produces an independent timeout event on
+        each request that exceeds its budget; the second such event
+        triggers the Slack notification.
+
+        On timeout, the underlying thread is *shielded* and continues
+        running (Python cannot cancel a thread blocked on file I/O);
+        :attr:`state_save_timeouts` is incremented and
+        :class:`StateSaveTimeoutError` is raised.
         """
-        in_flight = self._save_task
-        if in_flight is not None and not in_flight.done():
-            count = self._record_save_timeout(reason="save already in flight")
-            raise StateSaveTimeoutError(
-                f"State save for {self.machine.name} already in flight "
-                f"(lifetime timeout count: {count})"
-            )
+        if self._save_spawn_lock is None:
+            self._save_spawn_lock = asyncio.Lock()
+        async with self._save_spawn_lock:
+            existing = self._save_task
+            if existing is not None and not existing.done():
+                # Join the in-flight save: brief overlap finishes
+                # quickly without spawning a second thread, while a
+                # sustained hang lets us hit our own budget below.
+                task = existing
+            else:
+                # Spawn the worker as a Task so we can both `shield`
+                # it (so that wait_for cancelling does not propagate
+                # to the underlying thread, which cannot be cancelled
+                # anyway) and check `.done()` on subsequent calls.
+                task = asyncio.create_task(asyncio.to_thread(self._save_cache))
+                # If the underlying thread eventually completes after
+                # we've timed out, consume any exception it produced
+                # so the event loop doesn't log "Task exception was
+                # never retrieved". Also clear our reference so
+                # subsequent save_cache calls can spawn a new worker.
+                task.add_done_callback(self._on_save_task_done)
+                self._save_task = task
 
-        # Spawn the worker as a Task so we can both `shield` it (so that
-        # wait_for cancelling does not propagate to the underlying thread,
-        # which cannot be cancelled anyway) and check `.done()` on
-        # subsequent calls.
-        task: "asyncio.Task[None]" = asyncio.create_task(
-            asyncio.to_thread(self._save_cache)
-        )
-        # If the underlying thread eventually completes after we've timed
-        # out, consume any exception it produced so the event loop doesn't
-        # log "Task exception was never retrieved". Also clear our
-        # reference so subsequent save_cache calls aren't blocked forever
-        # waiting on a task we've already given up on.
-        task.add_done_callback(self._on_save_task_done)
-        self._save_task = task
         try:
             await asyncio.wait_for(asyncio.shield(task), timeout=STATE_SAVE_TIMEOUT_SEC)
         except asyncio.TimeoutError as exc:
