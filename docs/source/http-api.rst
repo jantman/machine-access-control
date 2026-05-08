@@ -36,9 +36,9 @@ For the admin endpoints (``POST/DELETE`` on ``/api/machine/oops/<name>``
 and ``/api/machine/locked_out/<name>``), the response body includes
 ``action_applied: true`` to indicate that the requested state mutation
 took effect in memory even though persistence timed out — these
-actions also fire Slack notifications fire-and-forget, which cannot be
-rolled back, so the action *is* live and the next successful save will
-catch up:
+actions also send Slack notifications in a fire-and-forget fashion,
+which cannot be rolled back, so the action *is* live and the next
+successful save will catch up:
 
 ::
 
