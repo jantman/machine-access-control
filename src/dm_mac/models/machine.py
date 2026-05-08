@@ -1,5 +1,6 @@
 """Model representing a machine."""
 
+import asyncio
 import logging
 import os
 import pickle
@@ -31,6 +32,23 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 logger: Logger = getLogger(__name__)
+
+
+#: Maximum wall-clock seconds we will spend persisting machine state to disk
+#: before raising :class:`StateSaveTimeoutError`. Keeps a single hung disk
+#: write from blocking the request handler long enough to wedge the firmware
+#: (see ``docs/2026-05-05-mcu-lockup-analysis.md``).
+STATE_SAVE_TIMEOUT_SEC: float = 2.0
+
+
+class StateSaveTimeoutError(Exception):
+    """Raised when persisting machine state to disk exceeds the budget.
+
+    Surfaced to MCU clients as HTTP 503 by the ``/api/machine/update``
+    view (and by ``/api/machine/oops/<name>`` and
+    ``/api/machine/locked_out/<name>``) so the firmware sees a clean
+    error and recovers on its next heartbeat.
+    """
 
 
 _SECOND_RELAY_SCHEMA: Dict[str, Any] = {
@@ -342,6 +360,32 @@ class MachineState:
         #: Authorization decision outcome for the second relay
         #: (granted/denied/warn/always_enabled), or None if no second relay.
         self.second_relay_authorization: Optional[str] = None
+        #: Lifetime count of state-save timeouts for this machine. Persisted
+        #: with the rest of the machine state (best-effort: a write that
+        #: itself times out cannot persist the increment until the next
+        #: successful save); surfaced as the
+        #: ``mac_state_save_timeouts_total`` Prometheus counter from the
+        #: in-memory value, which is always increment-correct because
+        #: :meth:`save_cache` is single-flight per machine.
+        self.state_save_timeouts: int = 0
+        #: Tracks the in-flight ``asyncio.to_thread`` task spawned by
+        #: :meth:`save_cache`. While this task is running (or hung on a
+        #: stuck disk) subsequent calls to :meth:`save_cache` *join*
+        #: the existing task instead of spawning more threads, so a
+        #: single hung disk write cannot exhaust the default thread
+        #: pool. Each joiner gets its own :data:`STATE_SAVE_TIMEOUT_SEC`
+        #: budget, so brief overlap finishes successfully while a
+        #: sustained hang produces independent timeout events on each
+        #: subsequent request (which is what drives the
+        #: :func:`mac_state_save_timeouts_total <prometheus>` counter
+        #: and the Slack-on-second-timeout rule).
+        self._save_task: Optional["asyncio.Task[None]"] = None
+        #: Guards the check-and-set of :attr:`_save_task` so two
+        #: concurrent callers cannot both observe ``_save_task`` as
+        #: ``None``/``done()`` and spawn separate workers. Lazily
+        #: created on first use so we don't bind to a specific event
+        #: loop at construction time.
+        self._save_spawn_lock: Optional[asyncio.Lock] = None
         #: Path to the directory to save machine state in
         self._state_dir: str = os.environ.get("MACHINE_STATE_DIR", "machine_state")
         os.makedirs(self._state_dir, exist_ok=True)
@@ -355,7 +399,13 @@ class MachineState:
             logger.warning("State loading disabled for machine %s", self.machine.name)
 
     def _save_cache(self) -> None:
-        """Save machine state cache to disk."""
+        """Save machine state cache to disk (synchronous).
+
+        Acquires the in-process lock and on-disk filelock, builds the state
+        dict, and writes the pickle. Used directly by maintenance tools and
+        tests; request handlers should call :meth:`save_cache` instead so
+        the write is bounded by :data:`STATE_SAVE_TIMEOUT_SEC`.
+        """
         logger.debug("Getting lock for state file: %s", self._state_path + ".lock")
         with self._lock:
             lock = FileLock(self._state_path + ".lock")
@@ -381,11 +431,140 @@ class MachineState:
                     "current_user": self.current_user,
                     "second_relay_desired_state": self.second_relay_desired_state,
                     "second_relay_authorization": self.second_relay_authorization,
+                    "state_save_timeouts": self.state_save_timeouts,
                 }
                 logger.debug("Saving state to: %s", self._state_path)
                 with open(self._state_path, "wb") as f:
                     pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
         logger.debug("State saved.")
+
+    async def save_cache(self) -> None:
+        """Save machine state cache to disk with a timeout.
+
+        Single-flight per machine: only one save *thread* is
+        outstanding at a time. Concurrent callers see the existing
+        in-flight task and *join* it (awaiting the same task) rather
+        than spawning a second thread that would also block on the
+        same disk lock; this prevents thread-pool exhaustion under a
+        sustained disk hang while heartbeats keep arriving.
+
+        Whether the caller spawned the task or joined an existing
+        one, it then awaits with its own :data:`STATE_SAVE_TIMEOUT_SEC`
+        budget. Brief overlap (the existing save finishes within the
+        joiner's budget) returns success without counting a timeout.
+        A sustained hang produces an independent timeout event on
+        each request that exceeds its budget; the second such event
+        triggers the Slack notification.
+
+        On timeout, the underlying thread is *shielded* and continues
+        running (Python cannot cancel a thread blocked on file I/O);
+        :attr:`state_save_timeouts` is incremented and
+        :class:`StateSaveTimeoutError` is raised.
+        """
+        if self._save_spawn_lock is None:
+            self._save_spawn_lock = asyncio.Lock()
+        async with self._save_spawn_lock:
+            existing = self._save_task
+            if existing is not None and not existing.done():
+                # Join the in-flight save: brief overlap finishes
+                # quickly without spawning a second thread, while a
+                # sustained hang lets us hit our own budget below.
+                task = existing
+            else:
+                # Spawn the worker as a Task so we can both `shield`
+                # it (so that wait_for cancelling does not propagate
+                # to the underlying thread, which cannot be cancelled
+                # anyway) and check `.done()` on subsequent calls.
+                task = asyncio.create_task(asyncio.to_thread(self._save_cache))
+                # If the underlying thread eventually completes after
+                # we've timed out, consume any exception it produced
+                # so the event loop doesn't log "Task exception was
+                # never retrieved". Also clear our reference so
+                # subsequent save_cache calls can spawn a new worker.
+                task.add_done_callback(self._on_save_task_done)
+                self._save_task = task
+
+        try:
+            await asyncio.wait_for(asyncio.shield(task), timeout=STATE_SAVE_TIMEOUT_SEC)
+        except asyncio.TimeoutError as exc:
+            count = self._record_save_timeout(reason="exceeded budget")
+            raise StateSaveTimeoutError(
+                f"State save for {self.machine.name} exceeded "
+                f"{STATE_SAVE_TIMEOUT_SEC:.1f}s budget "
+                f"(lifetime timeout count: {count})"
+            ) from exc
+
+    def _on_save_task_done(self, task: "asyncio.Task[None]") -> None:
+        """Done-callback for the in-flight save task.
+
+        Logs (and thus consumes) any exception the underlying
+        :meth:`_save_cache` raised, so a thread that finishes after we
+        have already timed out cannot leak unhandled exceptions into
+        the event loop. Also clears :attr:`_save_task` if this is still
+        the current task, so a subsequent successful save can run.
+        """
+        try:
+            exc = task.exception()
+        except asyncio.CancelledError:
+            exc = None
+        if exc is not None:
+            logger.warning(
+                "Background state save for machine %s finished with "
+                "an exception: %r",
+                self.machine.name,
+                exc,
+            )
+        if self._save_task is task:
+            self._save_task = None
+
+    def _record_save_timeout(self, reason: str) -> int:
+        """Increment the timeout counter, log, and notify Slack.
+
+        Returns the post-increment lifetime count so callers can
+        include it in the raised exception.
+        """
+        self.state_save_timeouts += 1
+        count = self.state_save_timeouts
+        logger.error(
+            "State save for machine %s timed out (%s); " "lifetime timeout count: %d",
+            self.machine.name,
+            reason,
+            count,
+        )
+        self._notify_save_timeout(count)
+        return count
+
+    def _notify_save_timeout(self, count: int) -> None:
+        """Fire a fire-and-forget Slack notification on the 2nd save timeout.
+
+        Skipped on the first timeout to tolerate single transient stalls;
+        fired *exactly once* on the transition to 2 to avoid spamming
+        ``SLACK_CONTROL_CHANNEL_ID`` under a sustained disk hang (where
+        timeouts can arrive every ~10 s as MCU heartbeats keep coming).
+        Operators monitoring the ``mac_state_save_timeouts_total``
+        Prometheus counter can alert on sustained increase from there.
+        """
+        if count != 2:
+            return
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if slack is None:
+            return
+        msg = (
+            f":warning: Machine `{self.machine.display_name}` had a state-save "
+            f"timeout (>{STATE_SAVE_TIMEOUT_SEC:.1f}s); lifetime count is now "
+            f"{count}. Disk may be hung; firmware was returned HTTP 503."
+        )
+        try:
+            asyncio.create_task(
+                slack.app.client.chat_postMessage(
+                    channel=slack.control_channel_id,
+                    text=msg,
+                )
+            )
+        except RuntimeError:  # pragma: no cover - no running loop
+            logger.debug(
+                "No running event loop; skipping Slack save-timeout notification"
+            )
 
     def _load_from_cache(self) -> None:
         """Load machine state cache from disk."""
@@ -596,7 +775,7 @@ class MachineState:
                     self.status_led_brightness = 0.0
                     self.last_update = time()
             self._resolve_second_relay()
-        self._save_cache()
+        await self.save_cache()
         return self.machine_response
 
     async def _handle_oops(self, users: UsersConfig) -> None:

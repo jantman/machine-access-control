@@ -13,6 +13,7 @@ from prometheus_client.samples import Sample
 from quart import Response
 from quart import current_app
 
+from dm_mac.models.machine import STATE_SAVE_TIMEOUT_SEC
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
@@ -52,10 +53,33 @@ class LabeledGaugeMetricFamily(Metric):
         self.samples.append(Sample(self.name, dict(labels | self._labels), value, None))
 
 
+class LabeledCounterMetricFamily(Metric):
+    """Counter metric with labels, sibling to LabeledGaugeMetricFamily."""
+
+    def __init__(
+        self,
+        name: str,
+        documentation: str,
+        labels: Optional[Dict[str, str]] = None,
+        unit: str = "",
+    ):
+        """Initialize LabeledCounterMetricFamily."""
+        Metric.__init__(self, name, documentation, "counter", unit)
+        if labels is None:
+            labels = {}
+        self._labels = labels
+
+    def add_metric(self, labels: Dict[str, str], value: float) -> None:
+        """Add a counter sample under ``<name>_total``."""
+        self.samples.append(
+            Sample(self.name + "_total", dict(labels | self._labels), value, None)
+        )
+
+
 class PromCustomCollector:
     """Custom collector for metrics."""
 
-    def collect(self) -> Generator[LabeledGaugeMetricFamily, None, None]:
+    def collect(self) -> Generator[Metric, None, None]:
         """Collect custom metrics."""
         mconf: MachinesConfig = current_app.config["MACHINES"]  # noqa
         uconf: UsersConfig = current_app.config["USERS"]  # noqa
@@ -161,6 +185,11 @@ class PromCustomCollector:
             "The always_enabled flag on the machine's second_relay "
             "(only emitted for machines with second_relay configured)",
         )
+        save_timeouts: LabeledCounterMetricFamily = LabeledCounterMetricFamily(
+            "mac_state_save_timeouts",
+            f"Lifetime count of state-save timeouts (>{STATE_SAVE_TIMEOUT_SEC:.1f}s) "
+            f"for the machine",
+        )
         m: Machine
         for m in mconf.machines:
             labels = {"machine_name": m.name, "display_name": m.display_name}
@@ -197,6 +226,7 @@ class PromCustomCollector:
                 {**labels, "led_attribute": "brightness"},
                 m.state.status_led_brightness,
             )
+            save_timeouts.add_metric(labels, m.state.state_save_timeouts)
             if m.second_relay is not None:
                 sr_labels = {
                     **labels,
@@ -234,6 +264,7 @@ class PromCustomCollector:
         yield wifi_percent
         yield temp_c
         yield led
+        yield save_timeouts
         # Only yield the second-relay metrics when at least one machine has
         # a second_relay configured. This keeps single-relay deployments
         # byte-identical to the pre-feature output.

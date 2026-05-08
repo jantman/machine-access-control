@@ -1,14 +1,21 @@
 """Tests for models.machine."""
 
+import asyncio
 import os
 import pickle
+import time
 from pathlib import Path
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
+import pytest
+
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
+from dm_mac.models.machine import StateSaveTimeoutError
 from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 
@@ -155,6 +162,7 @@ class TestSaveCache(MachineStateTester):
             "current_user": None,
             "second_relay_desired_state": False,
             "second_relay_authorization": None,
+            "state_save_timeouts": 0,
         }
 
     def test_non_defaults(self, tmp_path: Path, fixtures_path: str) -> None:
@@ -207,6 +215,7 @@ class TestSaveCache(MachineStateTester):
             "current_user": user,
             "second_relay_desired_state": False,
             "second_relay_authorization": None,
+            "state_save_timeouts": 0,
         }
 
 
@@ -518,3 +527,182 @@ class TestOverrideLogin(MachineStateTester):
         assert self.cls.is_override_login is True
         assert self.cls.is_oopsed is True
         assert self.cls.relay_desired_state is True
+
+
+class TestAsyncSaveCache(MachineStateTester):
+    """Tests for the timeout-bounded async ``save_cache`` wrapper."""
+
+    @pytest.mark.asyncio
+    async def test_happy_path_writes_pickle(self, tmp_path: Path) -> None:
+        """Async wrapper completes well under the budget on a normal disk."""
+        self.cls._state_path = str(tmp_path) + "/MachineName-state.pickle"
+        await self.cls.save_cache()
+        assert self.cls.state_save_timeouts == 0
+        with open(os.path.join(tmp_path, "MachineName-state.pickle"), "rb") as f:
+            state = pickle.load(f)
+        assert state["machine_name"] == "MachineName"
+        assert state["state_save_timeouts"] == 0
+
+    @pytest.mark.asyncio
+    async def test_timeout_raises_and_increments_counter(self) -> None:
+        """A slow underlying save raises StateSaveTimeoutError and counts."""
+
+        # Sleep just long enough to outlast the patched 0.1s budget; using
+        # the unpatched STATE_SAVE_TIMEOUT_SEC (2.0s) here would make the
+        # test sleep for 2.5s for no reason.
+        def slow_save() -> None:
+            time.sleep(0.3)
+
+        with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+            with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.1):
+                with pytest.raises(StateSaveTimeoutError):
+                    await self.cls.save_cache()
+        assert self.cls.state_save_timeouts == 1
+
+    @pytest.mark.asyncio
+    async def test_first_timeout_does_not_notify_slack(self) -> None:
+        """A single transient timeout must not page Slack."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        slack = MagicMock()
+        slack.app.client.chat_postMessage = AsyncMock()
+        slack.control_channel_id = "C123"
+        m_app = MagicMock()
+        m_app.config = {"SLACK_HANDLER": slack}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+        assert self.cls.state_save_timeouts == 1
+        slack.app.client.chat_postMessage.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_second_timeout_notifies_slack(self) -> None:
+        """The second-or-later timeout must fire a Slack notification."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        slack = MagicMock()
+        slack.app.client.chat_postMessage = AsyncMock()
+        slack.control_channel_id = "C123"
+        type(self.machine).display_name = "MachineDisplayName"
+        # Pre-seed one prior timeout
+        self.cls.state_save_timeouts = 1
+        m_app = MagicMock()
+        m_app.config = {"SLACK_HANDLER": slack}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+                    # Allow the create_task() to be scheduled before assertion
+                    await asyncio.sleep(0)
+        assert self.cls.state_save_timeouts == 2
+        slack.app.client.chat_postMessage.assert_called_once()
+        kwargs = slack.app.client.chat_postMessage.call_args.kwargs
+        assert kwargs["channel"] == "C123"
+        assert "MachineDisplayName" in kwargs["text"]
+        assert "2" in kwargs["text"]
+
+    @pytest.mark.asyncio
+    async def test_single_flight_joins_existing_task_under_sustained_hang(
+        self,
+    ) -> None:
+        """A second call while the first is still running joins the same
+        task instead of spawning another thread (preventing pool exhaustion).
+        Each caller hits its own budget and counts as a timeout, so a
+        sustained hang correctly drives the counter to >= 2 (which is what
+        triggers the Slack notification)."""
+
+        # Use a real Event so the underlying thread blocks deterministically
+        # and we can assert that no second thread was spawned.
+        import threading
+
+        block_thread = threading.Event()
+        spawned: list[int] = []
+
+        def slow_save() -> None:
+            spawned.append(1)
+            block_thread.wait(timeout=5.0)
+
+        m_app = MagicMock()
+        m_app.config = {}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    # First call spawns the task, hits the budget while
+                    # the thread is still blocked.
+                    with pytest.raises(StateSaveTimeoutError) as exc1:
+                        await self.cls.save_cache()
+                    # Second call joins the same in-flight task and
+                    # also hits its own budget (the disk is still hung).
+                    with pytest.raises(StateSaveTimeoutError) as exc2:
+                        await self.cls.save_cache()
+
+        # Release the blocked thread so the test exits cleanly
+        block_thread.set()
+        assert len(spawned) == 1, "second call must not have spawned a thread"
+        assert "exceeded" in str(exc1.value)
+        assert "exceeded" in str(exc2.value)
+        assert self.cls.state_save_timeouts == 2
+
+    @pytest.mark.asyncio
+    async def test_brief_contention_does_not_count_as_timeout(self) -> None:
+        """When a save is in flight but completes within the joiner's budget,
+        the joining call returns successfully without incrementing the
+        timeout counter. Brief overlap is contention, not a real timeout."""
+
+        import threading
+
+        # Block briefly, much shorter than the patched budget. The first
+        # caller spawns and waits past the unblock; the second caller
+        # joins the same task and also sees it complete in time.
+        unblock = threading.Event()
+        spawned: list[int] = []
+
+        def briefly_slow_save() -> None:
+            spawned.append(1)
+            unblock.wait(timeout=2.0)
+
+        async def release_after_a_bit() -> None:
+            await asyncio.sleep(0.05)
+            unblock.set()
+
+        with patch.object(self.cls, "_save_cache", side_effect=briefly_slow_save):
+            # Budget of 0.5 s comfortably exceeds the 0.05 s block.
+            with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.5):
+                # Spawn caller and joiner concurrently with a delayed unblock.
+                releaser = asyncio.create_task(release_after_a_bit())
+                # Both calls succeed once the thread unblocks; neither
+                # exceeds its 0.5 s budget.
+                await asyncio.gather(
+                    self.cls.save_cache(),
+                    self.cls.save_cache(),
+                )
+                await releaser
+
+        assert len(spawned) == 1, "second call must not have spawned a thread"
+        assert (
+            self.cls.state_save_timeouts == 0
+        ), "brief contention must not count as timeout"
+
+    @pytest.mark.asyncio
+    async def test_no_slack_handler_does_not_error(self) -> None:
+        """When SLACK_HANDLER is absent the notify path is silently skipped."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        self.cls.state_save_timeouts = 5
+        m_app = MagicMock()
+        m_app.config = {}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+        assert self.cls.state_save_timeouts == 6
