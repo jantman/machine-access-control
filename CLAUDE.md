@@ -154,12 +154,13 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
 
 ### API Endpoints
 
-**Machine APIs** (`/machine/*`):
-- `POST /machine/update`: Main endpoint for MCU state updates. Returns 503
-  with `{"error": "state save timeout"}` if persisting the resulting state
-  exceeds `STATE_SAVE_TIMEOUT_SEC`.
-- `POST /machine/lock/<machine_name>`: Lock out a machine
-- `POST /machine/unlock/<machine_name>`: Unlock a machine
+**Machine APIs** (mounted under the `/api` blueprint, so externally served
+as `/api/machine/*`):
+- `POST /api/machine/update`: Main endpoint for MCU state updates. Returns
+  503 with `{"error": "state save timeout"}` if persisting the resulting
+  state exceeds `STATE_SAVE_TIMEOUT_SEC`.
+- `POST /api/machine/lock/<machine_name>`: Lock out a machine
+- `POST /api/machine/unlock/<machine_name>`: Unlock a machine
 
 **Admin APIs** (`/api/*`):
 - `POST /api/reload-users`: Hot-reload users.json without restart

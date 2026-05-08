@@ -11,12 +11,17 @@ with interactive documentation at ``/docs`` (Swagger UI) and ``/redocs`` (ReDoc)
 State Save Timeout (HTTP 503)
 -----------------------------
 
-The endpoints that mutate machine state — ``POST /api/machine/update``,
-``POST/DELETE /api/machine/oops/<machine_name>``, and
-``POST/DELETE /api/machine/locked_out/<machine_name>`` — bound the time
-spent persisting state to disk to ``STATE_SAVE_TIMEOUT_SEC`` (2.0
-seconds). If the underlying disk hangs and the write exceeds this
-budget, the handler returns:
+The endpoints that mutate machine state —
+
+* ``POST /api/machine/update``,
+* ``POST /api/machine/oops/<machine_name>`` and
+  ``DELETE /api/machine/oops/<machine_name>``,
+* ``POST /api/machine/locked_out/<machine_name>`` and
+  ``DELETE /api/machine/locked_out/<machine_name>``
+
+— bound the time spent persisting state to disk to
+``STATE_SAVE_TIMEOUT_SEC`` (2.0 seconds). If the underlying disk hangs
+and the write exceeds this budget, the handler returns:
 
 ::
 

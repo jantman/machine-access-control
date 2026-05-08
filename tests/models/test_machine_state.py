@@ -607,6 +607,41 @@ class TestAsyncSaveCache(MachineStateTester):
         assert "2" in kwargs["text"]
 
     @pytest.mark.asyncio
+    async def test_single_flight_fails_fast_when_save_in_progress(self) -> None:
+        """A second call while the first is still running fails immediately
+        instead of spawning another thread (preventing pool exhaustion)."""
+
+        # Use a real Event so the underlying thread blocks deterministically
+        # and we can assert that no second thread was spawned.
+        import threading
+
+        block_thread = threading.Event()
+        spawned: list[int] = []
+
+        def slow_save() -> None:
+            spawned.append(1)
+            block_thread.wait(timeout=5.0)
+
+        m_app = MagicMock()
+        m_app.config = {}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    # First call hits the budget timeout while the thread blocks
+                    with pytest.raises(StateSaveTimeoutError) as exc1:
+                        await self.cls.save_cache()
+                    # Second call sees the still-running task and fails-fast
+                    with pytest.raises(StateSaveTimeoutError) as exc2:
+                        await self.cls.save_cache()
+
+        # Release the blocked thread so the test exits cleanly
+        block_thread.set()
+        assert len(spawned) == 1, "second call must not have spawned a thread"
+        assert "exceeded" in str(exc1.value)
+        assert "already in flight" in str(exc2.value)
+        assert self.cls.state_save_timeouts == 2
+
+    @pytest.mark.asyncio
     async def test_no_slack_handler_does_not_error(self) -> None:
         """When SLACK_HANDLER is absent the notify path is silently skipped."""
 
