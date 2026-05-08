@@ -9,7 +9,6 @@ from textwrap import dedent
 
 import nox
 
-
 try:
     from nox_poetry import Session
     from nox_poetry import session
@@ -24,7 +23,7 @@ except ImportError:
 
 
 package = "dm_mac"
-python_versions = ["3.12"]
+python_versions = ["3.13"]
 nox.needs_version = ">= 2024.4.15"
 nox.options.sessions = (
     "pre-commit",

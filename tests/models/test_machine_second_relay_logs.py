@@ -13,7 +13,6 @@ from dm_mac.models.machine import MachineState
 from dm_mac.models.machine import SecondRelayConfig
 from dm_mac.models.users import User
 
-
 pbm: str = "dm_mac.models.machine"
 pb: str = f"{pbm}.MachineState"
 

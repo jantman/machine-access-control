@@ -23,7 +23,6 @@ from dm_mac.neongetter import NeonUserUpdater
 from dm_mac.neongetter import logger
 from dm_mac.neongetter import main
 
-
 pbm = "dm_mac.neongetter"
 pb = f"{pbm}.NeonUserUpdater"
 

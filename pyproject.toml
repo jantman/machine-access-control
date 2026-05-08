@@ -1,97 +1,82 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core>=1",
+]
+
 [tool.poetry]
 name = "machine_access_control"
 version = "0.11.0"
 description = "Decatur Makers Machine Access Control package"
-authors = ["Jason Antman <jason@jasonantman.com>"]
+authors = [ "Jason Antman <jason@jasonantman.com>" ]
 license = "MIT"
 readme = "README.rst"
 homepage = "https://github.com/jantman/machine_access_control"
 repository = "https://github.com/jantman/machine_access_control"
 documentation = "https://github.com/jantman/machine_access_control"
 packages = [
-    { include = "dm_mac", from = "src" },
+  { include = "dm_mac", from = "src" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+  "Development Status :: 3 - Alpha",
 ]
-
-[tool.poetry.scripts]
-neongetter = "dm_mac.neongetter:main"
-neon-fob-adder = "dm_mac.neon_fob_adder:main"
-mac-server = "dm_mac:main"
-
-[tool.poetry.urls]
-Changelog = "https://github.com/jantman/machine_access_control/releases"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-jsonschema = "^4.23.0"
-requests = "^2.32.4"
-filelock = "^3.20.1"
-prometheus-client = "^0.25.0"
-quart = "^0.20.0"
-asyncio = "^4.0.0"
-slack-bolt = "^1.21.3"
-aiohttp = "^3.12.14"
-slack-sdk = "^3.33.5"
-humanize = "^4.11.0"
+dependencies.python = "^3.13"
+dependencies.jsonschema = "^4.23.0"
+dependencies.requests = "^2.32.4"
+dependencies.filelock = "^3.20.1"
+dependencies.prometheus-client = "^0.25.0"
+dependencies.quart = "^0.20.0"
+dependencies.asyncio = "^4.0.0"
+dependencies.slack-bolt = "^1.21.3"
+dependencies.aiohttp = "^3.12.14"
+dependencies.slack-sdk = "^3.33.5"
+dependencies.humanize = "^4.11.0"
 # Security: Explicitly require secure versions of transitive dependencies
-urllib3 = "^2.6.0"
-werkzeug = "^3.1.4"
-marshmallow = "^4.1.2"
-quart-schema = "^0.23.0"
-pydantic = "^2.12.5"
-
-[tool.poetry.group.dev.dependencies]
-Pygments = ">=2.10.0"
-black = ">=21.10b0"
-coverage = {extras = ["toml"], version = ">=6.2"}
-darglint = ">=1.8.1"
-flake8 = ">=7.1.1"
-flake8-bandit = ">=2.1.2"
-flake8-bugbear = ">=21.9.2"
-flake8-docstrings = ">=1.6.0"
-flake8-rst-docstrings = ">=0.2.5"
-furo = ">=2025.12.19"
-isort = ">=5.10.1"
-mypy = ">=0.930"
-nox = ">=2024.4.15"
-nox-poetry = ">= 1.2.0"
-pep8-naming = ">=0.12.1"
-pre-commit = ">=2.16.0"
-pre-commit-hooks = ">=4.1.0"
-pytest = ">=6.2.5"
-pyupgrade = ">=2.29.1"
-typeguard = ">=2.13.3"
-types-jsonschema = "^4.23.0.20240712"
-pytest-blockage = "^0.2.4"
-sphinx = "<10.0"
-responses = "^0.26.0"
-types-requests = "^2.32.0.20240712"
-faker = "^40.11.0"
-pytest-html = "^4.1.1"
-poetry-plugin-export = "^1.9.0"
-freezegun = "^1.5.1"
-pandas = "^3.0.1"
-python-dateutil = "^2.9.0"
-openpyxl = "^3.1.0"
+dependencies.urllib3 = "^2.6.0"
+dependencies.werkzeug = "^3.1.4"
+dependencies.marshmallow = "^4.1.2"
+dependencies.quart-schema = "^0.23.0"
+dependencies.pydantic = "^2.12.5"
+group.dev.dependencies.Pygments = ">=2.10.0"
+group.dev.dependencies.black = ">=21.10b0"
+group.dev.dependencies.coverage = { extras = [ "toml" ], version = ">=6.2" }
+group.dev.dependencies.darglint = ">=1.8.1"
+group.dev.dependencies.flake8 = ">=7.1.1"
+group.dev.dependencies.flake8-bandit = ">=2.1.2"
+group.dev.dependencies.flake8-bugbear = ">=21.9.2"
+group.dev.dependencies.flake8-docstrings = ">=1.6.0"
+group.dev.dependencies.flake8-rst-docstrings = ">=0.2.5"
+group.dev.dependencies.furo = ">=2025.12.19"
+group.dev.dependencies.isort = ">=5.10.1"
+group.dev.dependencies.mypy = ">=0.930"
+group.dev.dependencies.nox = ">=2024.4.15"
+group.dev.dependencies.nox-poetry = ">= 1.2.0"
+group.dev.dependencies.pep8-naming = ">=0.12.1"
+group.dev.dependencies.pre-commit = ">=2.16.0"
+group.dev.dependencies.pre-commit-hooks = ">=4.1.0"
+group.dev.dependencies.pytest = ">=6.2.5"
+group.dev.dependencies.pyupgrade = ">=2.29.1"
+group.dev.dependencies.typeguard = ">=2.13.3"
+group.dev.dependencies.types-jsonschema = "^4.23.0.20240712"
+group.dev.dependencies.pytest-blockage = "^0.2.4"
+group.dev.dependencies.sphinx = "<10.0"
+group.dev.dependencies.responses = "^0.26.0"
+group.dev.dependencies.types-requests = "^2.32.0.20240712"
+group.dev.dependencies.faker = "^40.11.0"
+group.dev.dependencies.pytest-html = "^4.1.1"
+group.dev.dependencies.poetry-plugin-export = "^1.9.0"
+group.dev.dependencies.freezegun = "^1.5.1"
+group.dev.dependencies.pandas = "^3.0.1"
+group.dev.dependencies.python-dateutil = "^2.9.0"
+group.dev.dependencies.openpyxl = "^3.1.0"
+scripts.neongetter = "dm_mac.neongetter:main"
+scripts.neon-fob-adder = "dm_mac.neon_fob_adder:main"
+scripts.mac-server = "dm_mac:main"
+urls.Changelog = "https://github.com/jantman/machine_access_control/releases"
 
 [tool.isort]
 profile = "black"
 force_single_line = true
-lines_after_imports = 2
-
-[tool.coverage.paths]
-source = ["src", "*/site-packages"]
-tests = ["tests", "*/tests"]
-
-[tool.coverage.run]
-branch = true
-source = ["dm_mac"]
-
-[tool.coverage.report]
-show_missing = true
-fail_under = 5
 
 [tool.mypy]
 strict = true
@@ -101,8 +86,10 @@ show_column_numbers = true
 show_error_codes = true
 show_error_context = true
 
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = [
-  "poetry-core>=1",
-]
+[tool.coverage]
+run.branch = true
+run.source = [ "dm_mac" ]
+paths.source = [ "src", "*/site-packages" ]
+paths.tests = [ "tests", "*/tests" ]
+report.fail_under = 5
+report.show_missing = true

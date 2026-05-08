@@ -8,7 +8,6 @@ import os
 import sys
 from urllib.parse import urlparse
 
-
 sys.path.append(os.path.abspath("exts"))
 
 # -- Project information -----------------------------------------------------

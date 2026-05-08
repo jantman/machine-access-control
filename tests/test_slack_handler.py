@@ -21,7 +21,6 @@ from dm_mac.models.users import UsersConfig
 from dm_mac.slack_handler import Message
 from dm_mac.slack_handler import SlackHandler
 
-
 pbm = "dm_mac.slack_handler"
 
 

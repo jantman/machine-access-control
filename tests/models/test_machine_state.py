@@ -19,7 +19,6 @@ from dm_mac.models.machine import StateSaveTimeoutError
 from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 
-
 pbm: str = "dm_mac.models.machine"
 pb: str = f"{pbm}.MachineState"
 

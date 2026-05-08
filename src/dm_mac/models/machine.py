@@ -26,7 +26,6 @@ from dm_mac.models.users import User
 from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
 
-
 if TYPE_CHECKING:  # pragma: no cover
     from dm_mac.slack_handler import SlackHandler
 

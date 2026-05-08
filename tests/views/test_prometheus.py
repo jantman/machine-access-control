@@ -97,8 +97,7 @@ class TestPrometheus:
 
         mtime_match = re.search(r"user_config_file_mtime ([\d.e+]+)", text)
         actual_mtime_str = mtime_match.group(1) if mtime_match else str(file_mtime)
-        expected = dedent(
-            """
+        expected = dedent("""
         # HELP machine_config_load_timestamp The timestamp when the machine config was loaded
         # TYPE machine_config_load_timestamp gauge
         machine_config_load_timestamp 1.689477248e+09
@@ -271,8 +270,7 @@ class TestPrometheus:
         mac_state_save_timeouts_total{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
         mac_state_save_timeouts_total{display_name="esp32test",machine_name="esp32test"} 0.0
         mac_state_save_timeouts_total{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
-        """  # noqa: E501
-        ).replace("__FILE_MTIME__", actual_mtime_str)
+        """).replace("__FILE_MTIME__", actual_mtime_str)  # noqa: E501
         assert custom_metrics == expected
         assert (
             response.headers["Content-Type"] == CONTENT_TYPE_LATEST + "; charset=utf-8"
@@ -297,8 +295,7 @@ class TestPrometheus:
 
         mtime_match = re.search(r"user_config_file_mtime ([\d.e+]+)", text)
         actual_mtime_str = mtime_match.group(1) if mtime_match else str(file_mtime)
-        expected = dedent(
-            """
+        expected = dedent("""
         # HELP machine_config_load_timestamp The timestamp when the machine config was loaded
         # TYPE machine_config_load_timestamp gauge
         machine_config_load_timestamp 1.689477248e+09
@@ -471,8 +468,7 @@ class TestPrometheus:
         mac_state_save_timeouts_total{display_name="restrictive-lathe",machine_name="restrictive-lathe"} 0.0
         mac_state_save_timeouts_total{display_name="esp32test",machine_name="esp32test"} 0.0
         mac_state_save_timeouts_total{display_name="always-on-machine",machine_name="always-on-machine"} 0.0
-        """  # noqa: E501
-        ).replace("__FILE_MTIME__", actual_mtime_str)
+        """).replace("__FILE_MTIME__", actual_mtime_str)  # noqa: E501
         assert custom_metrics == expected
         assert (
             response.headers["Content-Type"] == CONTENT_TYPE_LATEST + "; charset=utf-8"

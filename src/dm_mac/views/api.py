@@ -16,7 +16,6 @@ from dm_mac.models.api_schemas import ErrorResponse
 from dm_mac.models.api_schemas import ReloadUsersResponse
 from dm_mac.models.users import UsersConfig
 
-
 logger: Logger = getLogger(__name__)
 
 api: Blueprint = Blueprint("api", __name__, url_prefix="/api")

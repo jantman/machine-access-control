@@ -27,7 +27,6 @@ from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.machine import StateSaveTimeoutError
 from dm_mac.models.users import UsersConfig
 
-
 logger: Logger = getLogger(__name__)
 
 machineapi: Blueprint = Blueprint("machine", __name__, url_prefix="/machine")

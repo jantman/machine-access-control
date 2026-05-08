@@ -16,7 +16,6 @@ from jsonschema.exceptions import ValidationError
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 
-
 pbm: str = "dm_mac.models.machine"
 
 

@@ -13,7 +13,6 @@ from dm_mac.utils import set_log_debug
 from dm_mac.utils import set_log_info
 from dm_mac.utils import set_log_level_format
 
-
 pbm = "dm_mac.utils"
 
 
@@ -35,6 +34,7 @@ class TestLoadJsonConfig:
             call().__enter__(),
             call().read(),
             call().__exit__(None, None, None),
+            call().close(),
         ]
 
     @patch.dict("os.environ", {"VNAME": "fname.json"})
@@ -52,6 +52,7 @@ class TestLoadJsonConfig:
             call().__enter__(),
             call().read(),
             call().__exit__(None, None, None),
+            call().close(),
         ]
 
     @patch.dict("os.environ", {})

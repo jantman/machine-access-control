@@ -18,7 +18,6 @@ from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
 
-
 logger: logging.Logger = logging.getLogger(__name__)
 
 
@@ -63,8 +62,7 @@ class Message:
 class SlackHandler:
     """Handle Slack integration."""
 
-    HELP_RESPONSE: str = dedent(
-        """
+    HELP_RESPONSE: str = dedent("""
     Hi, I'm the Machine Access Control slack bot.
     Mention my username followed by one of these commands:
     "status" - list all machines and their status
@@ -74,8 +72,7 @@ class SlackHandler:
 
     I am Free and Open Source software:
     https://github.com/jantman/machine-access-control
-    """
-    ).strip()
+    """).strip()
 
     def __init__(self, quart_app: Quart):
         logger.info("Initializing SlackHandler.")

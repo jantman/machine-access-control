@@ -16,7 +16,6 @@ from dm_mac.models.machine import Machine
 from dm_mac.models.machine import SecondRelayConfig
 from dm_mac.slack_handler import SlackHandler
 
-
 HandlerFixture = Tuple[SlackHandler, AsyncMock]
 
 

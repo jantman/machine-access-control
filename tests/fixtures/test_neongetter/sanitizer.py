@@ -23,7 +23,6 @@ from yaml import load
 from dm_mac.neongetter import NeonUserUpdater
 from dm_mac.utils import load_json_config
 
-
 try:
     from yaml import CDumper as Dumper
     from yaml import CLoader as Loader

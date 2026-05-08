@@ -26,7 +26,6 @@ from dm_mac.cli_utils import set_log_info
 from dm_mac.models.users import UsersConfig
 from dm_mac.utils import load_json_config
 
-
 logging.basicConfig(
     level=logging.WARNING, format="[%(asctime)s %(levelname)s] %(message)s"
 )

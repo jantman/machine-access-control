@@ -16,7 +16,6 @@ from sphinx.util.i18n import format_date
 from sphinx.util.logging import getLogger
 from sphinx.util.matching import Matcher
 
-
 try:
     from sphinx.util.display import status_iterator
 except ImportError:
@@ -294,12 +293,8 @@ def _html_page_context(app, pagename, templatename, context, doctree):
     )
 
     if app.config.git_last_updated_metatags:
-        context[
-            "metatags"
-        ] += """
-    <meta property="article:modified_time" content="{}" />""".format(
-            date.isoformat()
-        )
+        context["metatags"] += """
+    <meta property="article:modified_time" content="{}" />""".format(date.isoformat())
 
 
 def _config_inited(app, config):
