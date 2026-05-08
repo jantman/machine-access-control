@@ -23,6 +23,8 @@ The endpoints that mutate machine state —
 ``STATE_SAVE_TIMEOUT_SEC`` (2.0 seconds). If the underlying disk hangs
 and the write exceeds this budget, the handler returns:
 
+For ``POST /api/machine/update`` (firmware-facing):
+
 ::
 
     HTTP/1.1 503 Service Unavailable
@@ -30,17 +32,35 @@ and the write exceeds this budget, the handler returns:
 
     {"error": "state save timeout"}
 
-This is the recommended path for the firmware to recover from a stuck
-disk on the server: the MCU sees a clean error, leaves its current
-relay state alone, and retries on its next 10-second heartbeat. Without
-this bound, a slow-but-eventually-successful 200 response can wedge the
-firmware via ESPHome ``http_request`` issues such as `#6677
+For the admin endpoints (``POST/DELETE`` on ``/api/machine/oops/<name>``
+and ``/api/machine/locked_out/<name>``), the response body includes
+``action_applied: true`` to indicate that the requested state mutation
+took effect in memory even though persistence timed out — these
+actions also fire Slack notifications fire-and-forget, which cannot be
+rolled back, so the action *is* live and the next successful save will
+catch up:
+
+::
+
+    HTTP/1.1 503 Service Unavailable
+    Content-Type: application/json
+
+    {"error": "state save timeout", "action_applied": true}
+
+For the firmware-facing endpoint, the 503 response is the recommended
+path for the MCU to recover from a stuck disk on the server: it sees a
+clean error, leaves its current relay state alone, and retries on its
+next 10-second heartbeat. Without this bound, a slow-but-eventually
+successful 200 response can wedge the firmware via ESPHome
+``http_request`` issues such as `#6677
 <https://github.com/esphome/issues/issues/6677>`_.
 
 Each timeout increments the per-machine ``mac_state_save_timeouts_total``
-Prometheus counter. When the lifetime per-machine count reaches 2 or
-more, a notification is posted to ``SLACK_CONTROL_CHANNEL_ID``; a single
-transient timeout is logged and counted but does not page.
+Prometheus counter. A Slack notification is posted to
+``SLACK_CONTROL_CHANNEL_ID`` *exactly once*, on the transition from 1
+to 2 lifetime timeouts for a given machine; subsequent timeouts under a
+sustained disk hang do not re-page (operators monitoring the Prometheus
+counter can alert on continued growth).
 
 Second Relay Protocol Additions
 -------------------------------

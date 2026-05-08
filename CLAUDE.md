@@ -125,10 +125,14 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
 - Each persistence write is bounded by `STATE_SAVE_TIMEOUT_SEC` (2.0 s) via
   `MachineState.save_cache()`. If a write exceeds the budget the request
   handler returns HTTP 503 to the MCU so the firmware sees a clean error
-  instead of a slow-but-200 response. Lifetime per-machine timeouts are
-  exposed as the `mac_state_save_timeouts_total` Prometheus counter, and
-  every timeout where the per-machine count is `>= 2` posts a notification
-  to `SLACK_CONTROL_CHANNEL_ID`.
+  instead of a slow-but-200 response. `save_cache()` is single-flight per
+  machine (subsequent calls fail-fast while a previous save is hung) so a
+  stuck disk cannot exhaust the thread pool. Lifetime per-machine
+  timeouts are exposed as the `mac_state_save_timeouts_total` Prometheus
+  counter; a Slack notification is posted to `SLACK_CONTROL_CHANNEL_ID`
+  *exactly once*, on the transition to 2 timeouts for a given machine
+  (subsequent timeouts during a sustained disk hang do not re-page;
+  monitor the Prometheus counter for ongoing trend).
 
 ### Request Flow
 

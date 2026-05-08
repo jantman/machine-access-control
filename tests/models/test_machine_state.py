@@ -13,7 +13,6 @@ from unittest.mock import patch
 
 import pytest
 
-from dm_mac.models.machine import STATE_SAVE_TIMEOUT_SEC
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
 from dm_mac.models.machine import StateSaveTimeoutError
@@ -548,8 +547,11 @@ class TestAsyncSaveCache(MachineStateTester):
     async def test_timeout_raises_and_increments_counter(self) -> None:
         """A slow underlying save raises StateSaveTimeoutError and counts."""
 
+        # Sleep just long enough to outlast the patched 0.1s budget; using
+        # the unpatched STATE_SAVE_TIMEOUT_SEC (2.0s) here would make the
+        # test sleep for 2.5s for no reason.
         def slow_save() -> None:
-            time.sleep(STATE_SAVE_TIMEOUT_SEC + 0.5)
+            time.sleep(0.3)
 
         with patch.object(self.cls, "_save_cache", side_effect=slow_save):
             with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.1):

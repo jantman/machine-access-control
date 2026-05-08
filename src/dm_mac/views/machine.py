@@ -154,13 +154,27 @@ async def oops(machine_name: str) -> Tuple[Response, int]:
         await machine.state.save_cache()
         return jsonify({"success": True}), 200
     except StateSaveTimeoutError as ex:
+        # The in-memory state mutation and any Slack notification have
+        # already taken effect; only persistence to disk failed. Surface
+        # 503 so monitoring catches the disk problem, but include
+        # `action_applied: true` so the API caller knows the requested
+        # change is live and the next successful save will catch up.
         logger.error(
-            "State save timeout in %s oops for machine %s: %s",
+            "State save timeout in %s oops for machine %s "
+            "(action applied in memory; persistence deferred): %s",
             method,
             machine_name,
             ex,
         )
-        return jsonify({"error": "state save timeout"}), 503
+        return (
+            jsonify(
+                {
+                    "error": "state save timeout",
+                    "action_applied": True,
+                }
+            ),
+            503,
+        )
     except Exception as ex:
         logger.error(
             "Error in %s oops for machine %s: %s",
@@ -198,13 +212,26 @@ async def locked_out(machine_name: str) -> Tuple[Response, int]:
         await machine.state.save_cache()
         return jsonify({"success": True}), 200
     except StateSaveTimeoutError as ex:
+        # See oops() above: the in-memory lockout transition has already
+        # taken effect; only the pickle write timed out. Signal both via
+        # 503 (so monitoring fires) and `action_applied: true` (so the
+        # API caller knows the lock/unlock is live).
         logger.error(
-            "State save timeout in %s locked_out for machine %s: %s",
+            "State save timeout in %s locked_out for machine %s "
+            "(action applied in memory; persistence deferred): %s",
             method,
             machine_name,
             ex,
         )
-        return jsonify({"error": "state save timeout"}), 503
+        return (
+            jsonify(
+                {
+                    "error": "state save timeout",
+                    "action_applied": True,
+                }
+            ),
+            503,
+        )
     except Exception as ex:
         logger.error(
             "Error in %s locked_out for machine %s: %s",

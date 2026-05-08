@@ -460,6 +460,12 @@ class MachineState:
         task: "asyncio.Task[None]" = asyncio.create_task(
             asyncio.to_thread(self._save_cache)
         )
+        # If the underlying thread eventually completes after we've timed
+        # out, consume any exception it produced so the event loop doesn't
+        # log "Task exception was never retrieved". Also clear our
+        # reference so subsequent save_cache calls aren't blocked forever
+        # waiting on a task we've already given up on.
+        task.add_done_callback(self._on_save_task_done)
         self._save_task = task
         try:
             await asyncio.wait_for(asyncio.shield(task), timeout=STATE_SAVE_TIMEOUT_SEC)
@@ -470,6 +476,29 @@ class MachineState:
                 f"{STATE_SAVE_TIMEOUT_SEC:.1f}s budget "
                 f"(lifetime timeout count: {count})"
             ) from exc
+
+    def _on_save_task_done(self, task: "asyncio.Task[None]") -> None:
+        """Done-callback for the in-flight save task.
+
+        Logs (and thus consumes) any exception the underlying
+        :meth:`_save_cache` raised, so a thread that finishes after we
+        have already timed out cannot leak unhandled exceptions into
+        the event loop. Also clears :attr:`_save_task` if this is still
+        the current task, so a subsequent successful save can run.
+        """
+        try:
+            exc = task.exception()
+        except asyncio.CancelledError:
+            exc = None
+        if exc is not None:
+            logger.warning(
+                "Background state save for machine %s finished with "
+                "an exception: %r",
+                self.machine.name,
+                exc,
+            )
+        if self._save_task is task:
+            self._save_task = None
 
     def _record_save_timeout(self, reason: str) -> int:
         """Increment the timeout counter, log, and notify Slack.
@@ -489,13 +518,16 @@ class MachineState:
         return count
 
     def _notify_save_timeout(self, count: int) -> None:
-        """Fire a fire-and-forget Slack notification on repeated save timeouts.
+        """Fire a fire-and-forget Slack notification on the 2nd save timeout.
 
         Skipped on the first timeout to tolerate single transient stalls;
-        every timeout where the lifetime count is >= 2 produces one
-        notification to ``SLACK_CONTROL_CHANNEL_ID``.
+        fired *exactly once* on the transition to 2 to avoid spamming
+        ``SLACK_CONTROL_CHANNEL_ID`` under a sustained disk hang (where
+        timeouts can arrive every ~10 s as MCU heartbeats keep coming).
+        Operators monitoring the ``mac_state_save_timeouts_total``
+        Prometheus counter can alert on sustained increase from there.
         """
-        if count < 2:
+        if count != 2:
             return
         slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
         if slack is None:

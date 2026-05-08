@@ -3347,7 +3347,12 @@ class TestOopsApi:
         assert response.status_code == 500
 
     async def test_oops_state_save_timeout(self, tmp_path: Path) -> None:
-        """Test oops POST returns 503 on state-save timeout."""
+        """Test oops POST returns 503 on state-save timeout.
+
+        Body must include ``action_applied: true`` so the API caller
+        knows the in-memory state mutation took effect even though
+        persistence to disk timed out.
+        """
         from dm_mac.models.machine import StateSaveTimeoutError
 
         app, client = app_and_client(tmp_path)
@@ -3362,7 +3367,10 @@ class TestOopsApi:
                 "/api/machine/oops/metal-mill",
             )
         assert response.status_code == 503
-        assert await response.json == {"error": "state save timeout"}
+        assert await response.json == {
+            "error": "state save timeout",
+            "action_applied": True,
+        }
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
@@ -3457,7 +3465,12 @@ class TestLockApi:
         assert response.status_code == 500
 
     async def test_lockout_state_save_timeout(self, tmp_path: Path) -> None:
-        """Test locked_out POST returns 503 on state-save timeout."""
+        """Test locked_out POST returns 503 on state-save timeout.
+
+        Body must include ``action_applied: true`` so the API caller
+        knows the in-memory lock/unlock mutation took effect even
+        though persistence to disk timed out.
+        """
         from dm_mac.models.machine import StateSaveTimeoutError
 
         app, client = app_and_client(tmp_path)
@@ -3472,7 +3485,10 @@ class TestLockApi:
                 "/api/machine/locked_out/metal-mill",
             )
         assert response.status_code == 503
-        assert await response.json == {"error": "state save timeout"}
+        assert await response.json == {
+            "error": "state save timeout",
+            "action_applied": True,
+        }
 
 
 @freeze_time("2023-07-16 03:14:08", tz_offset=0)
