@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
+from dm_mac.models.machine import FleetTimeoutTracker
 from dm_mac.models.machine import Machine
 from dm_mac.models.machine import MachineState
 from dm_mac.models.machine import StateSaveTimeoutError
@@ -552,10 +553,13 @@ class TestAsyncSaveCache(MachineStateTester):
         def slow_save() -> None:
             time.sleep(0.3)
 
-        with patch.object(self.cls, "_save_cache", side_effect=slow_save):
-            with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.1):
-                with pytest.raises(StateSaveTimeoutError):
-                    await self.cls.save_cache()
+        m_app = MagicMock()
+        m_app.config = {}
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.1):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
         assert self.cls.state_save_timeouts == 1
 
     @pytest.mark.asyncio
@@ -705,3 +709,148 @@ class TestAsyncSaveCache(MachineStateTester):
                     with pytest.raises(StateSaveTimeoutError):
                         await self.cls.save_cache()
         assert self.cls.state_save_timeouts == 6
+
+
+class TestFleetTimeoutTracker:
+    """Tests for the fleet-wide state-save timeout tracker."""
+
+    def test_single_machine_does_not_trigger(self) -> None:
+        """One machine repeatedly timing out is not a fleet-wide event."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m1", now=101.0) is None
+        assert t.record("m1", now=102.0) is None
+
+    def test_two_distinct_machines_in_window_triggers(self) -> None:
+        """Two distinct machines within the window fires; returns the count."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m2", now=130.0) == 2
+
+    def test_four_distinct_machines_returns_four(self) -> None:
+        """The returned count reflects distinct machines in the window."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m2", now=101.0) == 2
+        # Within cooldown: subsequent events suppressed even as count grows
+        assert t.record("m3", now=102.0) is None
+        assert t.record("m4", now=103.0) is None
+
+    def test_distinct_machines_outside_window_do_not_trigger(self) -> None:
+        """An event outside the window is dropped before counting."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        # 61 s later — m1's event has aged out; only m2 is in the window
+        assert t.record("m2", now=161.0) is None
+
+    def test_cooldown_suppresses_repaging(self) -> None:
+        """Once armed, the cooldown suppresses further notifications."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m2", now=101.0) == 2
+        # Different pair of machines still within cooldown: no re-page
+        assert t.record("m3", now=200.0) is None
+        assert t.record("m4", now=201.0) is None
+
+    def test_cooldown_expiration_allows_repaging(self) -> None:
+        """After the cooldown elapses a fresh fleet-wide event re-fires."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m2", now=101.0) == 2
+        # 301 s after the notification: cooldown is over.
+        assert t.record("m3", now=402.0) is None  # only m3 in window
+        assert t.record("m4", now=403.0) == 2
+
+    def test_threshold_three_requires_three_distinct(self) -> None:
+        """Configurable threshold actually controls trigger point."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=3, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m2", now=101.0) is None
+        assert t.record("m3", now=102.0) == 3
+
+    def test_same_machine_does_not_double_count_toward_distinct(self) -> None:
+        """Repeated events from the same machine count once toward distinct."""
+        t = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        assert t.record("m1", now=100.0) is None
+        assert t.record("m1", now=101.0) is None
+        assert t.record("m1", now=102.0) is None  # still 1 distinct
+        assert t.record("m2", now=103.0) == 2  # now 2 distinct
+
+
+class TestFleetTimeoutNotification(MachineStateTester):
+    """Integration tests: save_cache timeout drives fleet-wide Slack alert."""
+
+    @pytest.mark.asyncio
+    async def test_fleet_notification_fires_via_tracker(self) -> None:
+        """When the tracker says fire, the Slack call goes out."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        slack = MagicMock()
+        slack.app.client.chat_postMessage = AsyncMock()
+        slack.control_channel_id = "C123"
+        # Tracker pre-seeded so this single timeout crosses the threshold.
+        tracker = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        tracker.record("other-machine", now=time.monotonic() - 1.0)
+        m_app = MagicMock()
+        m_app.config = {
+            "SLACK_HANDLER": slack,
+            "FLEET_TIMEOUT_TRACKER": tracker,
+        }
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+                    await asyncio.sleep(0)
+        # Two calls expected: per-machine (count==1 → skipped) does NOT fire,
+        # but fleet-wide DOES fire. So exactly one call total.
+        assert slack.app.client.chat_postMessage.call_count == 1
+        text = slack.app.client.chat_postMessage.call_args.kwargs["text"]
+        assert "Fleet-wide" in text
+        assert "2 distinct machines" in text
+
+    @pytest.mark.asyncio
+    async def test_no_fleet_tracker_skips_silently(self) -> None:
+        """Absence of FLEET_TIMEOUT_TRACKER in app config is not an error."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        slack = MagicMock()
+        slack.app.client.chat_postMessage = AsyncMock()
+        slack.control_channel_id = "C123"
+        m_app = MagicMock()
+        m_app.config = {"SLACK_HANDLER": slack}  # no FLEET_TIMEOUT_TRACKER
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+                    await asyncio.sleep(0)
+        slack.app.client.chat_postMessage.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_fleet_tracker_below_threshold_does_not_notify(self) -> None:
+        """A single-machine timeout with empty tracker does not page."""
+
+        def slow_save() -> None:
+            time.sleep(0.5)
+
+        slack = MagicMock()
+        slack.app.client.chat_postMessage = AsyncMock()
+        slack.control_channel_id = "C123"
+        tracker = FleetTimeoutTracker(window_sec=60, threshold=2, cooldown_sec=300)
+        m_app = MagicMock()
+        m_app.config = {
+            "SLACK_HANDLER": slack,
+            "FLEET_TIMEOUT_TRACKER": tracker,
+        }
+        with patch(f"{pbm}.current_app", new=m_app):
+            with patch.object(self.cls, "_save_cache", side_effect=slow_save):
+                with patch(f"{pbm}.STATE_SAVE_TIMEOUT_SEC", 0.05):
+                    with pytest.raises(StateSaveTimeoutError):
+                        await self.cls.save_cache()
+                    await asyncio.sleep(0)
+        slack.app.client.chat_postMessage.assert_not_called()

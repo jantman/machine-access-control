@@ -31,11 +31,26 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
-    # Task watchdog: catastrophic-hang fallback only. The 60 s timeout is
-    # intentionally generous so this does NOT interrupt an in-progress
-    # operation (e.g. a laser cut) when the application-level liveness
-    # watchdog (interval below) can recover; this only fires when the loop
-    # task itself is so wedged that no software watchdog can run.
+    # Three layered hardware/runtime watchdogs:
+    #
+    # 1. Task WDT (CONFIG_ESP_TASK_WDT_*): catastrophic-hang fallback
+    #    for the loop task. The 60 s timeout is intentionally generous
+    #    so this does NOT interrupt an in-progress operation (e.g. a
+    #    laser cut) when the application-level liveness watchdog
+    #    (interval below) can recover; this only fires when the loop
+    #    task itself is so wedged that no software watchdog can run.
+    #
+    # 2. Interrupt WDT (CONFIG_ESP_INT_WDT*): fires if interrupts are
+    #    disabled (a critical section is held) for longer than the
+    #    timeout. Catches loop blocks that would otherwise mask the
+    #    task WDT, because the task WDT cannot itself fire from inside
+    #    a critical section.
+    #
+    # 3. Bootloader/RTC WDT (CONFIG_BOOTLOADER_WDT_*): a hardware timer
+    #    in the RTC domain that fires unconditionally. Last resort if
+    #    the chip hangs in a way no software WDT can detect. Enabled
+    #    here primarily to keep it on through application startup;
+    #    runtime feeding is handled by the task WDT subsystem.
     sdkconfig_options:
       CONFIG_ESP_TASK_WDT_TIMEOUT_S: "60"
       CONFIG_ESP_TASK_WDT_EN: y
@@ -43,6 +58,10 @@ esp32:
       CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0: y
       CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1: y
       CONFIG_ESP_TASK_WDT_PANIC: y
+      CONFIG_ESP_INT_WDT: y
+      CONFIG_ESP_INT_WDT_TIMEOUT_MS: "300"
+      CONFIG_BOOTLOADER_WDT_ENABLE: y
+      CONFIG_BOOTLOADER_WDT_TIME_MS: "9000"
 
 # Enable logging
 logger:
@@ -325,7 +344,15 @@ interval:
             ESP_LOGE("WDOG",
                      "No successful POST in %us; relay off; rebooting",
                      stale);
-            App.safe_reboot();
+            // App.reboot() (not safe_reboot) — by the time this fires
+            // the device is by-definition unrecoverable, so we want an
+            // unconditional esp_restart(). safe_reboot() runs every
+            // component's synchronous on_shutdown() hook and waits
+            // indefinitely for it to return; http_request's shutdown
+            // hook blocks when the network/server is unreachable —
+            // exactly the condition we're trying to recover from.
+            // See docs/2026-05-11-mcu-lockup-analysis.md.
+            App.reboot();
           } else if (stale > 90 && relay_on) {
             ESP_LOGW("WDOG",
                      "No successful POST in %us; relay ON; deferring reboot",

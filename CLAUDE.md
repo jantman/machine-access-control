@@ -133,11 +133,22 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
   thread pool. Brief overlap between requests succeeds without
   counting; only callers whose own wait actually exceeds the budget
   count as timeouts. Lifetime per-machine timeouts are exposed as the
-  `mac_state_save_timeouts_total` Prometheus counter; a Slack
-  notification is posted to `SLACK_CONTROL_CHANNEL_ID` *exactly once*,
-  on the transition to 2 timeouts for a given machine (subsequent
-  timeouts during a sustained disk hang do not re-page; monitor the
-  Prometheus counter for ongoing trend).
+  `mac_state_save_timeouts_total` Prometheus counter. Two independent
+  Slack notifications cover different failure shapes (both post to
+  `SLACK_CONTROL_CHANNEL_ID`):
+
+  1. **Per-machine** ("this machine is repeatedly slow"): fires
+     exactly once on the transition to 2 lifetime timeouts for one
+     machine. Suppresses single transient stalls.
+  2. **Fleet-wide** ("the disk is hung"): fires when at least
+     `FLEET_TIMEOUT_THRESHOLD` (default 2) *distinct* machines record
+     timeouts within `FLEET_TIMEOUT_WINDOW_SEC` (default 60 s), with
+     `FLEET_TIMEOUT_COOLDOWN_SEC` (default 300 s) between consecutive
+     fires. This catches the 2026-05-11 pattern in which every
+     machine's per-machine counter goes 0→1 simultaneously and the
+     per-machine rule above never trips. Implemented by
+     `FleetTimeoutTracker` (one instance per app, in
+     `current_app.config["FLEET_TIMEOUT_TRACKER"]`).
 
 ### Request Flow
 
