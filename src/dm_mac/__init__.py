@@ -15,6 +15,7 @@ from quart.logging import default_handler
 from quart_schema import QuartSchema
 from slack_bolt.adapter.socket_mode.async_handler import AsyncSocketModeHandler
 
+from dm_mac.models.machine import FleetTimeoutTracker
 from dm_mac.models.machine import MachinesConfig
 from dm_mac.models.users import UsersConfig
 from dm_mac.slack_handler import SlackHandler
@@ -98,6 +99,7 @@ def create_app() -> Quart:
     app.config.update({"USERS": UsersConfig()})
     app.config.update({"START_TIME": time()})
     app.config.update({"SLACK_HANDLER": None})
+    app.config.update({"FLEET_TIMEOUT_TRACKER": FleetTimeoutTracker()})
     app.register_blueprint(api)
     app.add_url_rule("/metrics", view_func=prometheus_route)
     return app

@@ -4,13 +4,16 @@ import asyncio
 import logging
 import os
 import pickle
+from collections import deque
 from contextlib import nullcontext
 from logging import Logger
 from logging import getLogger
 from threading import Lock
+from time import monotonic
 from time import time
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Deque
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -39,6 +42,18 @@ logger: Logger = getLogger(__name__)
 #: (see ``docs/2026-05-05-mcu-lockup-analysis.md``).
 STATE_SAVE_TIMEOUT_SEC: float = 2.0
 
+#: Window over which to count distinct machines that hit state-save timeouts
+#: for the fleet-wide Slack alert (see :class:`FleetTimeoutTracker`).
+FLEET_TIMEOUT_WINDOW_SEC: float = 60.0
+
+#: Minimum distinct machines within :data:`FLEET_TIMEOUT_WINDOW_SEC` that
+#: triggers the fleet-wide Slack notification.
+FLEET_TIMEOUT_THRESHOLD: int = 2
+
+#: Minimum spacing between consecutive fleet-wide Slack notifications, to
+#: avoid spamming the channel during a sustained disk hang.
+FLEET_TIMEOUT_COOLDOWN_SEC: float = 300.0
+
 
 class StateSaveTimeoutError(Exception):
     """Raised when persisting machine state to disk exceeds the budget.
@@ -48,6 +63,70 @@ class StateSaveTimeoutError(Exception):
     ``/api/machine/locked_out/<name>``) so the firmware sees a clean
     error and recovers on its next heartbeat.
     """
+
+
+class FleetTimeoutTracker:
+    """Cross-machine accounting for state-save timeouts.
+
+    The per-machine Slack notification in
+    :meth:`MachineState._notify_save_timeout` only fires on the
+    transition to 2 *lifetime* timeouts for a single machine, which
+    is the right signal for "this machine is repeatedly slow". It is
+    the *wrong* signal for "the disk on the mac-server host just
+    hung", which produces the 2026-05-11 pattern: N distinct machines
+    each hit their first lifetime timeout simultaneously, every per-
+    machine counter goes 0 → 1, and no Slack message fires.
+
+    This tracker fills that gap. Each timeout records
+    ``(machine_name, monotonic_ts)``; when at least
+    :data:`FLEET_TIMEOUT_THRESHOLD` *distinct* machines have recorded
+    a timeout within :data:`FLEET_TIMEOUT_WINDOW_SEC`, the tracker
+    signals that a fleet-wide notification should fire, subject to
+    :data:`FLEET_TIMEOUT_COOLDOWN_SEC` between consecutive
+    notifications.
+
+    See ``docs/2026-05-11-mcu-lockup-analysis.md`` for the
+    motivating incident.
+    """
+
+    def __init__(
+        self,
+        window_sec: float = FLEET_TIMEOUT_WINDOW_SEC,
+        threshold: int = FLEET_TIMEOUT_THRESHOLD,
+        cooldown_sec: float = FLEET_TIMEOUT_COOLDOWN_SEC,
+    ) -> None:
+        self.window_sec: float = window_sec
+        self.threshold: int = threshold
+        self.cooldown_sec: float = cooldown_sec
+        self._events: Deque[Tuple[str, float]] = deque()
+        self._last_notification_ts: Optional[float] = None
+
+    def record(self, machine_name: str, now: Optional[float] = None) -> Optional[int]:
+        """Record a state-save timeout for ``machine_name``.
+
+        :param machine_name: Internal machine name (not display name).
+        :param now: Override the current monotonic timestamp; used by
+            tests. Production callers should omit this.
+        :returns: ``None`` if no fleet-wide notification should fire;
+            otherwise the count of *distinct* machines within the
+            window at the moment the threshold was crossed. A non-None
+            return implicitly arms the cooldown.
+        """
+        ts: float = monotonic() if now is None else now
+        cutoff: float = ts - self.window_sec
+        while self._events and self._events[0][1] < cutoff:
+            self._events.popleft()
+        self._events.append((machine_name, ts))
+        distinct: int = len({name for name, _ in self._events})
+        if distinct < self.threshold:
+            return None
+        if (
+            self._last_notification_ts is not None
+            and (ts - self._last_notification_ts) < self.cooldown_sec
+        ):
+            return None
+        self._last_notification_ts = ts
+        return distinct
 
 
 _SECOND_RELAY_SCHEMA: Dict[str, Any] = {
@@ -531,6 +610,7 @@ class MachineState:
             count,
         )
         self._notify_save_timeout(count)
+        self._notify_fleet_save_timeout()
         return count
 
     def _notify_save_timeout(self, count: int) -> None:
@@ -563,6 +643,48 @@ class MachineState:
         except RuntimeError:  # pragma: no cover - no running loop
             logger.debug(
                 "No running event loop; skipping Slack save-timeout notification"
+            )
+
+    def _notify_fleet_save_timeout(self) -> None:
+        """Fire a Slack alert if multiple machines hit timeouts in a short window.
+
+        Complements :meth:`_notify_save_timeout`: that rule pages on
+        the *second lifetime* timeout for one machine ("this machine
+        is slow"); this rule pages when
+        :data:`FLEET_TIMEOUT_THRESHOLD` *distinct* machines hit any
+        timeout within :data:`FLEET_TIMEOUT_WINDOW_SEC` ("the disk is
+        slow"). Cooldown via the tracker prevents re-paging during a
+        sustained hang.
+        """
+        tracker: Optional[FleetTimeoutTracker] = current_app.config.get(
+            "FLEET_TIMEOUT_TRACKER"
+        )
+        if tracker is None:
+            return
+        distinct: Optional[int] = tracker.record(self.machine.name)
+        if distinct is None:
+            return
+        slack: Optional["SlackHandler"] = current_app.config.get("SLACK_HANDLER")
+        if slack is None:
+            return
+        msg = (
+            f":rotating_light: Fleet-wide state-save timeouts: "
+            f"{distinct} distinct machines hit state-save timeouts within "
+            f"{tracker.window_sec:.0f}s. Disk on the mac-server host is "
+            f"likely saturated or hung. See "
+            f"`mac_state_save_timeouts_total` in Prometheus."
+        )
+        try:
+            asyncio.create_task(
+                slack.app.client.chat_postMessage(
+                    channel=slack.control_channel_id,
+                    text=msg,
+                )
+            )
+        except RuntimeError:  # pragma: no cover - no running loop
+            logger.debug(
+                "No running event loop; skipping fleet-wide save-timeout "
+                "notification"
             )
 
     def _load_from_cache(self) -> None:
