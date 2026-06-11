@@ -214,6 +214,11 @@ Key files to modify:
 
 ## Progress
 
-- Planning complete; awaiting human approval before implementation.
+- Planning complete; approved to proceed autonomously (commit after every task).
+- **Milestone 1 complete** (case-insensitive machine matching):
+  - 1.1: `MachinesConfig.get_machine()` is now case-insensitive via lowercased
+    name/alias lookup maps.
+  - 1.2: Added `get_machine()` case-insensitive unit tests and a mixed-case
+    `@mention` oops command test. `nox -s tests` passing.
 </content>
 </invoke>

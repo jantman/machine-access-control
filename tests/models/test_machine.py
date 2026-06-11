@@ -235,3 +235,42 @@ class TestMachinesConfigGetMachine:
                 cls: MachinesConfig = MachinesConfig()
         machine = cls.get_machine("nonexistent")
         assert machine is None
+
+    def test_get_machine_case_insensitive_name(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test getting a machine by name regardless of case."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        for variant in ["metal-mill", "Metal-Mill", "METAL-MILL", "MeTaL-mIlL"]:
+            machine = cls.get_machine(variant)
+            assert machine is not None, variant
+            assert machine.name == "metal-mill"
+
+    def test_get_machine_case_insensitive_alias(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test getting a machine by alias regardless of case."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        for variant in ["Metal Mill", "metal mill", "METAL MILL", "mEtAl MiLl"]:
+            machine = cls.get_machine(variant)
+            assert machine is not None, variant
+            assert machine.name == "metal-mill"
+            assert machine.alias == "Metal Mill"

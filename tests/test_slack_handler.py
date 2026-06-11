@@ -734,6 +734,38 @@ class TestSlackHandler:
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_handle_command_oops_case_insensitive(self, tmp_path) -> None:
+        """Oops command matches machine name/alias case-insensitively."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = False
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        msg = Message(
+            text="<@U12345678> oops MeTaL MiLl",
+            user_id="U5678",
+            user_name="User Name",
+            user_handle="displayName",
+            channel_id="Cadmin",
+            channel_name="AdminChannel",
+        )
+        say = AsyncMock()
+        await self.cls.handle_command(msg, say)
+        assert say.mock_calls == []
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin",
+                text="Machine Metal Mill oopsed via Slack by unknown user.",
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine Metal Mill has been Oops'ed!"
+            ),
+        ]
+        assert self.slack_app.mock_calls == []
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
+
 
 def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:
     fpath: str = os.path.abspath(
