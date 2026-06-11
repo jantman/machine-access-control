@@ -877,6 +877,179 @@ class TestSlackHandler:
         ]
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_opens_modal(self, tmp_path) -> None:
+        """No-arg /oops-clear opens a modal of oopsed/locked machines."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        # clear everything first, then mark two
+        for mach in mconf.machines:
+            mach.state.is_oopsed = False
+            mach.state.is_locked_out = False
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = True
+        mconf.machines_by_name["hammer"].state.is_locked_out = True
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "", "trigger_id": "T123"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [call()]
+        # sorted by display name (case-insensitive): hammer, then Metal Mill
+        expected_view = {
+            "type": "modal",
+            "callback_id": "oops_clear_modal",
+            "title": {"type": "plain_text", "text": "Clear Machine"},
+            "submit": {"type": "plain_text", "text": "Clear"},
+            "close": {"type": "plain_text", "text": "Cancel"},
+            "blocks": [
+                {
+                    "type": "input",
+                    "block_id": "machine_block",
+                    "label": {"type": "plain_text", "text": "Machine to clear"},
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "machine_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a machine",
+                        },
+                        "options": [
+                            {
+                                "text": {"type": "plain_text", "text": "hammer"},
+                                "value": "hammer",
+                            },
+                            {
+                                "text": {"type": "plain_text", "text": "Metal Mill"},
+                                "value": "metal-mill",
+                            },
+                        ],
+                    },
+                }
+            ],
+        }
+        assert client.mock_calls == [
+            call.views_open(trigger_id="T123", view=expected_view)
+        ]
+        # no default selection
+        element = expected_view["blocks"][0]["element"]
+        assert "initial_option" not in element
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_no_machines_to_clear(self, tmp_path) -> None:
+        """No-arg /oops-clear with nothing oopsed/locked acks, opens no modal."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        for mach in mconf.machines:
+            mach.state.is_oopsed = False
+            mach.state.is_locked_out = False
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "", "trigger_id": "T123"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [
+            call("No machines are currently oopsed or locked out.")
+        ]
+        assert client.mock_calls == []
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_modal_submit_clears(self, tmp_path) -> None:
+        """Modal submission clears the selected machine."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = True
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        view = {
+            "state": {
+                "values": {
+                    "machine_block": {
+                        "machine_select": {"selected_option": {"value": "metal-mill"}}
+                    }
+                }
+            }
+        }
+        await self.cls.oops_clear_modal_submit(ack, view)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin", text="Machine Metal Mill un-oopsed via Slack."
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine Metal Mill oops has been cleared."
+            ),
+        ]
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_modal_submit_already_clear(self, tmp_path) -> None:
+        """Modal submission for an already-clear machine is graceful."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = False
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        view = {
+            "state": {
+                "values": {
+                    "machine_block": {
+                        "machine_select": {"selected_option": {"value": "metal-mill"}}
+                    }
+                }
+            }
+        }
+        await self.cls.oops_clear_modal_submit(ack, view)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_modal_submit_no_selection(self, tmp_path) -> None:
+        """Modal submission with no selection is handled without error."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        ack = AsyncMock()
+        view = {
+            "state": {
+                "values": {
+                    "machine_block": {"machine_select": {"selected_option": None}}
+                }
+            }
+        }
+        await self.cls.oops_clear_modal_submit(ack, view)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_modal_submit_unknown_machine(self, tmp_path) -> None:
+        """Modal submission selecting an unknown machine is handled gracefully."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        ack = AsyncMock()
+        view = {
+            "state": {
+                "values": {
+                    "machine_block": {
+                        "machine_select": {
+                            "selected_option": {"value": "ghost-machine"}
+                        }
+                    }
+                }
+            }
+        }
+        await self.cls.oops_clear_modal_submit(ack, view)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == []
+
 
 def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:
     fpath: str = os.path.abspath(

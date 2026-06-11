@@ -229,5 +229,14 @@ Key files to modify:
     error/edge). No-arg case is a temporary usage hint, replaced in Milestone 3.
   - 2.3: Added direct-form tests (clears oopsed, already-clear, invalid machine,
     wrong channel, mixed-case) and updated `test_init`. `nox -s tests` passing.
+- **Milestone 3 complete** (Block Kit modal):
+  - 3.1: No-arg `/oops-clear` now opens a `static_select` modal of currently
+    oopsed/locked machines (no default); ephemeral notice when none.
+  - 3.2: Registered and implemented `oops_clear_modal_submit()` to clear the
+    selected machine via `_clear_machine`, with graceful handling of the
+    already-cleared race and missing/unknown selections.
+  - 3.3: Added modal-flow tests (open with options, empty case, submit clears,
+    already-clear, no selection, unknown machine). `slack_handler.py` at 100%
+    coverage; `nox -s tests` passing.
 </content>
 </invoke>
