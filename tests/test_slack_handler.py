@@ -140,12 +140,16 @@ class TestSlackHandler:
             call().event("app_mention")(self.cls.app_mention),
             call().command("/oops-clear"),
             call().command("/oops-clear")(self.cls.oops_clear_command),
+            call().view("oops_clear_modal"),
+            call().view("oops_clear_modal")(self.cls.oops_clear_modal_submit),
         ]
         assert self.slack_app.mock_calls == [
             call.event("app_mention"),
             call.event("app_mention")(self.cls.app_mention),
             call.command("/oops-clear"),
             call.command("/oops-clear")(self.cls.oops_clear_command),
+            call.view("oops_clear_modal"),
+            call.view("oops_clear_modal")(self.cls.oops_clear_modal_submit),
         ]
         assert self.cls.app == self.slack_app
 

@@ -64,6 +64,14 @@ class Message:
 class SlackHandler:
     """Handle Slack integration."""
 
+    #: Block Kit ``callback_id`` for the ``/oops-clear`` selection modal; used
+    #: both when opening the modal and when routing its submission.
+    MODAL_CALLBACK_ID: str = "oops_clear_modal"
+    #: ``block_id`` of the machine-selection input block in the modal.
+    MODAL_BLOCK_ID: str = "machine_block"
+    #: ``action_id`` of the machine-selection ``static_select`` element.
+    MODAL_ACTION_ID: str = "machine_select"
+
     HELP_RESPONSE: str = dedent("""
     Hi, I'm the Machine Access Control slack bot.
     Mention my username followed by one of these commands:
@@ -87,6 +95,7 @@ class SlackHandler:
         )
         self.app.event("app_mention")(self.app_mention)
         self.app.command("/oops-clear")(self.oops_clear_command)
+        self.app.view(self.MODAL_CALLBACK_ID)(self.oops_clear_modal_submit)
         logger.debug("SlackHandler initialized.")
 
     async def app_mention(self, body: Dict[str, Any], say: AsyncSay) -> None:
@@ -312,8 +321,82 @@ class SlackHandler:
             else:
                 await ack()
             return
-        # No machine specified: open the selection modal (Milestone 3).
-        await ack("Please specify a machine name: `/oops-clear <machine name>`")
+        # No machine specified: open a modal to pick from oopsed/locked machines.
+        machines: List[Machine] = sorted(
+            (m for m in mconf.machines if m.state.is_oopsed or m.state.is_locked_out),
+            key=lambda m: m.display_name.lower(),
+        )
+        if not machines:
+            await ack("No machines are currently oopsed or locked out.")
+            return
+        await ack()
+        await client.views_open(
+            trigger_id=command["trigger_id"],
+            view=self._build_clear_modal(machines),
+        )
+
+    def _build_clear_modal(self, machines: List[Machine]) -> Dict[str, Any]:
+        """Build the ``/oops-clear`` Block Kit selection modal.
+
+        The modal has a single required input: a ``static_select`` dropdown of
+        the given machines (option text = display name, value = machine name)
+        with no default selection.
+        """
+        options: List[Dict[str, Any]] = [
+            {
+                "text": {"type": "plain_text", "text": mach.display_name},
+                "value": mach.name,
+            }
+            for mach in machines
+        ]
+        return {
+            "type": "modal",
+            "callback_id": self.MODAL_CALLBACK_ID,
+            "title": {"type": "plain_text", "text": "Clear Machine"},
+            "submit": {"type": "plain_text", "text": "Clear"},
+            "close": {"type": "plain_text", "text": "Cancel"},
+            "blocks": [
+                {
+                    "type": "input",
+                    "block_id": self.MODAL_BLOCK_ID,
+                    "label": {"type": "plain_text", "text": "Machine to clear"},
+                    "element": {
+                        "type": "static_select",
+                        "action_id": self.MODAL_ACTION_ID,
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a machine",
+                        },
+                        "options": options,
+                    },
+                }
+            ],
+        }
+
+    async def oops_clear_modal_submit(
+        self, ack: AsyncAck, view: Dict[str, Any]
+    ) -> None:
+        """Handle submission of the ``/oops-clear`` selection modal.
+
+        Acknowledges promptly to close the modal, then clears the selected
+        machine. The machine may have been cleared between opening and
+        submitting the modal; that and any unexpected missing selection are
+        handled gracefully (no error raised).
+        """
+        await ack()
+        try:
+            selected: str = view["state"]["values"][self.MODAL_BLOCK_ID][
+                self.MODAL_ACTION_ID
+            ]["selected_option"]["value"]
+        except (KeyError, TypeError):
+            logger.warning("/oops-clear modal submitted with no machine selected")
+            return
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        mach: Optional[Machine] = mconf.get_machine(selected)
+        if not mach:
+            logger.warning("/oops-clear modal selected unknown machine '%s'", selected)
+            return
+        await self._clear_machine(mach)
 
     @staticmethod
     def _both_relays_suffix(machine: Machine) -> str:
