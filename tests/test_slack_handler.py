@@ -138,10 +138,14 @@ class TestSlackHandler:
             call(token="btoken", signing_secret="secret"),
             call().event("app_mention"),
             call().event("app_mention")(self.cls.app_mention),
+            call().command("/oops-clear"),
+            call().command("/oops-clear")(self.cls.oops_clear_command),
         ]
         assert self.slack_app.mock_calls == [
             call.event("app_mention"),
             call.event("app_mention")(self.cls.app_mention),
+            call.command("/oops-clear"),
+            call.command("/oops-clear")(self.cls.oops_clear_command),
         ]
         assert self.cls.app == self.slack_app
 

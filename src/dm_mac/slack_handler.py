@@ -11,7 +11,9 @@ from typing import Optional
 from humanize import naturaldelta
 from quart import Quart
 from slack_bolt.async_app import AsyncApp
+from slack_bolt.context.ack.async_ack import AsyncAck
 from slack_bolt.context.say.async_say import AsyncSay
+from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from dm_mac.models.machine import Machine
@@ -84,6 +86,7 @@ class SlackHandler:
             signing_secret=os.environ["SLACK_SIGNING_SECRET"],
         )
         self.app.event("app_mention")(self.app_mention)
+        self.app.command("/oops-clear")(self.oops_clear_command)
         logger.debug("SlackHandler initialized.")
 
     async def app_mention(self, body: Dict[str, Any], say: AsyncSay) -> None:
@@ -273,6 +276,44 @@ class SlackHandler:
         result: Optional[str] = await self._clear_machine(mach)
         if result:
             await say(result)
+
+    async def oops_clear_command(
+        self, ack: AsyncAck, command: Dict[str, Any], client: AsyncWebClient
+    ) -> None:
+        """Handle the ``/oops-clear`` slash command.
+
+        Usable only from the control channel. With an argument
+        (``/oops-clear <machine name>``) it clears that machine directly.
+        With no argument it opens a Block Kit modal to pick a machine to
+        clear (see Milestone 3). ``ack`` is always called promptly so Slack
+        does not report the command as failed; error/edge cases respond with
+        an ephemeral message, while a successful clear acks silently (the
+        resulting channel posts cover the outcome).
+        """
+        channel_id: str = command.get("channel_id", "")
+        if channel_id != self.control_channel_id:
+            logger.warning(
+                "Ignoring /oops-clear from non-control channel %s", channel_id
+            )
+            await ack(
+                "The `/oops-clear` command can only be used in the control channel."
+            )
+            return
+        text: str = command.get("text", "").strip()
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        if text:
+            mach: Optional[Machine] = mconf.get_machine(text)
+            if not mach:
+                await ack(self._invalid_machine_msg(text))
+                return
+            result: Optional[str] = await self._clear_machine(mach)
+            if result:
+                await ack(result)
+            else:
+                await ack()
+            return
+        # No machine specified: open the selection modal (Milestone 3).
+        await ack("Please specify a machine name: `/oops-clear <machine name>`")
 
     @staticmethod
     def _both_relays_suffix(machine: Machine) -> str:
