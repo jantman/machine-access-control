@@ -343,6 +343,10 @@ class MachinesConfig:
         logger.debug("Initializing MachinesConfig")
         self.machines_by_name: Dict[str, Machine] = {}
         self.machines_by_alias: Dict[str, Machine] = {}
+        #: Case-insensitive lookup maps (lowercased name/alias -> Machine), used
+        #: by :py:meth:`get_machine` so Slack commands can match regardless of case.
+        self.machines_by_name_lower: Dict[str, Machine] = {}
+        self.machines_by_alias_lower: Dict[str, Machine] = {}
         self.machines: List[Machine] = []
         mdict: Dict[str, Any]
         mname: str
@@ -352,14 +356,17 @@ class MachinesConfig:
             mach: Machine = Machine(name=mname, **mdict)
             self.machines.append(mach)
             self.machines_by_name[mach.name] = mach
+            self.machines_by_name_lower[mach.name.lower()] = mach
             if mach.alias:
                 self.machines_by_alias[mach.alias] = mach
+                self.machines_by_alias_lower[mach.alias.lower()] = mach
         self.load_time: float = time()
 
     def get_machine(self, name_or_alias: str) -> Optional[Machine]:
-        """Get a machine by name or alias."""
-        return self.machines_by_name.get(name_or_alias) or self.machines_by_alias.get(
-            name_or_alias
+        """Get a machine by name or alias (case-insensitive)."""
+        key: str = name_or_alias.lower()
+        return self.machines_by_name_lower.get(key) or self.machines_by_alias_lower.get(
+            key
         )
 
     def _load_and_validate_config(self) -> Dict[str, Dict[str, Any]]:
