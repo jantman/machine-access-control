@@ -17,7 +17,7 @@ To set up the Slack integration:
    1. Create your new app "from scratch".
    2. Set a meaningful name, such as ``machine-access-control`` and create the app in your Workspace.
    3. In the left menu, navigate to ``OAuth & Permissions``.
-   4. In the "Scopes" pane, under "Bot Token Scopes", click "Add an OAuth Scope" and add scopes for ``app_mentions:read``, ``canvases:read``, ``canvases:write``, ``channels:read``, ``chat:write``, ``groups:read``, ``groups:write``, ``incoming-webhook``, ``users.profile:read``, and ``users:read``.
+   4. In the "Scopes" pane, under "Bot Token Scopes", click "Add an OAuth Scope" and add scopes for ``app_mentions:read``, ``canvases:read``, ``canvases:write``, ``channels:read``, ``chat:write``, ``commands``, ``groups:read``, ``groups:write``, ``incoming-webhook``, ``users.profile:read``, and ``users:read``.
 
 2. In your workspace, create a new private channel for admins to interact with MAC in, and MAC to post status updates to.
 3. In the left menu, navigate to ``Install App``. Click on the button to install to your workspace. When prompted for a channel for the app to post in, select the private channel that you created in the previous step.
@@ -25,6 +25,9 @@ To set up the Slack integration:
 5. Go back to the main settings for your app and navigate to ``Socket Mode`` under ``Settings`` on the left menu; toggle on ``Enable Socket Mode``. For ``Token Name``, enter ``socket-mode-token`` and click ``Generate``. Copy the generated token and set it as the ``SLACK_APP_TOKEN`` environment variable for the MAC server. If you need to retrieve this token later, it can be found in the ``App-Level Tokens`` pane of the ``Settings -> Basic Information`` page.
 6. Go back to the main settings for your app and navigate to ``Basic Information`` under ``Settings`` on the left menu; in the ``App Credentials`` pane click ``Show`` in the ``Signing Secret`` box and then copy that value; set it as the ``SLACK_SIGNING_SECRET`` environment variable for the MAC server.
 7. Go back to the main settings for your app and navigate to ``Event Subscriptions`` under ``Features`` on the left menu; click the toggle in the upper left of the panel to Enable Events; under ``Subscribe to bot events`` add a subscription for ``app_mention``.
+8. Go back to the main settings for your app and navigate to ``Interactivity & Shortcuts`` under ``Features`` on the left menu; toggle ``Interactivity`` on. Because the app uses Socket Mode, no Request URL is required. This is needed so that submissions of the ``/oops-clear`` selection modal are delivered to the server.
+9. Go back to the main settings for your app and navigate to ``Slash Commands`` under ``Features`` on the left menu; click ``Create New Command``. Set the ``Command`` to ``/oops-clear``, enter a short ``Short Description`` such as "Clear a machine's Oops/lockout", and an optional ``Usage Hint`` of ``[machine name]``. Save the command. (With Socket Mode enabled, no Request URL is needed.)
+10. If Slack prompts you that the app needs to be reinstalled to apply the new ``commands`` scope and slash command, navigate back to ``Install App`` and reinstall it to your workspace.
 
 .. _slack.configuration:
 
@@ -53,6 +56,16 @@ Using an example bot name of ``@machine-access-control``, the supported commands
 * ``@machine-access-control clear <machine-name>`` - Clear all Oops and/or maintenance lock-out states on the machine with name ``machine-name``. You can use either the machine name or its alias (if configured).
 
 **Note:** If a machine has an ``alias`` configured in ``machines.json``, the bot's responses will use the alias instead of the machine name for better readability.
+
+**Note:** Machine names and aliases are matched case-insensitively, for both the at-mention commands above and the ``/oops-clear`` slash command below.
+
+Clearing a Machine with ``/oops-clear``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As a convenience for clearing Oops and maintenance lock-out states, MAC also provides a ``/oops-clear`` slash command. Like the control commands above, it can only be used from the ``SLACK_CONTROL_CHANNEL_ID`` channel; using it elsewhere returns a private message telling you so.
+
+* ``/oops-clear <machine name>`` - Clear all Oops and/or maintenance lock-out states on the named machine (by name or alias). This is equivalent to the ``clear`` at-mention command.
+* ``/oops-clear`` (with no machine name) - Open a dialog with a single dropdown listing all machines that are currently Oopsed or locked-out. Select a machine and click ``Clear`` to clear it. If no machines are currently Oopsed or locked-out, you'll get a private message saying so instead.
 
 In addition, changes to all machines' Oops and maintenance lock-out states will be posted as messages in the ``SLACK_OOPS_CHANNEL_ID`` channel.
 

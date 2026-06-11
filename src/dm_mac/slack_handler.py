@@ -80,6 +80,10 @@ class SlackHandler:
     "lock <machine name>" - set maintenance lockout on this machine
     "clear <machine name>" - clear oops and/or maintenance lockout on this machine
 
+    Machine names and aliases are matched case-insensitively.
+    You can also use the "/oops-clear" slash command (in the control channel) to
+    clear a machine, optionally with no machine name to pick one from a menu.
+
     I am Free and Open Source software:
     https://github.com/jantman/machine-access-control
     """).strip()

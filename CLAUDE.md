@@ -115,7 +115,7 @@ Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and `
     - `alias`: (optional) Human-readable name for the accessory (used in Slack/log lines that refer specifically to the second relay)
 - Users: `users.json` (schema in `models/users.py::CONFIG_SCHEMA`)
 - Machine names must match ESPHome configs and can only contain `[a-z0-9_-]`
-- Machines can be looked up by either name or alias in Slack commands
+- Machines can be looked up by either name or alias (case-insensitively) in Slack commands (both at-mentions and the `/oops-clear` slash command)
 
 **State Persistence**:
 - Machine state is persisted to disk on every update using pickle

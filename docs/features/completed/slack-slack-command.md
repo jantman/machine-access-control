@@ -238,5 +238,18 @@ Key files to modify:
   - 3.3: Added modal-flow tests (open with options, empty case, submit clears,
     already-clear, no selection, unknown machine). `slack_handler.py` at 100%
     coverage; `nox -s tests` passing.
+- **Milestone 4 complete** (acceptance criteria):
+  - 4.1: Documented the slash command + interactivity setup and `/oops-clear`
+    usage (both forms) plus case-insensitive matching in `docs/source/slack.rst`;
+    refreshed `HELP_RESPONSE` and the CLAUDE.md Slack-lookup note.
+  - 4.2/4.3: `slack_handler.py` at 100% coverage; `nox` sessions `tests` (309
+    passing), `pre-commit`, `mypy`, `typeguard`, and `docs` all pass. The
+    `safety` session fails only on **pre-existing upstream CVEs** in transitive
+    dependencies (`aiohttp`, `dulwich`, `idna`); this branch changes no
+    dependencies (`pyproject.toml`/`poetry.lock` untouched), so it is unrelated
+    to this feature and best addressed by a separate dependency-bump change.
+  - 4.4: Feature complete; this document moved to `docs/features/completed/`.
+
+**Feature complete.**
 </content>
 </invoke>
