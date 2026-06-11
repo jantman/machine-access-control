@@ -235,17 +235,22 @@ class SlackHandler:
             return
         await mach.lockout(slack=self)
 
-    async def clear(self, msg: Message, say: AsyncSay) -> None:
-        """Clear oops and lock status on a machine."""
-        mname: str = " ".join(msg.command[1:])
-        mconf: MachinesConfig = self.quart.config["MACHINES"]
-        mach: Optional[Machine] = mconf.get_machine(mname)
-        if not mach:
-            await say(
-                f"Invalid machine name or alias '{mname}'. Use status command to "
-                f"list all machines."
-            )
-            return
+    @staticmethod
+    def _invalid_machine_msg(name_or_alias: str) -> str:
+        """Return the standard 'invalid machine name or alias' message."""
+        return (
+            f"Invalid machine name or alias '{name_or_alias}'. Use status command "
+            f"to list all machines."
+        )
+
+    async def _clear_machine(self, mach: Machine) -> Optional[str]:
+        """Clear oops and/or maintenance lock-out status on a machine.
+
+        Returns ``None`` if something was cleared (the resulting Slack channel
+        posts from :py:meth:`Machine.unoops` / :py:meth:`Machine.unlock` cover
+        the outcome), or a human-readable message string if the machine was
+        already clear (so the caller can surface it to the requester).
+        """
         acted = False
         if mach.state.is_oopsed:
             await mach.unoops(slack=self)
@@ -254,7 +259,20 @@ class SlackHandler:
             await mach.unlock(slack=self)
             acted = True
         if not acted:
-            await say(f"Machine {mach.display_name} is not oopsed or locked-out.")
+            return f"Machine {mach.display_name} is not oopsed or locked-out."
+        return None
+
+    async def clear(self, msg: Message, say: AsyncSay) -> None:
+        """Clear oops and lock status on a machine."""
+        mname: str = " ".join(msg.command[1:])
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        mach: Optional[Machine] = mconf.get_machine(mname)
+        if not mach:
+            await say(self._invalid_machine_msg(mname))
+            return
+        result: Optional[str] = await self._clear_machine(mach)
+        if result:
+            await say(result)
 
     @staticmethod
     def _both_relays_suffix(machine: Machine) -> str:
