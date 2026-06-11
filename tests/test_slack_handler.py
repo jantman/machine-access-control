@@ -770,6 +770,109 @@ class TestSlackHandler:
         assert self.slack_app.mock_calls == []
         assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
 
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_clears_oopsed(self, tmp_path) -> None:
+        """Direct /oops-clear form clears an oopsed machine and acks silently."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = True
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "metal-mill"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin", text="Machine Metal Mill un-oopsed via Slack."
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine Metal Mill oops has been cleared."
+            ),
+        ]
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_not_oopsed_or_locked(self, tmp_path) -> None:
+        """Direct /oops-clear form on a clear machine acks with a message."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = False
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "metal-mill"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [
+            call("Machine Metal Mill is not oopsed or locked-out.")
+        ]
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_invalid_machine(self, tmp_path) -> None:
+        """Direct /oops-clear form with an unknown machine acks with an error."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "invalid-name"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [
+            call(
+                "Invalid machine name or alias 'invalid-name'. "
+                "Use status command to list all machines."
+            )
+        ]
+        assert self.slack_client.mock_calls == []
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_wrong_channel(self, tmp_path) -> None:
+        """/oops-clear from a non-control channel is rejected, no state change."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = True
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Coops", "text": "metal-mill"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [
+            call("The `/oops-clear` command can only be used in the control channel.")
+        ]
+        assert self.slack_client.mock_calls == []
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is True
+
+    @freeze_time("2023-07-16 03:14:08", tz_offset=0)
+    async def test_oops_clear_command_case_insensitive(self, tmp_path) -> None:
+        """Direct /oops-clear form matches machine alias case-insensitively."""
+        self.slack_app.reset_mock()
+        self.slack_client.reset_mock()
+        setup_machines(tmp_path, self)
+        mconf: MachinesConfig = self.quart_app.config["MACHINES"]
+        mconf.machines_by_name["metal-mill"].state.is_oopsed = True
+        mconf.machines_by_name["metal-mill"].state.is_locked_out = False
+        ack = AsyncMock()
+        client = AsyncMock()
+        command = {"channel_id": "Cadmin", "text": "MeTaL MiLl"}
+        await self.cls.oops_clear_command(ack, command, client)
+        assert ack.mock_calls == [call()]
+        assert self.slack_client.mock_calls == [
+            call.chat_postMessage(
+                channel="Cadmin", text="Machine Metal Mill un-oopsed via Slack."
+            ),
+            call.chat_postMessage(
+                channel="Coops", text="Machine Metal Mill oops has been cleared."
+            ),
+        ]
+        assert mconf.machines_by_name["metal-mill"].state.is_oopsed is False
+
 
 def setup_machines(fixture_dir: Path, test_class: TestSlackHandler) -> None:
     fpath: str = os.path.abspath(

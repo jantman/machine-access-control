@@ -220,5 +220,14 @@ Key files to modify:
     name/alias lookup maps.
   - 1.2: Added `get_machine()` case-insensitive unit tests and a mixed-case
     `@mention` oops command test. `nox -s tests` passing.
+- **Milestone 2 complete** (`/oops-clear` slash command, direct form):
+  - 2.1: Extracted shared `_invalid_machine_msg()` and `_clear_machine()` helpers
+    and refactored `clear()` onto them (no behavior change).
+  - 2.2: Registered the `/oops-clear` command and implemented
+    `oops_clear_command()` — control-channel gating + direct
+    `/oops-clear <machine>` form (silent ack on success, ephemeral on
+    error/edge). No-arg case is a temporary usage hint, replaced in Milestone 3.
+  - 2.3: Added direct-form tests (clears oopsed, already-clear, invalid machine,
+    wrong channel, mixed-case) and updated `test_init`. `nox -s tests` passing.
 </content>
 </invoke>
