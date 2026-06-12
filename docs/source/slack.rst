@@ -65,7 +65,7 @@ Clearing a Machine with ``/oops-clear``
 As a convenience for clearing Oops and maintenance lock-out states, MAC also provides a ``/oops-clear`` slash command. Like the control commands above, it can only be used from the ``SLACK_CONTROL_CHANNEL_ID`` channel; using it elsewhere returns a private message telling you so.
 
 * ``/oops-clear <machine name>`` - Clear all Oops and/or maintenance lock-out states on the named machine (by name or alias). This is equivalent to the ``clear`` at-mention command.
-* ``/oops-clear`` (with no machine name) - Open a dialog with a single dropdown listing all machines that are currently Oopsed or locked-out. Select a machine and click ``Clear`` to clear it. If no machines are currently Oopsed or locked-out, you'll get a private message saying so instead.
+* ``/oops-clear`` (with no machine name) - Open a modal with a single dropdown listing all machines that are currently Oopsed or locked-out. Select a machine and click ``Clear`` to clear it. If no machines are currently Oopsed or locked-out, you'll get a private message saying so instead.
 
 In addition, changes to all machines' Oops and maintenance lock-out states will be posted as messages in the ``SLACK_OOPS_CHANNEL_ID`` channel.
 

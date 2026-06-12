@@ -1,6 +1,6 @@
 # Slack Slash Command and Case-Insensitive Search
 
-You must read, understand, and follow all instructions in `./README.md` when planning and implementing this feature.
+You must read, understand, and follow all instructions in `../README.md` when planning and implementing this feature.
 
 ## Overview
 
@@ -251,5 +251,3 @@ Key files to modify:
   - 4.4: Feature complete; this document moved to `docs/features/completed/`.
 
 **Feature complete.**
-</content>
-</invoke>

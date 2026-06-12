@@ -296,12 +296,12 @@ class SlackHandler:
         """Handle the ``/oops-clear`` slash command.
 
         Usable only from the control channel. With an argument
-        (``/oops-clear <machine name>``) it clears that machine directly.
-        With no argument it opens a Block Kit modal to pick a machine to
-        clear (see Milestone 3). ``ack`` is always called promptly so Slack
-        does not report the command as failed; error/edge cases respond with
-        an ephemeral message, while a successful clear acks silently (the
-        resulting channel posts cover the outcome).
+        (``/oops-clear <machine name>``) it clears that machine directly. With
+        no argument it opens a Block Kit modal to pick a machine to clear.
+        ``ack`` is always called promptly so Slack does not report the command
+        as failed; error/edge cases respond with an ephemeral message, while a
+        successful clear acks silently (the resulting channel posts cover the
+        outcome).
         """
         channel_id: str = command.get("channel_id", "")
         if channel_id != self.control_channel_id:

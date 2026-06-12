@@ -359,7 +359,26 @@ class MachinesConfig:
             self.machines_by_name_lower[mach.name.lower()] = mach
             if mach.alias:
                 self.machines_by_alias[mach.alias] = mach
-                self.machines_by_alias_lower[mach.alias.lower()] = mach
+        # Populate the case-insensitive alias map in a second pass, after every
+        # machine name is known, so a collision is detected regardless of config
+        # order. Two machines whose aliases (or an alias and another machine's
+        # name) differ only by case would make lookups ambiguous, so we fail
+        # fast rather than silently overwrite an entry.
+        for mach in self.machines:
+            if not mach.alias:
+                continue
+            alias_key: str = mach.alias.lower()
+            existing: Optional[Machine] = self.machines_by_name_lower.get(
+                alias_key
+            ) or self.machines_by_alias_lower.get(alias_key)
+            if existing is not None and existing is not mach:
+                raise ValueError(
+                    f"Machine alias '{mach.alias}' (machine '{mach.name}') "
+                    f"collides case-insensitively with machine "
+                    f"'{existing.name}'. Machine names and aliases must be "
+                    f"unique when compared case-insensitively."
+                )
+            self.machines_by_alias_lower[alias_key] = mach
         self.load_time: float = time()
 
     def get_machine(self, name_or_alias: str) -> Optional[Machine]:
