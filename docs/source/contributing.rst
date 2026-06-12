@@ -11,10 +11,10 @@ requests.
 
 Here is a list of important resources for contributors:
 
--  `Source Code <https://github.com/jantman/machine_access_control>`__
--  `Documentation <https://github.com/jantman/machine_access_control>`__
+-  `Source Code <https://github.com/Decaturmakers/machine-access-control>`__
+-  `Documentation <https://github.com/Decaturmakers/machine-access-control>`__
 -  `Issue
-   Tracker <https://github.com/jantman/machine_access_control/issues>`__
+   Tracker <https://github.com/Decaturmakers/machine-access-control/issues>`__
 
 Tooling in use
 --------------
@@ -111,7 +111,7 @@ How to submit changes
 ---------------------
 
 Open a `pull
-request <https://github.com/jantman/machine_access_control/pulls>`__ to
+request <https://github.com/Decaturmakers/machine-access-control/pulls>`__ to
 submit changes to this project.
 
 Your pull request needs to meet the following guidelines for acceptance:
@@ -138,4 +138,4 @@ your approach.
 Release Process
 ---------------
 
-Use ``poetry version`` to increment the version number, commit push and merge that. Tag the repo and push the tag. `GitHub Actions <https://github.com/jantman/machine-access-control/actions>`__ will run a Docker build, push to GHCR (GitHub Container Registry), build to PyPI, and create a release on the repo.
+Use ``poetry version`` to increment the version number, commit push and merge that. Tag the repo and push the tag. `GitHub Actions <https://github.com/Decaturmakers/machine-access-control/actions>`__ will run a Docker build, push to GHCR (GitHub Container Registry), build to PyPI, and create a release on the repo.

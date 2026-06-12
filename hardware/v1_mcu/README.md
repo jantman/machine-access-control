@@ -1,6 +1,6 @@
 # machine-access-control hardware/v1_mcu
 
-This directory holds information related to the Version 1 Machine Control Unit (MCU) hardware, mainly the designs for the 3D printed enclosure and laser-cut acrylic RFID card/fob holder, as well as the wiring diagram (such as it is). Full details of the electronic components and wiring can be seen in the documentation at https://jantman.github.io/machine-access-control/hardware.html#version-1-hardware
+This directory holds information related to the Version 1 Machine Control Unit (MCU) hardware, mainly the designs for the 3D printed enclosure and laser-cut acrylic RFID card/fob holder, as well as the wiring diagram (such as it is). Full details of the electronic components and wiring can be seen in the documentation at https://decaturmakers.github.io/machine-access-control/hardware.html#version-1-hardware
 
 ## RFID Card / Fob Holder
 
@@ -14,7 +14,7 @@ The enclosure is designed to be 3D printed; prototypes were printed on a (highly
 
 I'm slicing with Cura. If the mounting nut catches are enabled, be sure to enable supports and also set your wall line width, initial layer height, and layer height in [config.scad](config.scad).
 
-The connector used for power and control is a GX16-8 style round connector as specified in the [documentation](https://jantman.github.io/machine-access-control/hardware.html#version-1-hardware) and mounts using a single round through-hole of at least 0.615 inches (nominally 5/8" or 16mm). Due to the wide variety of mounting options, this hole is left out of the model and can be drilled after printing in whichever location is most suitable for the final mounting.
+The connector used for power and control is a GX16-8 style round connector as specified in the [documentation](https://decaturmakers.github.io/machine-access-control/hardware.html#version-1-hardware) and mounts using a single round through-hole of at least 0.615 inches (nominally 5/8" or 16mm). Due to the wide variety of mounting options, this hole is left out of the model and can be drilled after printing in whichever location is most suitable for the final mounting.
 
 ### Required Hardware
 
@@ -51,4 +51,4 @@ See the hardware docs for details.
 
 ### Enclosure Notes
 
-The enclosure itself is built using v3 of [Willem Aandewiel](https://willem.aandewiel.nl/)'s excellent [YAPP_Box](https://github.com/mrWheel/YAPP_Box) OpenSCAD enclosure generator, with a [patch](https://github.com/jantman/machine-access-control/commit/c860e23d8b0bcd43c924b47d14e1e0748aece98f) for custom cutouts.
+The enclosure itself is built using v3 of [Willem Aandewiel](https://willem.aandewiel.nl/)'s excellent [YAPP_Box](https://github.com/mrWheel/YAPP_Box) OpenSCAD enclosure generator, with a [patch](https://github.com/Decaturmakers/machine-access-control/commit/c860e23d8b0bcd43c924b47d14e1e0748aece98f) for custom cutouts.

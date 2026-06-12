@@ -7,7 +7,7 @@ The only supported method of installing and running the Control Server is via Do
 
 For actual use, you will need to ensure that the Docker container is always running and restarts automatically; it's assumed that you'll use systemd or some configuration management / automation tool for that, but that's outside the scope of this documentation.
 
-The `tests/fixtures directory of the source repository <https://github.com/jantman/machine-access-control/tree/main/tests/fixtures>`__ contains an example `docker-compose <https://docs.docker.com/compose/>`__ file that can be used as an example of how to run the container. By default, it will be accessible on port 5000 unless that file is changed.
+The `tests/fixtures directory of the source repository <https://github.com/Decaturmakers/machine-access-control/tree/main/tests/fixtures>`__ contains an example `docker-compose <https://docs.docker.com/compose/>`__ file that can be used as an example of how to run the container. By default, it will be accessible on port 5000 unless that file is changed.
 
 **NOTE** that by default the container runs as root, and files written by it (i.e. the machine state directory) will be root-owned.
 

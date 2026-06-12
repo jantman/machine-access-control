@@ -1,4 +1,4 @@
-// FROM: https://github.com/jantman/machine-access-control ; MIT license
+// FROM: https://github.com/Decaturmakers/machine-access-control ; MIT license
 // dimensioned in inches
 $fn = 360;
 
