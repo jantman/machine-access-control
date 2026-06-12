@@ -343,6 +343,10 @@ class MachinesConfig:
         logger.debug("Initializing MachinesConfig")
         self.machines_by_name: Dict[str, Machine] = {}
         self.machines_by_alias: Dict[str, Machine] = {}
+        #: Case-insensitive lookup maps (lowercased name/alias -> Machine), used
+        #: by :py:meth:`get_machine` so Slack commands can match regardless of case.
+        self.machines_by_name_lower: Dict[str, Machine] = {}
+        self.machines_by_alias_lower: Dict[str, Machine] = {}
         self.machines: List[Machine] = []
         mdict: Dict[str, Any]
         mname: str
@@ -352,14 +356,36 @@ class MachinesConfig:
             mach: Machine = Machine(name=mname, **mdict)
             self.machines.append(mach)
             self.machines_by_name[mach.name] = mach
+            self.machines_by_name_lower[mach.name.lower()] = mach
             if mach.alias:
                 self.machines_by_alias[mach.alias] = mach
+        # Populate the case-insensitive alias map in a second pass, after every
+        # machine name is known, so a collision is detected regardless of config
+        # order. Two machines whose aliases (or an alias and another machine's
+        # name) differ only by case would make lookups ambiguous, so we fail
+        # fast rather than silently overwrite an entry.
+        for mach in self.machines:
+            if not mach.alias:
+                continue
+            alias_key: str = mach.alias.lower()
+            existing: Optional[Machine] = self.machines_by_name_lower.get(
+                alias_key
+            ) or self.machines_by_alias_lower.get(alias_key)
+            if existing is not None and existing is not mach:
+                raise ValueError(
+                    f"Machine alias '{mach.alias}' (machine '{mach.name}') "
+                    f"collides case-insensitively with machine "
+                    f"'{existing.name}'. Machine names and aliases must be "
+                    f"unique when compared case-insensitively."
+                )
+            self.machines_by_alias_lower[alias_key] = mach
         self.load_time: float = time()
 
     def get_machine(self, name_or_alias: str) -> Optional[Machine]:
-        """Get a machine by name or alias."""
-        return self.machines_by_name.get(name_or_alias) or self.machines_by_alias.get(
-            name_or_alias
+        """Get a machine by name or alias (case-insensitive)."""
+        key: str = name_or_alias.lower()
+        return self.machines_by_name_lower.get(key) or self.machines_by_alias_lower.get(
+            key
         )
 
     def _load_and_validate_config(self) -> Dict[str, Dict[str, Any]]:

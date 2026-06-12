@@ -235,3 +235,91 @@ class TestMachinesConfigGetMachine:
                 cls: MachinesConfig = MachinesConfig()
         machine = cls.get_machine("nonexistent")
         assert machine is None
+
+    def test_get_machine_case_insensitive_name(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test getting a machine by name regardless of case."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        for variant in ["metal-mill", "Metal-Mill", "METAL-MILL", "MeTaL-mIlL"]:
+            machine = cls.get_machine(variant)
+            assert machine is not None, variant
+            assert machine.name == "metal-mill"
+
+    def test_get_machine_case_insensitive_alias(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Test getting a machine by alias regardless of case."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["Metal Mill"], "alias": "Metal Mill"},
+            "hammer": {"authorizations_or": ["Woodshop Orientation"]},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        for variant in ["Metal Mill", "metal mill", "METAL MILL", "mEtAl MiLl"]:
+            machine = cls.get_machine(variant)
+            assert machine is not None, variant
+            assert machine.name == "metal-mill"
+            assert machine.alias == "Metal Mill"
+
+    def test_aliases_colliding_case_insensitively_raise(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """Two aliases differing only by case must be rejected at load."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["a"], "alias": "Big Machine"},
+            "hammer": {"authorizations_or": ["b"], "alias": "big machine"},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                with pytest.raises(ValueError, match="collides case-insensitively"):
+                    MachinesConfig()
+
+    def test_alias_colliding_with_other_machine_name_raises(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """An alias that matches another machine's name (case-insensitively) raises."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "metal-mill": {"authorizations_or": ["a"]},
+            "hammer": {"authorizations_or": ["b"], "alias": "Metal-Mill"},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                with pytest.raises(ValueError, match="collides case-insensitively"):
+                    MachinesConfig()
+
+    def test_alias_equal_to_own_name_is_allowed(
+        self, fixtures_path: str, tmp_path: Path
+    ) -> None:
+        """An alias equal to the machine's own name is harmless, not a collision."""
+        conf: Dict[str, Dict[str, Any]] = {
+            "hammer": {"authorizations_or": ["b"], "alias": "Hammer"},
+        }
+        cpath: str = str(os.path.join(tmp_path, "machines.json"))
+        with open(cpath, "w") as fh:
+            json.dump(conf, fh, sort_keys=True, indent=4)
+        with patch.dict(os.environ, {"MACHINES_CONFIG": cpath}):
+            with patch(f"{pbm}.MachineState", autospec=True):
+                cls: MachinesConfig = MachinesConfig()
+        machine = cls.get_machine("HAMMER")
+        assert machine is not None
+        assert machine.name == "hammer"

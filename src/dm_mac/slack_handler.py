@@ -11,7 +11,9 @@ from typing import Optional
 from humanize import naturaldelta
 from quart import Quart
 from slack_bolt.async_app import AsyncApp
+from slack_bolt.context.ack.async_ack import AsyncAck
 from slack_bolt.context.say.async_say import AsyncSay
+from slack_sdk.web.async_client import AsyncWebClient
 from slack_sdk.web.async_slack_response import AsyncSlackResponse
 
 from dm_mac.models.machine import Machine
@@ -62,6 +64,14 @@ class Message:
 class SlackHandler:
     """Handle Slack integration."""
 
+    #: Block Kit ``callback_id`` for the ``/oops-clear`` selection modal; used
+    #: both when opening the modal and when routing its submission.
+    MODAL_CALLBACK_ID: str = "oops_clear_modal"
+    #: ``block_id`` of the machine-selection input block in the modal.
+    MODAL_BLOCK_ID: str = "machine_block"
+    #: ``action_id`` of the machine-selection ``static_select`` element.
+    MODAL_ACTION_ID: str = "machine_select"
+
     HELP_RESPONSE: str = dedent("""
     Hi, I'm the Machine Access Control slack bot.
     Mention my username followed by one of these commands:
@@ -69,6 +79,10 @@ class SlackHandler:
     "oops <machine name>" - set Oops state on this machine immediately
     "lock <machine name>" - set maintenance lockout on this machine
     "clear <machine name>" - clear oops and/or maintenance lockout on this machine
+
+    Machine names and aliases are matched case-insensitively.
+    You can also use the "/oops-clear" slash command (in the control channel) to
+    clear a machine, optionally with no machine name to pick one from a menu.
 
     I am Free and Open Source software:
     https://github.com/jantman/machine-access-control
@@ -84,6 +98,8 @@ class SlackHandler:
             signing_secret=os.environ["SLACK_SIGNING_SECRET"],
         )
         self.app.event("app_mention")(self.app_mention)
+        self.app.command("/oops-clear")(self.oops_clear_command)
+        self.app.view(self.MODAL_CALLBACK_ID)(self.oops_clear_modal_submit)
         logger.debug("SlackHandler initialized.")
 
     async def app_mention(self, body: Dict[str, Any], say: AsyncSay) -> None:
@@ -235,17 +251,22 @@ class SlackHandler:
             return
         await mach.lockout(slack=self)
 
-    async def clear(self, msg: Message, say: AsyncSay) -> None:
-        """Clear oops and lock status on a machine."""
-        mname: str = " ".join(msg.command[1:])
-        mconf: MachinesConfig = self.quart.config["MACHINES"]
-        mach: Optional[Machine] = mconf.get_machine(mname)
-        if not mach:
-            await say(
-                f"Invalid machine name or alias '{mname}'. Use status command to "
-                f"list all machines."
-            )
-            return
+    @staticmethod
+    def _invalid_machine_msg(name_or_alias: str) -> str:
+        """Return the standard 'invalid machine name or alias' message."""
+        return (
+            f"Invalid machine name or alias '{name_or_alias}'. Use status command "
+            f"to list all machines."
+        )
+
+    async def _clear_machine(self, mach: Machine) -> Optional[str]:
+        """Clear oops and/or maintenance lock-out status on a machine.
+
+        Returns ``None`` if something was cleared (the resulting Slack channel
+        posts from :py:meth:`Machine.unoops` / :py:meth:`Machine.unlock` cover
+        the outcome), or a human-readable message string if the machine was
+        already clear (so the caller can surface it to the requester).
+        """
         acted = False
         if mach.state.is_oopsed:
             await mach.unoops(slack=self)
@@ -254,7 +275,132 @@ class SlackHandler:
             await mach.unlock(slack=self)
             acted = True
         if not acted:
-            await say(f"Machine {mach.display_name} is not oopsed or locked-out.")
+            return f"Machine {mach.display_name} is not oopsed or locked-out."
+        return None
+
+    async def clear(self, msg: Message, say: AsyncSay) -> None:
+        """Clear oops and lock status on a machine."""
+        mname: str = " ".join(msg.command[1:])
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        mach: Optional[Machine] = mconf.get_machine(mname)
+        if not mach:
+            await say(self._invalid_machine_msg(mname))
+            return
+        result: Optional[str] = await self._clear_machine(mach)
+        if result:
+            await say(result)
+
+    async def oops_clear_command(
+        self, ack: AsyncAck, command: Dict[str, Any], client: AsyncWebClient
+    ) -> None:
+        """Handle the ``/oops-clear`` slash command.
+
+        Usable only from the control channel. With an argument
+        (``/oops-clear <machine name>``) it clears that machine directly. With
+        no argument it opens a Block Kit modal to pick a machine to clear.
+        ``ack`` is always called promptly so Slack does not report the command
+        as failed; error/edge cases respond with an ephemeral message, while a
+        successful clear acks silently (the resulting channel posts cover the
+        outcome).
+        """
+        channel_id: str = command.get("channel_id", "")
+        if channel_id != self.control_channel_id:
+            logger.warning(
+                "Ignoring /oops-clear from non-control channel %s", channel_id
+            )
+            await ack(
+                "The `/oops-clear` command can only be used in the control channel."
+            )
+            return
+        text: str = command.get("text", "").strip()
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        if text:
+            mach: Optional[Machine] = mconf.get_machine(text)
+            if not mach:
+                await ack(self._invalid_machine_msg(text))
+                return
+            result: Optional[str] = await self._clear_machine(mach)
+            if result:
+                await ack(result)
+            else:
+                await ack()
+            return
+        # No machine specified: open a modal to pick from oopsed/locked machines.
+        machines: List[Machine] = sorted(
+            (m for m in mconf.machines if m.state.is_oopsed or m.state.is_locked_out),
+            key=lambda m: m.display_name.lower(),
+        )
+        if not machines:
+            await ack("No machines are currently oopsed or locked out.")
+            return
+        await ack()
+        await client.views_open(
+            trigger_id=command["trigger_id"],
+            view=self._build_clear_modal(machines),
+        )
+
+    def _build_clear_modal(self, machines: List[Machine]) -> Dict[str, Any]:
+        """Build the ``/oops-clear`` Block Kit selection modal.
+
+        The modal has a single required input: a ``static_select`` dropdown of
+        the given machines (option text = display name, value = machine name)
+        with no default selection.
+        """
+        options: List[Dict[str, Any]] = [
+            {
+                "text": {"type": "plain_text", "text": mach.display_name},
+                "value": mach.name,
+            }
+            for mach in machines
+        ]
+        return {
+            "type": "modal",
+            "callback_id": self.MODAL_CALLBACK_ID,
+            "title": {"type": "plain_text", "text": "Clear Machine"},
+            "submit": {"type": "plain_text", "text": "Clear"},
+            "close": {"type": "plain_text", "text": "Cancel"},
+            "blocks": [
+                {
+                    "type": "input",
+                    "block_id": self.MODAL_BLOCK_ID,
+                    "label": {"type": "plain_text", "text": "Machine to clear"},
+                    "element": {
+                        "type": "static_select",
+                        "action_id": self.MODAL_ACTION_ID,
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select a machine",
+                        },
+                        "options": options,
+                    },
+                }
+            ],
+        }
+
+    async def oops_clear_modal_submit(
+        self, ack: AsyncAck, view: Dict[str, Any]
+    ) -> None:
+        """Handle submission of the ``/oops-clear`` selection modal.
+
+        Acknowledges promptly to close the modal, then clears the selected
+        machine. The machine may have been cleared between opening and
+        submitting the modal; that and any unexpected missing selection are
+        handled gracefully (no error raised).
+        """
+        await ack()
+        try:
+            selected: str = view["state"]["values"][self.MODAL_BLOCK_ID][
+                self.MODAL_ACTION_ID
+            ]["selected_option"]["value"]
+        except (KeyError, TypeError):
+            logger.warning("/oops-clear modal submitted with no machine selected")
+            return
+        mconf: MachinesConfig = self.quart.config["MACHINES"]
+        mach: Optional[Machine] = mconf.get_machine(selected)
+        if not mach:
+            logger.warning("/oops-clear modal selected unknown machine '%s'", selected)
+            return
+        await self._clear_machine(mach)
 
     @staticmethod
     def _both_relays_suffix(machine: Machine) -> str:
