@@ -85,7 +85,7 @@ class SlackHandler:
     clear a machine, optionally with no machine name to pick one from a menu.
 
     I am Free and Open Source software:
-    https://github.com/jantman/machine-access-control
+    https://github.com/Decaturmakers/machine-access-control
     """).strip()
 
     def __init__(self, quart_app: Quart):

@@ -60,7 +60,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             Release ${{ github.ref_name }}.
-            Docker images: https://github.com/users/jantman/packages/container/package/machine-access-control
+            Docker images: https://github.com/orgs/Decaturmakers/packages/container/package/machine-access-control
             Python packages: https://pypi.org/project/machine_access_control/
           draft: false
           prerelease: false

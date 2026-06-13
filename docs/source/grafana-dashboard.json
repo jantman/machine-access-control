@@ -1817,7 +1817,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "Machine Access Control",
-  "description": "https://github.com/jantman/machine-access-control/blob/main/docs/source/grafana-dashboard.json",
+  "description": "https://github.com/Decaturmakers/machine-access-control/blob/main/docs/source/grafana-dashboard.json",
   "uid": "dm-mac-dashboard",
   "version": 1,
   "weekStart": ""

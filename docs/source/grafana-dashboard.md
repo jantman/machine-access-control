@@ -5,7 +5,7 @@
 This document provides comprehensive information about the Grafana dashboard for the Decatur Makers Machine Access Control (dm-mac) system. This dashboard visualizes metrics exposed by the `/metrics` Prometheus endpoint on the control server.
 
 **Dashboard File**: `docs/source/grafana-dashboard.json`
-**GitHub URL**: https://github.com/jantman/machine-access-control/blob/main/docs/source/grafana-dashboard.json
+**GitHub URL**: https://github.com/Decaturmakers/machine-access-control/blob/main/docs/source/grafana-dashboard.json
 **Documentation**: `docs/source/admin.rst` (includes embedded dashboard JSON)
 
 ## Purpose
@@ -500,5 +500,5 @@ When modifying the dashboard:
 - **Prometheus Querying**: https://prometheus.io/docs/prometheus/latest/querying/basics/
 - **PromQL Functions**: https://prometheus.io/docs/prometheus/latest/querying/functions/
 - **Grafana Panel Types**: https://grafana.com/docs/grafana/latest/panels-visualizations/
-- **Project Repository**: https://github.com/jantman/machine-access-control
+- **Project Repository**: https://github.com/Decaturmakers/machine-access-control
 - **Metrics Implementation**: `src/dm_mac/views/prometheus.py`

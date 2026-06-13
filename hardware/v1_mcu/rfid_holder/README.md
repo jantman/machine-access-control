@@ -1,6 +1,6 @@
 # RFID Card/Fob Holder
 
-A holder/pocket for RFID cards and fobs to align and hold them over a RFID reader; designed for [https://github.com/jantman/machine-access-control](https://github.com/jantman/machine-access-control).
+A holder/pocket for RFID cards and fobs to align and hold them over a RFID reader; designed for [https://github.com/Decaturmakers/machine-access-control](https://github.com/Decaturmakers/machine-access-control).
 
 Each unit is made up of one top piece, two symmetrical middle pieces, and two symmetrical bottom pieces. The middle and bottom pieces have a drain channel to allow liquids or debris to drain or be blown out the bottom of the holder. Pieces attach with M4 screws.
 

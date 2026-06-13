@@ -19,7 +19,7 @@ export GIT_COMMIT := $(shell git rev-parse --short HEAD)
 export GITURL := $(shell git config remote.origin.url)
 export BRANCH_NAME := $(shell git rev-parse --abbrev-ref HEAD)
 # TODO: update the proper git URL here:
-ifneq "$(GITURL)" "git@github.com:jantman/machine-access-control.git"
+ifneq "$(GITURL)" "git@github.com:Decaturmakers/machine-access-control.git"
 	export GIT_COMMIT := ${GIT_COMMIT} (branch '${BRANCH_NAME}' from $(GITURL))
 endif
 
