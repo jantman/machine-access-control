@@ -138,4 +138,4 @@ your approach.
 Release Process
 ---------------
 
-Use ``poetry version`` to increment the version number, commit push and merge that. Tag the repo and push the tag. `GitHub Actions <https://github.com/Decaturmakers/machine-access-control/actions>`__ will run a Docker build, push to GHCR (GitHub Container Registry), build to PyPI, and create a release on the repo.
+Releases are driven by the version number in ``pyproject.toml``. Use ``poetry version`` to increment the version number, then commit, push, and merge that to ``main``. When a commit lands on ``main`` with a version higher than the latest GitHub release, the release `GitHub Actions <https://github.com/Decaturmakers/machine-access-control/actions>`__ workflow automatically tags the commit, runs a Docker build and pushes it to GHCR (GitHub Container Registry), builds and publishes to PyPI, and creates a release on the repo. No manual tagging is required.

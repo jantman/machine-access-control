@@ -2,41 +2,65 @@
 #
 # 1. In repository Settings -> Actions -> General, ensure "Allow all actions and reusable workflows" is selected, and that under "Workflow permissions", "Read repository contents and packages permissions" is checked.
 #
-name: Release on Tag
+# Releases are driven by the version in pyproject.toml: when a commit lands on
+# main with a version higher than the latest GitHub release, this workflow
+# tags it, builds and pushes the Docker image to GHCR, publishes to PyPI, and
+# creates a GitHub release. No manual tagging required.
+name: Release
 on:
   push:
-    tags:
-    - '*'
+    branches:
+    - main
+permissions:
+  contents: write
+  packages: write
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     steps:
       - uses: actions/checkout@v6
-      - name: Set up Python
-        uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
-      - name: Install dependencies
-        run: python -m pip install --upgrade pip && pip install poetry && poetry install
-      - name: Get Version
-        id: get-version
-        run: echo "APP_VERSION=$(poetry version -s)" >> $GITHUB_OUTPUT
-      - name: Ensure tag matches version
-        if: github.ref_name != steps.get-version.outputs.APP_VERSION
+          fetch-depth: 0
+      - name: Check version vs. latest release
+        id: version_check
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "ERROR: tag name (${{ github.ref_name }}) does not match current version in version.py (${{ steps.get-version.outputs.APP_VERSION }})"
-          exit 2
+          CURRENT_VERSION=$(python3 -c "
+          import re, pathlib
+          text = pathlib.Path('pyproject.toml').read_text()
+          m = re.search(r'^version\s*=\s*\"([^\"]+)\"', text, re.MULTILINE)
+          print(m.group(1))
+          ")
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty' 2>/dev/null || true)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No existing releases found — first release"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            LATEST_VERSION="${LATEST_TAG#v}"
+            SHOULD=$(python3 -c "
+          current = tuple(int(x) for x in '$CURRENT_VERSION'.split('.'))
+          latest = tuple(int(x) for x in '$LATEST_VERSION'.split('.'))
+          print('true' if current > latest else 'false')
+          ")
+            echo "Latest release: $LATEST_TAG, current version: $CURRENT_VERSION, should_release: $SHOULD"
+            echo "should_release=$SHOULD" >> "$GITHUB_OUTPUT"
+          fi
       - name: Set up Docker Buildx
+        if: steps.version_check.outputs.should_release == 'true'
         uses: docker/setup-buildx-action@v4
       - name: Login to GHCR
+        if: steps.version_check.outputs.should_release == 'true'
         run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - name: Lowercase image repository name
+        if: steps.version_check.outputs.should_release == 'true'
         id: image
         run: echo "repo=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
       - name: Docker Build and Push
+        if: steps.version_check.outputs.should_release == 'true'
         uses: docker/build-push-action@v7
         with:
           push: true
@@ -44,26 +68,48 @@ jobs:
           labels: |
             org.opencontainers.image.url=https://github.com/${{ github.repository }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.version=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ steps.version_check.outputs.current_version }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
-            ghcr.io/${{ steps.image.outputs.repo }}:${{ github.ref_name }}
+            ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.version_check.outputs.current_version }}
             ghcr.io/${{ steps.image.outputs.repo }}:latest
       - name: Build and publish to pypi
+        if: steps.version_check.outputs.should_release == 'true'
         uses: JRubics/poetry-publish@v2.1
         with:
           pypi_token: ${{ secrets.PYPI_TOKEN }}
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v3
+      - name: Create git tag
+        if: steps.version_check.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.version_check.outputs.current_version }}"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.should_release == 'true'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            Release ${{ github.ref_name }}.
-            Docker images: https://github.com/orgs/Decaturmakers/packages/container/package/machine-access-control
-            Python packages: https://pypi.org/project/machine_access_control/
-          draft: false
-          prerelease: false
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version_check.outputs.current_version }}"
+          REPO="${{ github.repository }}"
+          IMAGE="ghcr.io/${{ steps.image.outputs.repo }}"
+
+          # Generate changelog via GitHub API
+          CHANGELOG=$(gh api \
+            "repos/$REPO/releases/generate-notes" \
+            -f tag_name="$VERSION" \
+            -f target_commitish="main" \
+            --jq '.body')
+
+          # Build release body in a file to avoid shell escaping issues
+          {
+            printf '%s\n' "$CHANGELOG"
+            printf '\n---\n\n## Docker Image\n\n```bash\n'
+            printf 'docker pull %s:%s\n' "$IMAGE" "$VERSION"
+            printf 'docker pull %s:latest\n' "$IMAGE"
+            printf '```\n'
+            printf '\n## Python Package\n\nhttps://pypi.org/project/machine_access_control/%s/\n' "$VERSION"
+          } > /tmp/release_body.md
+
+          gh release create "$VERSION" \
+            --title "Release $VERSION" \
+            --notes-file /tmp/release_body.md
