@@ -92,6 +92,16 @@ poetry run neon-fob-adder --csv members.csv --field account_id
 
 Both tools use the same environment variables: ``NEON_ORG``, ``NEON_KEY``, and ``NEONGETTER_CONFIG``.
 
+### Releasing
+Releases are automated and driven by the version in `pyproject.toml` — do **not** create or push git tags manually.
+
+```bash
+# Bump the version (minor shown; use major/patch as appropriate), then commit and merge to main
+poetry version minor
+```
+
+On every push to `main`, `.github/workflows/release.yml` compares the `pyproject.toml` version against the latest GitHub release. If it is higher, the workflow automatically creates the git tag (bare version, e.g. `0.14.0` — no `v` prefix), builds and pushes the Docker image to GHCR, publishes to PyPI, and creates a GitHub release with generated notes. If the version is unchanged, the workflow no-ops.
+
 ## Architecture
 
 ### Core Components
