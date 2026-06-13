@@ -127,6 +127,9 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Login to GHCR
         run: echo "${{secrets.GITHUB_TOKEN}}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Lowercase image repository name
+        id: image
+        run: echo "repo=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
       - name: Docker Build
         uses: docker/build-push-action@v7
         with:
@@ -140,4 +143,4 @@ jobs:
             org.opencontainers.image.version=${{ github.ref_name }}
             org.opencontainers.image.revision=${{ github.sha }}
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ steps.image.outputs.repo }}:${{ github.sha }}
